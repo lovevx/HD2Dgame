@@ -1,0 +1,21 @@
+{
+  "status": "success",
+  "job_id": "job_0add2fd2319d40afb6521abf5bdb0045",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\attack_up_retry\\The_swordsman_facing_away_from_the_viewer_performs_one_fast_two-handed_katana_slash_across_his_body_with_a_sho_051b70b3\\result_output_url.bin",
+      "mime_type": "image/webp"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\attack_up_retry\\The_swordsman_facing_away_from_the_viewer_performs_one_fast_two-handed_katana_slash_across_his_body_with_a_sho_051b70b3\\result_output_transparent_output_urls_gif.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\attack_up_retry\\The_swordsman_facing_away_from_the_viewer_performs_one_fast_two-handed_katana_slash_across_his_body_with_a_sho_051b70b3\\result_output_transparent_output_urls_png.png",
+      "mime_type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "status": "success",
+  "job_id": "job_259cdfeb5c1e447885281d9481bebdb5",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_down\\The_swordsman_walks_in_place_toward_the_viewer_alternating_his_legs_with_small_arm_movement_and_swaying_coat_t_a1feaab6\\result_output_url.bin",
+      "mime_type": "image/webp"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_down\\The_swordsman_walks_in_place_toward_the_viewer_alternating_his_legs_with_small_arm_movement_and_swaying_coat_t_a1feaab6\\result_output_transparent_output_urls_gif.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_down\\The_swordsman_walks_in_place_toward_the_viewer_alternating_his_legs_with_small_arm_movement_and_swaying_coat_t_a1feaab6\\result_output_transparent_output_urls_png.png",
+      "mime_type": "image/png"
+    }
+  ]
+}

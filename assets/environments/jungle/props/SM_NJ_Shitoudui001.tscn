@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://local_study/preset3d/meshes/SM_NJ_Shitoudui001_4c223968_01.res" id="1_rmgkm"]
+[ext_resource type="Material" path="res://local_study/preset3d/materials/mat_a58f0f2103ae84d3_original.tres" id="2_6repq"]
+
+[node name="Model" type="Node3D" unique_id=1267298891]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=18148897]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5672851, 0.179375, 0.91278017)
+
+[node name="SM_NJ_Shitoudui001" type="MeshInstance3D" parent="Geometry" unique_id=571299883]
+mesh = ExtResource("1_rmgkm")
+surface_material_override/0 = ExtResource("2_6repq")

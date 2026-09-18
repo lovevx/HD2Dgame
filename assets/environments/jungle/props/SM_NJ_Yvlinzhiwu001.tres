@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3 uid="uid://dx5ig7lxf10j5"]
+
+[ext_resource type="Script" uid="uid://tfihpnl3bnrw" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_yil6h"]
+[ext_resource type="Script" uid="uid://ddb66wr46eh8h" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_fe0ht"]
+[ext_resource type="PackedScene" path="res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu001.tscn" id="3_gp2t2"]
+
+[resource]
+script = ExtResource("1_yil6h")
+library_entry_id = &"jungle-SM_NJ_Yvlinzhiwu001"
+title = "林下蕨丛（原始宽度 11m）"
+category = "丛林 / 地被"
+source = ExtResource("3_gp2t2")
+source_path = "res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu001.tscn"
+asset_id = &"SM_NJ_Yvlinzhiwu001_77b64161"
+family_id = &"family_061a5072d4052607"
+material_slots = {
+"Geometry/SM_NJ_Yvlinzhiwu001": Array[String](["mat_8bcd7b93f63b6cb0"])
+}
+facing = 2
+wind = 0.0

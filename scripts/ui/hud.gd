@@ -1,0 +1,775 @@
+extends CanvasLayer
+const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
+const Attributes := preload("res://data/attributes.gd")
+const PlayerFrames := preload("res://assets/characters/black_swordsman/player_frames.tres")
+const CursorTexture := preload("res://assets/ui/cursor.png")
+## 光标图里剑尖所在的像素位置：贴图按这个点对准鼠标，指针才不会跑偏。
+const CURSOR_TIP := Vector2(8, 8)
+var player: Node
+var header: Label
+var hp_bar: ProgressBar
+var mp_bar: ProgressBar
+var stats: Label
+var objective: Label
+var message: Label
+var overlay: ColorRect
+var panel_title: Label
+var panel_body: Label
+var action_button: Button
+var message_tween: Tween
+var key_guide: Control
+var prompt: Label
+var menu: Control
+var boss_box: VBoxContainer
+var boss_name: Label
+var boss_bar: ProgressBar
+var boss_title := ""
+var cursor: TextureRect
+var char_panel: Control                 # C 键角色面板：左形象+装备环，右属性
+var char_portrait: TextureRect
+var char_attr_labels: Dictionary = {}   # 六维键 → 数值 Label（面板右侧）
+var char_derived_label: Label
+var char_points_label: Label
+var _selected_bag: PanelContainer = null  # 背包当前点选格（高亮），再点取消
+var campaign_controller: Node
+var bag_cells: Array[PanelContainer] = []
+var equipment_slots: Dictionary = {}
+var item_detail: Label
+var item_action: Button
+var _selected_item := ""
+var _selected_slot := ""   # 穿戴栏选中槽（有值时详情显示已穿戴物品，可卸下）
+## 穿戴栏槽位标题 → 槽位 key（与 Campaign.SLOTS 对应）
+const SLOT_TITLE_MAP := {
+	"主武器": "main_weapon", "副武器": "offhand", "头部": "head", "躯干": "body",
+	"护臂 · 左": "left_arm", "护臂 · 右": "right_arm", "足部": "boots", "披风": "cloak",
+	"项链": "necklace", "戒指": "ring", "戒指Ⅱ": "ring_sub",
+}
+var _choice_buttons: Array[Button] = []
+
+func _ready() -> void:
+	add_to_group("hud")  # 传送门等场景元素靠它找到 HUD 显示贴底提示
+	player = get_tree().get_first_node_in_group("player")
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(root)
+	var box := VBoxContainer.new()
+	box.position = Vector2(32, 28)
+	box.custom_minimum_size.x = 320
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(box)
+	header = _label(box, "契约者 / 独立试炼", 24, Color("a5dfff"))
+	hp_bar = _bar(box, Color("e07770"))
+	mp_bar = _bar(box, Color("55bfe6"))
+	stats = _label(box, "", 18)
+	objective = _label(root, "战斗试炼 / 等待开始", 22, Color("ebd6a2"))
+	objective.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	objective.position = Vector2(1450, 30)
+	objective.custom_minimum_size.x = 420
+	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var hint := _label(root, KeyBindings.HINT, 20, Color("b2c5d5"))
+	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	hint.position = Vector2(32, 1022)
+	message = _label(root, "", 24, Color("7cd9ff"))
+	message.position = Vector2(460, 950)
+	# 交互提示：贴底居中、小字号，只在进圈时出现，离开或按下操作就消失
+	prompt = _label(root, "", 22, Color("ffe58a"))
+	prompt.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	prompt.offset_top = -96
+	prompt.offset_bottom = -56
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	prompt.hide()
+	GameState.message.connect(_on_message)
+	overlay = ColorRect.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.025, 0.05, 0.09, 0.9)
+	root.add_child(overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+	var panel := VBoxContainer.new()
+	panel.custom_minimum_size = Vector2(850, 0)
+	panel.add_theme_constant_override("separation", 30)
+	center.add_child(panel)
+	panel_title = _label(panel, "", 46, Color("a5dfff"))
+	panel_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel_body = _label(panel, "", 24)
+	panel_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	action_button = Button.new()
+	action_button.custom_minimum_size.y = 64
+	action_button.add_theme_font_size_override("font_size", 26)
+	panel.add_child(action_button)
+	overlay.hide()  # 默认收起，由 show_panel 打开；港口等无面板场景直接复用 HUD
+	_build_key_guide(root)
+	_build_menu(root)
+	_build_char_panel(root)
+	_build_boss_bar(root)
+	_build_cursor(root)
+	if campaign_controller:
+		hint.text = "WASD 移动 · 左键连击 · Shift 闪避 · F 燧发枪 · 1 陷阱 · 2 药剂 · V 交互 · C 角色 · Esc 菜单"
+		for control in [overlay, menu, char_panel, key_guide]:
+			control.visibility_changed.connect(campaign_controller.sync_pause)
+
+func _process(_delta: float) -> void:
+	hp_bar.value = player.hp
+	mp_bar.value = player.mp
+	hp_bar.max_value = player.max_hp
+	mp_bar.max_value = player.max_mp
+	stats.text = "HP %d / %d    MP %d / %d\n药剂 %d    炸弹 %d    剃 %s    连段 %d" % [player.hp, player.max_hp, player.mp, player.max_mp, player.potions, player.bombs, _cd_text(player.dodge_cd), maxi(0, player.combo_stage + 1)]
+	if campaign_controller:
+		stats.text = "生命 %.0f%%    MP %.0f / %.0f\n药剂 %d · 陷阱 %d · 弹药 %d · 闪避 %s\n世界之源 %.1f%% · 噬灵者 %d/100 · 乐园币 %d" % [player.hp / player.max_hp * 100, player.mp, player.max_mp, player.potions, player.bombs, player.bullets, _cd_text(player.dodge_cd), GameState.campaign.source, GameState.campaign.world_mana, GameState.coins]
+	# 按下操作键就自动收起说明，避免长时间挡住视野
+	if key_guide.visible and _player_action_pressed():
+		key_guide.hide()
+	_sync_mouse_mode()
+
+## 战斗中用游戏内光标，隐藏系统光标；结算面板 / Esc 菜单 / C 角色面板打开时交还系统光标。
+func _sync_mouse_mode() -> void:
+	var wanted := Input.MOUSE_MODE_VISIBLE if (overlay.visible or menu.visible or char_panel.visible) else Input.MOUSE_MODE_HIDDEN
+	if Input.get_mouse_mode() != wanted:
+		Input.set_mouse_mode(wanted)
+	_update_cursor()
+
+## 游戏内光标：一枚剑刃指针贴图，剑尖对准鼠标位置；用系统光标时同步收起。
+func _build_cursor(parent: Control) -> void:
+	cursor = TextureRect.new()
+	cursor.texture = CursorTexture
+	# 像素素材按最近邻采样，换分辨率也保持硬边
+	cursor.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cursor.hide()
+	parent.add_child(cursor)
+
+func _update_cursor() -> void:
+	var shown := Input.get_mouse_mode() == Input.MOUSE_MODE_HIDDEN
+	cursor.visible = shown
+	if shown:
+		cursor.position = get_viewport().get_mouse_position() - CURSOR_TIP
+
+func _exit_tree() -> void:
+	# 离开关卡（回选关面板等）时恢复系统光标，别把它留在隐藏状态
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+## F1 开关按键说明面板，Esc 开关菜单，C 开关角色面板。
+func _unhandled_input(event: InputEvent) -> void:
+	if campaign_controller and event.is_action_pressed("open_menu") and (overlay.visible or char_panel.visible or key_guide.visible):
+		hide_panel()
+		char_panel.hide()
+		key_guide.hide()
+		get_viewport().set_input_as_handled()
+		return
+	if campaign_controller and overlay.visible:
+		return
+	if event.is_action_pressed("key_guide"):
+		key_guide.visible = not key_guide.visible
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("open_menu"):
+		menu.visible = not menu.visible
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("character_panel"):
+		menu.hide()
+		char_panel.visible = not char_panel.visible
+		if char_panel.visible:
+			_refresh_char_panel()
+		get_viewport().set_input_as_handled()
+
+## 贴底交互提示：由传送门等场景元素驱动，离开触发区就收起。
+func show_prompt(text: String, locked := false) -> void:
+	prompt.text = text
+	prompt.add_theme_color_override("font_color", Color("ff9a6a") if locked else Color("ffe58a"))
+	prompt.show()
+
+func hide_prompt() -> void:
+	prompt.hide()
+
+## 是否按下了任一操作键（自动收起按键说明用）。
+func _player_action_pressed() -> bool:
+	for action in ["move_left", "move_right", "move_up", "move_down", "attack", "dodge", "interact", "open_menu", "bomb", "potion"]:
+		if InputMap.has_action(action) and Input.is_action_just_pressed(action):
+			return true
+	return false
+
+## 按键说明面板：挂在 HUD 上，试炼、港口与科尔波山两关共用同一份键位表。
+func _build_key_guide(root: Control) -> void:
+	key_guide = Control.new()
+	key_guide.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	key_guide.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(key_guide)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	key_guide.add_child(center)
+	var card := PanelContainer.new()
+	card.mouse_filter = Control.MOUSE_FILTER_STOP  # 点面板本身不触发攻击，面板外仍可正常操作
+	card.add_theme_stylebox_override("panel", _card_style())
+	center.add_child(card)
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", 6)
+	card.add_child(page)
+	_label(page, "按键映射 / 苏晓", 30, Color("a5dfff"))
+	if campaign_controller:
+		_label(page, "WASD 移动 · 鼠标取景 · 左键三连击 · Shift 闪避", 23)
+		_label(page, "F 燧发枪（需获得，有限弹药） · 1 火药陷阱 · 2 饮用药剂", 23)
+		_label(page, "V 遭遇 / 拾取 / 传送门 / 港口服务 · C 装备背包 · Esc 菜单", 23)
+		_label(page, "拼刀：近战有效帧重叠自动触发；饮用药剂时受击会打断。", 21)
+		_label(page, "F1 关闭说明。科尔波山保留原外围三波和决战15秒准备。", 20)
+		key_guide.hide()
+		return
+	_label(page, "键位按 COMBAT_SPEC_SUXIAO v1.1 排布；标「%s」的按键功能尚未接入，底部提示条只列战斗操作" % KeyBindings.status_text(KeyBindings.PLANNED), 17, Color("8fa6ad"))
+	var halves := HBoxContainer.new()
+	halves.add_theme_constant_override("separation", 52)
+	page.add_child(halves)
+	var left := VBoxContainer.new()
+	var right := VBoxContainer.new()
+	for column in [left, right]:
+		column.add_theme_constant_override("separation", 4)
+		halves.add_child(column)
+	var split := int(ceil(KeyBindings.GROUPS.size() / 2.0))
+	for i in KeyBindings.GROUPS.size():
+		_guide_group(left if i < split else right, KeyBindings.GROUPS[i])
+	_label(page, "F1 开关本说明 · 按下移动或攻击会自动收起", 17, Color("7f949b"))
+	key_guide.hide()
+
+func _guide_group(column: Node, group: Dictionary) -> void:
+	var spacer := Control.new()
+	spacer.custom_minimum_size.y = 10
+	column.add_child(spacer)
+	_label(column, group["title"], 21, Color("ebd6a2"))
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 16)
+	grid.add_theme_constant_override("v_separation", 4)
+	column.add_child(grid)
+	for entry in group["entries"]:
+		var keys := _label(grid, entry["keys"], 19, Color("ffd9a0"))
+		keys.custom_minimum_size.x = 118
+		var action := _label(grid, entry["action"], 19)
+		action.custom_minimum_size.x = 452
+		var status := _label(grid, KeyBindings.status_text(entry["status"]), 17, KeyBindings.status_color(entry["status"]))
+		status.custom_minimum_size.x = 56
+		# 现状提示：键位与新表不一致时，说明当前按出来是什么
+		if entry.has("now"):
+			_label(grid, "", 16)
+			_label(grid, entry["now"], 16, Color("b08a5a"))
+			_label(grid, "", 16)
+
+## 冷却文案：可用显示“就绪”，冷却中显示剩余秒数。
+func _cd_text(remaining: float) -> String:
+	return "就绪" if remaining <= 0.0 else "%.1fs" % remaining
+
+## Esc 菜单：任何关卡里都能一键回选关面板，避免进了场景出不来。
+func _build_menu(root: Control) -> void:
+	menu = Control.new()
+	menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu.mouse_filter = Control.MOUSE_FILTER_STOP if campaign_controller else Control.MOUSE_FILTER_IGNORE
+	root.add_child(menu)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu.add_child(center)
+	var card := PanelContainer.new()
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.add_theme_stylebox_override("panel", _card_style())
+	center.add_child(card)
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", 12)
+	card.add_child(page)
+	_label(page, "面板 / 菜单", 30, Color("a5dfff"))
+	var back := Button.new()
+	back.text = "保存检查点并返回主菜单" if campaign_controller else "返回选关"
+	back.custom_minimum_size = Vector2(420, 58)
+	back.add_theme_font_size_override("font_size", 24)
+	back.pressed.connect(_back_to_select)
+	page.add_child(back)
+	if campaign_controller:
+		var tasks := Button.new()
+		tasks.text = "任务 / 阶段进度"
+		tasks.custom_minimum_size.y = 50
+		tasks.pressed.connect(func():
+			menu.hide()
+			campaign_controller.show_tasks())
+		page.add_child(tasks)
+		if campaign_controller.state == "practice":
+			var back_hub := Button.new()
+			back_hub.text = "结束练习 · 返回灰潮港"
+			back_hub.custom_minimum_size.y = 50
+			back_hub.pressed.connect(campaign_controller.return_from_practice)
+			page.add_child(back_hub)
+	elif get_tree().current_scene == null or get_tree().current_scene.scene_file_path != "res://scenes/world/harbor.tscn":
+		var harbor_button := Button.new()
+		harbor_button.text = "返回灰潮港口"
+		harbor_button.custom_minimum_size = Vector2(420, 58)
+		harbor_button.add_theme_font_size_override("font_size", 24)
+		harbor_button.pressed.connect(func(): GameState.change_scene("res://scenes/world/harbor.tscn"))
+		page.add_child(harbor_button)
+	_label(page, "Esc 关闭菜单 · 进度自动存档到本机", 17, Color("7f949b"))
+	menu.hide()
+
+## C 键角色面板：左右两大块 —— 左侧为 DNF 参考图排版（穿戴栏 + 8×8 背包，
+## 背包格支持悬停高亮与点选），右侧为属性面板（六维 + 派生值 + 可用属性点）。
+## 加点列为「主城加点装置」后置功能，此处只展示数值，不做分配。
+func _build_char_panel(root: Control) -> void:
+	char_panel = Control.new()
+	char_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	char_panel.mouse_filter = Control.MOUSE_FILTER_STOP if campaign_controller else Control.MOUSE_FILTER_IGNORE
+	root.add_child(char_panel)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	char_panel.add_child(center)
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(1010, 900)
+	card.mouse_filter = Control.MOUSE_FILTER_STOP  # 点面板本身不触发攻击
+	card.add_theme_stylebox_override("panel", _card_style())
+	center.add_child(card)
+	var halves := HBoxContainer.new()
+	halves.add_theme_constant_override("separation", 44)
+	halves.alignment = BoxContainer.ALIGNMENT_CENTER
+	halves.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	card.add_child(halves)
+
+	# ---- 左大块（底衬面板）：DNF 排版 穿戴栏 + 背包 ----
+	var left_panel := PanelContainer.new()
+	left_panel.add_theme_stylebox_override("panel", _panel_style())
+	left_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	halves.add_child(left_panel)
+	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 14)
+	left.alignment = BoxContainer.ALIGNMENT_CENTER
+	left_panel.add_child(left)
+	var wear_title := _label(left, "穿 戴 栏", 18, Color("e8c87a"))
+	wear_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var wear := HBoxContainer.new()
+	wear.add_theme_constant_override("separation", 28)
+	wear.alignment = BoxContainer.ALIGNMENT_CENTER
+	left.add_child(wear)
+	# 左翼（防具系 6 槽）：头部 / 躯干 / 护臂·左 / 护臂·右 / 足部 / 披风
+	var left_col := VBoxContainer.new()
+	left_col.add_theme_constant_override("separation", 16)
+	left_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	wear.add_child(left_col)
+	for name in ["头部", "躯干", "护臂 · 左", "护臂 · 右", "足部", "披风"]:
+		_make_slot(left_col, name, 50.0)
+	char_portrait = TextureRect.new()
+	char_portrait.texture = PlayerFrames.get_frame_texture("idle_down", 0)
+	char_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # 像素风放大保持硬边
+	char_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	char_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	char_portrait.custom_minimum_size = Vector2(160, 280)
+	wear.add_child(char_portrait)
+	# 右翼（武器与首饰 5 槽）：主武器 / 副武器 / 项链 / 戒指 / 戒指Ⅱ
+	var right_col := VBoxContainer.new()
+	right_col.add_theme_constant_override("separation", 16)
+	right_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	wear.add_child(right_col)
+	for name in ["主武器", "副武器", "项链", "戒指", "戒指Ⅱ"]:
+		_make_slot(right_col, name, 50.0)
+	_build_bag_section(left)
+
+	# ---- 右大块（底衬面板）：属性 ----
+	var right_panel := PanelContainer.new()
+	right_panel.add_theme_stylebox_override("panel", _panel_style())
+	right_panel.custom_minimum_size.x = 356
+	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	halves.add_child(right_panel)
+	var right := VBoxContainer.new()
+	right.custom_minimum_size.x = 320
+	right.add_theme_constant_override("separation", 8)
+	right.alignment = BoxContainer.ALIGNMENT_CENTER
+	right.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right_panel.add_child(right)
+	var aname := _label(right, "契约者 · %s" % GameState.player_name, 17, Color("cfe6f2"))
+	aname.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var atitle := _label(right, "角色属性 / 六维", 24, Color("a5dfff"))
+	atitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var rule := HSeparator.new()
+	rule.custom_minimum_size = Vector2(240, 2)
+	right.add_child(rule)
+	for key in Attributes.ALL_KEYS:
+		var line := _label(right, "", 21)
+		line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		char_attr_labels[key] = line
+	char_derived_label = _label(right, "", 15, Color("b2c5d5"))
+	char_derived_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	char_derived_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var spacer := Control.new()
+	spacer.custom_minimum_size.y = 6
+	right.add_child(spacer)
+	char_points_label = _label(right, "", 22, Color("ffe58a"))
+	char_points_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var note := _label(right, "属性加点需前往主城 · 加点装置", 13, Color("7f949b"))
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if campaign_controller:
+		note.text = "强化请前往灰潮港 · 铸潮工坊\nC / Esc 关闭角色面板"
+		item_detail = _label(right, "点击物品格查看详情", 18, Color("ebd6a2"))
+		item_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		item_detail.custom_minimum_size = Vector2(300, 150)
+		item_action = Button.new()
+		item_action.text = "选择物品"
+		item_action.custom_minimum_size.y = 48
+		item_action.pressed.connect(func():
+			if _selected_slot != "":
+				GameState.unequip_item(_selected_slot)
+				_selected_slot = ""
+				_selected_item = ""
+			else:
+				campaign_controller.use_item(_selected_item)
+			_refresh_char_panel())
+		right.add_child(item_action)
+	GameState.attributes_changed.connect(_refresh_char_panel)
+	_refresh_char_panel()
+
+	char_panel.hide()
+
+## 刷新角色面板：六维数值、派生值、可用属性点。
+func _refresh_char_panel() -> void:
+	var a: Dictionary = GameState.effective_attributes() if campaign_controller else GameState.attributes
+	for key in Attributes.ALL_KEYS:
+		char_attr_labels[key].text = "%s    %d" % [Attributes.CN_NAMES[key], int(a.get(key, Attributes.BASE))]
+	char_derived_label.text = "攻击 %d  ·  最大HP %d  ·  最大MP %d  ·  移速 %.1f" % [
+		int(Attributes.attack(a)), int(Attributes.max_hp(a)),
+		int(Attributes.max_mp(a)), Attributes.move_speed(a)]
+	char_points_label.text = "可用属性点  %d" % GameState.get_attr_points()
+	if campaign_controller:
+		char_derived_label.text = "攻击 %.0f · 最大生命 %.0f\n最大法力 %.0f · 刀术训练 Lv.%d\n乐园币 %d" % [player.attack_damage, player.max_hp, player.max_mp, GameState.campaign.training, GameState.coins]
+		_refresh_inventory()
+
+## 生成一个装备空槽：深底描边面板 + 部位名，追加到容器并返回以便装备系统填充。
+## size 控制槽边长；穿戴栏用紧凑尺寸（44），背包格另建小格。
+func _make_slot(parent: Node, slot_name: String, size := 92.0) -> PanelContainer:
+	var slot := PanelContainer.new()
+	slot.custom_minimum_size = Vector2(size, size)
+	slot.add_theme_stylebox_override("panel", _slot_style())
+	slot.mouse_filter = Control.MOUSE_FILTER_STOP
+	slot.set_meta("slot_key", SLOT_TITLE_MAP.get(slot_name, ""))
+	slot.set_meta("slot_title", slot_name)
+	var slot_label := Label.new()
+	slot_label.text = slot_name
+	slot_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	slot_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	slot_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	slot_label.add_theme_font_size_override("font_size", int(minf(14, size * 0.3)))
+	slot_label.add_theme_color_override("font_color", Color("7f949b"))
+	slot.add_child(slot_label)
+	slot.gui_input.connect(_slot_input.bind(slot))
+	parent.add_child(slot)
+	equipment_slots[slot_name] = slot
+	return slot
+
+## 点击穿戴槽：选中已穿戴物品 → 详情切换为「卸下」操作。
+func _slot_input(event: InputEvent, slot: PanelContainer) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	var key := str(slot.get_meta("slot_key", ""))
+	_selected_slot = key if key != "" and str(GameState.campaign.equipment.get(key, "")) != "" else ""
+	_selected_item = str(GameState.campaign.equipment.get(key, "")) if _selected_slot != "" else ""
+	_refresh_item_detail()
+
+## 下段背包网格（DNF 式）：标题 + 8 列 × 8 行 = 64 格，装备系统接入后填充。
+## 交互：悬停亮边提示、左键点选高亮（再点取消），为后续拾取/装卸做准备。
+const BAG_BORDER := Color(0.30, 0.45, 0.55, 0.45)
+const BAG_HOVER := Color("e8c87a")
+const BAG_SELECTED := Color("ffd76e")
+
+func _build_bag_section(parent: Node) -> void:
+	var title := _label(parent, "物品栏 · 装备", 18, Color("a5dfff"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var grid := GridContainer.new()
+	grid.columns = 8
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	parent.add_child(grid)
+	for i in 64:
+		var cell := PanelContainer.new()
+		cell.custom_minimum_size = Vector2(55, 55)  # 物品栏为主体（2/3 占比），背包装备大格
+		var st := _slot_style()
+		st.set_corner_radius_all(5)
+		st.set_content_margin_all(0)
+		st.set_border_width_all(1)
+		cell.add_theme_stylebox_override("panel", st)
+		cell.mouse_filter = Control.MOUSE_FILTER_STOP  # 可交互：不吃透传给战斗输入
+		cell.mouse_entered.connect(_bag_cell_hover.bind(cell, true))
+		cell.mouse_exited.connect(_bag_cell_hover.bind(cell, false))
+		cell.gui_input.connect(_bag_cell_input.bind(cell))
+		grid.add_child(cell)
+		bag_cells.append(cell)
+		if campaign_controller:
+			var text := _label(cell, "", 12)
+			text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+## 悬停：非选中格亮金边；选中格保持选中色，不受悬停影响。
+func _bag_cell_hover(cell: PanelContainer, entered: bool) -> void:
+	if cell == _selected_bag:
+		return
+	_set_bag_border(cell, BAG_HOVER if entered else BAG_BORDER)
+
+## 左键点选/取消背包格：单选高亮，再点同一格取消。
+func _bag_cell_input(event: InputEvent, cell: PanelContainer) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if campaign_controller:
+			_selected_item = str(cell.get_meta("item_id", ""))
+			_refresh_item_detail()
+		if _selected_bag == cell:
+			_selected_bag = null
+			_set_bag_border(cell, BAG_BORDER)
+		else:
+			if _selected_bag != null:
+				_set_bag_border(_selected_bag, BAG_BORDER)
+			_selected_bag = cell
+			_set_bag_border(cell, BAG_SELECTED)
+
+func _set_bag_border(cell: PanelContainer, color: Color) -> void:
+	var st := cell.get_theme_stylebox("panel")
+	if st is StyleBoxFlat:
+		st.border_color = color
+
+## 分块底衬样式：左右两大块的深色面板区，制造面板的板块感。
+func _panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.02, 0.04, 0.07, 0.5)
+	style.border_color = Color(0.25, 0.4, 0.52, 0.35)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(10)
+	style.set_content_margin_all(18)
+	return style
+
+## 装备槽样式：深底 + 细描边 + 圆角，空槽只显示部位名。
+func _slot_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.03, 0.06, 0.09, 0.9)
+	style.border_color = Color(0.30, 0.45, 0.55, 0.45)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(10)
+	style.set_content_margin_all(4)
+	return style
+
+func _back_to_select() -> void:
+	if campaign_controller:
+		campaign_controller.leave()
+		return
+	GameState.change_scene(GameState.LEVEL_SELECT_SCENE)
+
+## BOSS 血条：挂在屏幕顶部中间，同时显示阶段（P1 / P2 / P3），方便读阶段门槛。
+func _build_boss_bar(root: Control) -> void:
+	boss_box = VBoxContainer.new()
+	boss_box.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	boss_box.offset_top = 24
+	boss_box.offset_bottom = 92
+	boss_box.add_theme_constant_override("separation", 6)
+	boss_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(boss_box)
+	boss_name = _label(boss_box, "", 22, Color("ffd0a0"))
+	boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_bar = ProgressBar.new()
+	boss_bar.custom_minimum_size = Vector2(760, 20)
+	boss_bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	boss_bar.show_percentage = false
+	boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var back := StyleBoxFlat.new()
+	back.bg_color = Color(0.05, 0.08, 0.11, 0.85)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color("c04b36")
+	boss_bar.add_theme_stylebox_override("background", back)
+	boss_bar.add_theme_stylebox_override("fill", fill)
+	boss_box.add_child(boss_bar)
+	boss_box.hide()
+
+func show_boss(title: String, maximum: float) -> void:
+	boss_title = title
+	boss_bar.max_value = maximum
+	boss_bar.value = maximum
+	boss_name.text = title
+	boss_box.show()
+
+func set_boss_state(current: float, phase_text: String) -> void:
+	boss_bar.value = current
+	boss_name.text = "%s · %s" % [boss_title, phase_text]
+
+func hide_boss() -> void:
+	boss_box.hide()
+
+func _card_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.031, 0.058, 0.086, 0.88)
+	style.border_color = Color(0.35, 0.55, 0.68, 0.5)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.set_content_margin_all(26)
+	return style
+
+func _label(parent: Node, text: String, font_size: int, color := Color("dbe7ee")) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	# 深色描边，保证文字在港口明亮石板与试炼暗地面上都读得清
+	label.add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.07, 0.92))
+	label.add_theme_constant_override("outline_size", 5)
+	parent.add_child(label)
+	return label
+
+func _bar(parent: Node, color: Color) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.custom_minimum_size = Vector2(320, 22)
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.show_percentage = false
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	bar.add_theme_stylebox_override("fill", style)
+	parent.add_child(bar)
+	return bar
+
+## 复用 HUD 到其他场景时替换文案；objective_text 传空串则右上目标区留空。
+func configure(header_text: String, objective_text: String = "") -> void:
+	header.text = header_text
+	objective.text = objective_text
+
+## 右上目标栏的动态文案：波次推进、剩余目标数等都由它更新。
+func set_objective(text: String) -> void:
+	objective.text = text
+
+func show_panel(title: String, body: String, button: String, callback: Callable) -> void:
+	for extra in _choice_buttons:
+		if is_instance_valid(extra):
+			extra.get_parent().remove_child(extra)
+			extra.queue_free()
+	_choice_buttons.clear()
+	panel_title.text = title
+	panel_body.text = body
+	action_button.text = button
+	for connection in action_button.pressed.get_connections():
+		action_button.pressed.disconnect(connection.callable)
+	action_button.pressed.connect(callback)
+	overlay.show()
+	action_button.grab_focus()
+
+func hide_panel() -> void:
+	action_button.release_focus()
+	overlay.hide()
+
+func is_modal_open() -> bool:
+	return overlay.visible or menu.visible or char_panel.visible or key_guide.visible
+
+func show_character() -> void:
+	menu.hide()
+	hide_panel()
+	_refresh_char_panel()
+	char_panel.show()
+
+func add_choice(text: String, action: Callable) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.custom_minimum_size.y = 48
+	button.add_theme_font_size_override("font_size", 22)
+	button.pressed.connect(action)
+	var column := action_button.get_parent()
+	column.add_child(button)
+	column.move_child(button, action_button.get_index())
+	_choice_buttons.append(button)
+	return button
+
+const SHORT_ITEMS := {"knife": "匕首", "flintlock": "燧发枪", "letter": "引荐信", "guard_badge": "侍卫证", "dragon": "斩龙闪", "pendant": "亡妻\n项坠", "potion": "药剂", "trap": "火药\n陷阱", "catnip": "木天芷", "tiger_tooth": "虎齿", "claw": "虎爪", "crystal": "灵魂\n结晶", "white_mat": "白锻材", "green_mat": "绿锻材", "blue_mat": "蓝锻材", "purple_mat": "紫锻材", "gold_mat": "淡金\n锻材", "carlos_chest": "商人\n白箱", "oka_chest": "欧卡\n白箱", "tiger_chest": "巨虎\n绿箱"}
+
+## 词条摘要文本（详情与 tooltip 复用）。
+func _stats_text(def: Dictionary) -> String:
+	var parts: Array[String] = []
+	for key in def.get("stats", {}):
+		parts.append("%s+%d" % [Attributes.CN_NAMES.get(key, key), int(def["stats"][key])])
+	var pct := float(def.get("def_pct", 0.0))
+	if pct > 0.0:
+		parts.append("减免+%d%%" % int(pct * 100))
+	if def.has("attack_min"):
+		parts.append("攻击%.0f~%.0f" % [def.attack_min, def.attack_max])
+	return " · ".join(parts) if not parts.is_empty() else ""
+
+func _refresh_inventory() -> void:
+	var ids: Array = []
+	for id in GameState.campaign.bag:
+		if GameState.item_count(id) > 0: ids.append(id)
+	for i in bag_cells.size():
+		var cell := bag_cells[i]
+		var id: String = ids[i] if i < ids.size() else ""
+		cell.set_meta("item_id", id)
+		var label: Label = cell.get_child(0)
+		if id == "":
+			cell.tooltip_text = "空格"
+			label.text = ""
+			_set_cell_quality(cell, Color(0.30, 0.45, 0.55, 0.45))
+		else:
+			var def := GameState.item_def(id)
+			cell.tooltip_text = _item_tooltip(id, def)
+			label.text = "%s\n×%d" % [SHORT_ITEMS.get(id, id), GameState.item_count(id)]
+			_set_cell_quality(cell, GameState.Equip.quality_color(def.get("quality", "white")))
+	for title in equipment_slots:
+		var slot: PanelContainer = equipment_slots[title]
+		var key: String = SLOT_TITLE_MAP[title]
+		var id: String = str(GameState.campaign.equipment.get(key, ""))
+		var label: Label = slot.get_child(0)
+		if id == "":
+			label.text = title
+			label.add_theme_color_override("font_color", Color("7f949b"))
+			slot.tooltip_text = title
+			_set_slot_quality(slot, Color(0.30, 0.45, 0.55, 0.45))
+		else:
+			var def := GameState.item_def(id)
+			label.text = SHORT_ITEMS.get(id, id)
+			label.add_theme_color_override("font_color", GameState.Equip.quality_color(def.get("quality", "white")))
+			slot.tooltip_text = _item_tooltip(id, def)
+			_set_slot_quality(slot, GameState.Equip.quality_color(def.get("quality", "white")))
+	_refresh_item_detail()
+
+func _item_tooltip(id: String, def: Dictionary) -> String:
+	var st: Dictionary = GameState.Campaign.dura_state(GameState.campaign, id)
+	var lvl := GameState.Campaign.enhance_level(GameState.campaign, id)
+	var dur := ("耐久 %d/%d" % [int(st["cur"]), int(st["max"])]) if int(st["max"]) > 0 else "无耐久"
+	var reset := "" if GameState.item_count(id) > 0 else "[待补充]"
+	return "%s\n%s · 评分 %d · 强化 +%d%s\n%s\n%s" % [
+		def.get("name", id), GameState.Equip.quality_cn(def.get("quality", "white")),
+		int(def.get("score", 0)), lvl, reset, _stats_text(def), dur]
+
+## 品质配色：设置背包格/穿戴槽描边颜色（悬停/选中逻辑保持互斥）。
+func _set_cell_quality(cell: PanelContainer, color: Color) -> void:
+	var st := cell.get_theme_stylebox("panel")
+	if st is StyleBoxFlat:
+		st.border_color = color
+
+func _set_slot_quality(slot: PanelContainer, color: Color) -> void:
+	var st := slot.get_theme_stylebox("panel")
+	if st is StyleBoxFlat:
+		st.border_color = color
+
+func _refresh_item_detail() -> void:
+	if item_detail == null: return
+	if _selected_item == "" or GameState.item_count(_selected_item) <= 0:
+		item_detail.text = "点击背包格查看物品\n点击穿戴栏可卸下装备\n清场或备战时可开箱、换装"
+		item_action.disabled = true
+		item_action.text = "选择物品"
+		return
+	var def: Dictionary = GameState.item_def(_selected_item)
+	var st: Dictionary = GameState.Campaign.dura_state(GameState.campaign, _selected_item)
+	var lvl := GameState.Campaign.enhance_level(GameState.campaign, _selected_item)
+	var dur := ("耐久 %d / %d" % [int(st["cur"]), int(st["max"])]) if int(st["max"]) > 0 else "无耐久属性"
+	var exit_txt: String = "可带出世界" if def.get("export", false) else "本世界限定（结束清除）"
+	item_detail.text = "%s\n%s · 评分 %d · 强化 +%d\n%s\n%s\n%s" % [
+		def.get("name", _selected_item), GameState.Equip.quality_cn(def.get("quality", "white")),
+		int(def.get("score", 0)), lvl, _stats_text(def), dur, exit_txt]
+	if _selected_slot != "":
+		item_action.text = "卸下（回背包）"
+		item_action.disabled = not campaign_controller.can_manage_items()
+		return
+	var chest := GameState.Campaign.CHESTS.has(_selected_item)
+	item_action.text = "开启宝箱" if chest else ("装备" if def.has("slot") else "任务 / 材料 / 消耗品")
+	item_action.disabled = not campaign_controller.can_manage_items() or (not chest and not def.has("slot"))
+
+func _on_message(text: String) -> void:
+	message.text = text
+	message.modulate.a = 1
+	if message_tween:
+		message_tween.kill()
+	message_tween = create_tween()
+	message_tween.tween_interval(3)
+	message_tween.tween_property(message, "modulate:a", 0, 0.5)

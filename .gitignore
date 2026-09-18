@@ -1,0 +1,29 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+*.import
+
+# Local credentials
+.env
+
+# 缓存/预览/临时（不推送）
+.local-backups/
+.tmp_preview/
+
+# 第三方工具链（本地安装，不随仓库分发）
+.tools/
+
+# AI 工具目录与本地配置
+.agents/
+
+# 原著小说全文（版权文本，本地查阅用）
+background/
+
+# docs 预览截图与生成任务中间产物
+docs/**/*.png
+docs/**/*.log
+docs/meowa_design_20260916/
+
+# 学习/研究素材与日志（非游戏资源）
+local_study/
+*.log

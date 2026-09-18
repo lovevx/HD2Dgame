@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_imby0"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_f2agf"]
+[ext_resource type="PackedScene" path="res://assets/environments/jungle/props/SM_kushuicun_pofangzi002.tscn" id="3_kvgdh"]
+
+[resource]
+script = ExtResource("1_imby0")
+library_entry_id = &"jungle-SM_kushuicun_pofangzi002"
+title = "废弃林间木屋"
+category = "丛林 / 建筑"
+source = ExtResource("3_kvgdh")
+source_path = "res://assets/environments/jungle/props/SM_kushuicun_pofangzi002.tscn"
+asset_id = &"SM_kushuicun_pofangzi002_68064722"
+family_id = &"family_deea98b3baad28d1"
+material_slots = {
+"Geometry/SM_kushuicun_pofangzi002": Array[String](["mat_56b20a540e823385"])
+}
+static_collision = true
+wind = 0.0

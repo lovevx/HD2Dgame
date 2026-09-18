@@ -1,0 +1,16 @@
+{
+  "status": "success",
+  "job_id": "job_cf7b92aaaca84b728ea228407f774c84",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\base\\Two_sprites_of_the_same_male_swordsman_from_the_reference_for_an_HD2D_RPG_Short_tousled_black_hair_pale_stern_57027d84\\sprite_00.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\base\\Two_sprites_of_the_same_male_swordsman_from_the_reference_for_an_HD2D_RPG_Short_tousled_black_hair_pale_stern_57027d84\\sprite_01.png",
+      "mime_type": "image/png"
+    }
+  ]
+}

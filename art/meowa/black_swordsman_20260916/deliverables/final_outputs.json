@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\deliverables\\character_walk_pose.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\deliverables\\character_attack_pose.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\deliverables\\walk.webp",
+      "mime_type": "image/webp"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\deliverables\\walk.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\deliverables\\walk_sheet.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\deliverables\\attack.webp",
+      "mime_type": "image/webp"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\deliverables\\attack.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_20260916\\deliverables\\attack_sheet.png",
+      "mime_type": "image/png"
+    }
+  ]
+}

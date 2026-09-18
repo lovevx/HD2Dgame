@@ -1,0 +1,21 @@
+{
+  "status": "success",
+  "job_id": "job_f1aa540253f1426a9b8369092215eb43",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_up\\The_swordsman_walks_in_place_away_from_the_viewer_alternating_his_legs_with_swaying_coat_tails_Keep_his_back_f_abef3d4d\\result_output_url.bin",
+      "mime_type": "image/webp"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_up\\The_swordsman_walks_in_place_away_from_the_viewer_alternating_his_legs_with_swaying_coat_tails_Keep_his_back_f_abef3d4d\\result_output_transparent_output_urls_gif.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_up\\The_swordsman_walks_in_place_away_from_the_viewer_alternating_his_legs_with_swaying_coat_tails_Keep_his_back_f_abef3d4d\\result_output_transparent_output_urls_png.png",
+      "mime_type": "image/png"
+    }
+  ]
+}

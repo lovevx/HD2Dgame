@@ -1,0 +1,21 @@
+{
+  "status": "success",
+  "job_id": "job_0dcc7edf76d54e37ab19bc5fe298c905",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "e:\\godotproject\\hd-2d\\art\\meowa\\missing\\hit\\The_black-cloaked_swordsman_flinches_and_recoils_from_an_incoming_hit_body_jolts_backward_brief_non-looping_hu_dbff7e4a\\result_output_url.bin",
+      "mime_type": "image/webp"
+    },
+    {
+      "type": "media",
+      "path": "e:\\godotproject\\hd-2d\\art\\meowa\\missing\\hit\\The_black-cloaked_swordsman_flinches_and_recoils_from_an_incoming_hit_body_jolts_backward_brief_non-looping_hu_dbff7e4a\\result_output_transparent_output_urls_gif.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "type": "media",
+      "path": "e:\\godotproject\\hd-2d\\art\\meowa\\missing\\hit\\The_black-cloaked_swordsman_flinches_and_recoils_from_an_incoming_hit_body_jolts_backward_brief_non-looping_hu_dbff7e4a\\result_output_transparent_output_urls_png.png",
+      "mime_type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://local_study/preset3d/meshes/SM_kushuicun_pofangzi002_68064722_01.res" id="1_15skn"]
+[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/c83ac26186018a3e_T_damoshuzhong001.png" id="2_ame7q"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p8idh"]
+resource_name = "mat_56b20a540e823385"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_color = Color(0.8352941, 0.8862745, 0.8392157, 1)
+albedo_texture = ExtResource("2_ame7q")
+metallic_specular = 0.08
+roughness = 0.95
+texture_filter = 2
+
+[node name="Model" type="Node3D" unique_id=1083236705]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=2057883661]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.014057083, 0)
+
+[node name="SM_kushuicun_pofangzi002" type="MeshInstance3D" parent="Geometry" unique_id=843048936]
+mesh = ExtResource("1_15skn")
+surface_material_override/0 = SubResource("StandardMaterial3D_p8idh")

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="HD2DAssetLibrary" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_q57f5"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_1dashu001_LODs.tres" id="2_aj3h2"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_1dashu002_LODs.tres" id="3_tsd6w"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan006.tres" id="4_7vw80"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan012.tres" id="5_a7obr"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan016.tres" id="6_f4bbl"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya001.tres" id="7_p14a1"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya002.tres" id="8_40u1m"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya003.tres" id="9_y44wx"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya005.tres" id="10_cao5l"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya007.tres" id="11_cfsiw"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu001.tres" id="12_ut0df"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu002.tres" id="13_5721y"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu003.tres" id="14_bcw7v"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Jvqingshu001.tres" id="15_6q2el"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_kushuicun_pofangzi002.tres" id="16_v1a70"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Shitoudui001.tres" id="17_5ood1"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_library.gd" id="18_1y55k"]
+
+[resource]
+script = ExtResource("18_1y55k")
+assets = Array[ExtResource("1_q57f5")]([ExtResource("2_aj3h2"), ExtResource("3_tsd6w"), ExtResource("4_7vw80"), ExtResource("5_a7obr"), ExtResource("6_f4bbl"), ExtResource("7_p14a1"), ExtResource("8_40u1m"), ExtResource("9_y44wx"), ExtResource("10_cao5l"), ExtResource("11_cfsiw"), ExtResource("12_ut0df"), ExtResource("13_5721y"), ExtResource("14_bcw7v"), ExtResource("15_6q2el"), ExtResource("16_v1a70"), ExtResource("17_5ood1")])

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3 uid="uid://bu2eeqbw4fcsa"]
+
+[ext_resource type="Script" uid="uid://tfihpnl3bnrw" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_6boit"]
+[ext_resource type="Script" uid="uid://ddb66wr46eh8h" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_1bfeo"]
+[ext_resource type="PackedScene" path="res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu003.tscn" id="3_l3pmv"]
+
+[resource]
+script = ExtResource("1_6boit")
+library_entry_id = &"jungle-SM_NJ_Yvlinzhiwu003"
+title = "卷叶蕨"
+category = "丛林 / 地被"
+source = ExtResource("3_l3pmv")
+source_path = "res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu003.tscn"
+asset_id = &"SM_NJ_Yvlinzhiwu003_ba40b840"
+family_id = &"family_c46ce3a09f94ad8d"
+material_slots = {
+"Geometry/SM_NJ_Yvlinzhiwu003": Array[String](["mat_019196eccbd5430c"])
+}
+facing = 2
+wind = 0.0

@@ -1,0 +1,381 @@
+extends CharacterBody3D
+signal defeated
+## 敌人：红色预警圈锁定位置，前摇结束后才结算；远程威胁共用范围攻击。
+## kind 为 CUSTOM 时完全沿用试炼里的导出参数（近战 / 远程占位敌人）；
+## 其余 kind 走 PROFILES：野狼、野猪为能量型，肉体傀儡为无能量实验体
+## —— 青钢影的真实伤害对它无效，白盒阶段靠这个区分来验证苏晓的弱点。
+
+enum Kind { CUSTOM, WOLF, BOAR, GOLEM, DUMMY }
+
+## color 是主体毛色，trim 是四肢/头部等暗部；energy 决定头顶有没有能量核。
+const PROFILES := {
+	Kind.WOLF: {
+		"name": "野狼", "hp": 34.0, "speed": 3.3, "damage": 10.0, "reach": 2.3,
+		"windup": 0.5, "keep": 1.6, "color": Color("8fa0bb"), "trim": Color("59647a"), "energy": true,
+	},
+	Kind.BOAR: {
+		"name": "野猪", "hp": 72.0, "speed": 2.4, "damage": 16.0, "reach": 2.4,
+		"windup": 0.75, "keep": 1.6, "color": Color("a9643c"), "trim": Color("67381f"), "energy": true,
+	},
+	Kind.GOLEM: {
+		"name": "肉体傀儡", "hp": 58.0, "speed": 1.8, "damage": 18.0, "reach": 2.4,
+		"windup": 0.85, "keep": 1.7, "color": Color("9a8fb5"), "trim": Color("5d5670"), "energy": false,
+	},
+	## 纯靶子：血量极高且打不坏（见 take_damage），站桩不动、永不攻击。
+	Kind.DUMMY: {
+		"name": "练功木桩", "hp": 9999.0, "speed": 0.0, "damage": 0.0, "reach": 0.0,
+		"windup": 0.0, "keep": 0.0, "color": Color("c8a15c"), "trim": Color("7a5a2f"), "energy": false,
+	},
+}
+
+@export var max_hp: float = 48.0
+@export var move_speed: float = 2.3
+@export var ranged: bool = false
+@export var kind: Kind = Kind.CUSTOM
+
+var has_energy: bool = true
+var hp_: float
+var dead: bool = false
+var attack_cd: float = 1.2
+var windup: float = -1.0
+var target_point := Vector3.ZERO
+var knock := Vector3.ZERO
+var player: Node3D
+var marker: MeshInstance3D
+var health_label: Label3D
+var material: StandardMaterial3D
+var body_root: Node3D          # 白盒模型容器；CUSTOM 占位敌人不建模型，沿用胶囊
+var enemy_name := "近战守卫"
+var attack_damage := 14.0
+var kill_tier: int = 1   # 击杀武器耐久档：普通 1 / 精英 3 / BOSS 8（策划案 §6.3.1）
+var attack_reach := 2.5
+var attack_windup := 0.65
+var keep_distance := 1.6
+var _flash_timer := 0.0
+var stun_timer: float = 0.0          # 拼刀硬直：被弹开期间不能行动
+var clash_immune_timer: float = 0.0  # 拼刀后短暂免疫再次判定，与玩家冷却配合防双判
+const CLASH_WINDOW := 0.3   # 与 player.gd 拼刀窗口一致：双方命中时刻相差 ≤ 0.3 秒视为重叠
+const CLASH_STUN := 0.8     # 拼刀硬直时长
+const CLASH_REPEL := 8.0    # 拼刀弹开初速度
+const CLASH_IMMUNE := 0.35  # 拼刀后免疫时长
+
+func _ready() -> void:
+	# 纯靶子不进 enemies 组，避免被试炼/波次的“清怪”逻辑算作存活敌人。
+	if kind == Kind.DUMMY:
+		add_to_group("targets")
+	else:
+		add_to_group("enemies")
+	var body_color := Color("ce6654")
+	var trim_color := Color("7a3a30")
+	if ranged:
+		enemy_name = "远程威胁"
+		attack_damage = 18.0
+		attack_reach = 9.0
+		attack_windup = 0.95
+		keep_distance = 6.0
+		body_color = Color("a56fe0")
+		trim_color = Color("5f3d84")
+	var profile: Dictionary = PROFILES.get(kind, {})
+	if not profile.is_empty():
+		enemy_name = profile["name"]
+		max_hp = profile["hp"]
+		move_speed = profile["speed"]
+		attack_damage = profile["damage"]
+		attack_reach = profile["reach"]
+		attack_windup = profile["windup"]
+		keep_distance = profile["keep"]
+		has_energy = profile["energy"]
+		body_color = profile["color"]
+		trim_color = profile["trim"]
+	hp_ = max_hp
+	player = get_tree().get_first_node_in_group("player")
+	material = StandardMaterial3D.new()
+	material.albedo_color = body_color
+	$MeshInstance3D.material_override = material
+	if kind != Kind.CUSTOM:
+		# 有白盒模型的敌人把占位胶囊藏起来，只留它当碰撞参考
+		$MeshInstance3D.visible = false
+		_build_body(body_color, trim_color)
+	if kind != Kind.CUSTOM and has_energy:
+		_add_energy_core()  # 无能量肉体傀儡不挂能量核，一眼区分两类敌人
+	if kind == Kind.DUMMY:
+		# 靶子不显示“无能量”标签，读作一个可击打的木桩即可
+		enemy_name = "练功木桩"
+	health_label = Label3D.new()
+	health_label.position.y = 2.25
+	health_label.font_size = 40
+	health_label.pixel_size = 0.008
+	health_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	add_child(health_label)
+	_update_health()
+	marker = MeshInstance3D.new()
+	var disc := CylinderMesh.new()
+	disc.top_radius = 1.65
+	disc.bottom_radius = 1.65
+	disc.height = 0.025
+	marker.mesh = disc
+	var warning := StandardMaterial3D.new()
+	warning.albedo_color = Color(1, 0.2, 0.12, 0.4)
+	warning.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	warning.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	marker.material_override = warning
+	add_child(marker)
+	marker.top_level = true
+	marker.visible = false
+
+## 能量型敌人头顶挂一颗发光能量核，无能量肉体傀儡没有：一眼区分两类敌人。
+func _add_energy_core() -> void:
+	var core := MeshInstance3D.new()
+	core.name = "EnergyCore"
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.15
+	sphere.height = 0.3
+	core.mesh = sphere
+	var glow := StandardMaterial3D.new()
+	glow.albedo_color = Color("63d6ff")
+	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glow.emission_enabled = true
+	glow.emission = Color("63d6ff")
+	glow.emission_energy_multiplier = 2.4
+	core.material_override = glow
+	core.position = Vector3(0, 1.9, 0)  # 悬在头顶，不与上方的血量标签打架
+	add_child(core)
+
+# ---------------------------------------------------------------- 白盒模型
+
+## 三种小怪的白盒形体：野狼低伏细长、野猪矮壮带獠牙、肉体傀儡是佝偻人形。
+## 统一朝 -Z 为正面（朝向由 _physics_process 里的转向负责）。
+func _build_body(color: Color, trim: Color) -> void:
+	body_root = Node3D.new()
+	body_root.name = "Body"
+	add_child(body_root)
+	match kind:
+		Kind.WOLF:
+			_build_wolf(color, trim)
+		Kind.BOAR:
+			_build_boar(color, trim)
+		Kind.GOLEM:
+			_build_golem(color, trim)
+		Kind.DUMMY:
+			_build_dummy(color, trim)
+
+func _build_wolf(color: Color, trim: Color) -> void:
+	var fur := _material(color, 0.8)
+	var dark := _material(trim, 0.85)
+	_part("Torso", Vector3(0, 0.78, 0.05), Vector3(0.62, 0.62, 1.5), fur)
+	_part("Chest", Vector3(0, 0.86, -0.55), Vector3(0.68, 0.64, 0.5), fur)
+	_part("Neck", Vector3(0, 0.95, -0.86), Vector3(0.42, 0.44, 0.4), fur)
+	_part("Head", Vector3(0, 1.02, -1.14), Vector3(0.46, 0.44, 0.5), fur)
+	_part("Snout", Vector3(0, 0.92, -1.48), Vector3(0.26, 0.24, 0.34), dark)
+	_part("EarL", Vector3(-0.17, 1.28, -1.0), Vector3(0.12, 0.2, 0.08), dark)
+	_part("EarR", Vector3(0.17, 1.28, -1.0), Vector3(0.12, 0.2, 0.08), dark)
+	_part("Tail", Vector3(0, 0.98, 0.9), Vector3(0.14, 0.14, 0.6), dark)
+	for sx in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			_part("Leg", Vector3(sx * 0.24, 0.25, sz * 0.5), Vector3(0.16, 0.5, 0.16), dark)
+
+func _build_boar(color: Color, trim: Color) -> void:
+	var hide := _material(color, 0.85)
+	var dark := _material(trim, 0.9)
+	_part("Torso", Vector3(0, 0.76, 0.1), Vector3(0.86, 0.8, 1.6), hide)
+	_part("Hump", Vector3(0, 1.22, -0.3), Vector3(0.7, 0.3, 0.9), dark)
+	_part("Head", Vector3(0, 0.72, -1.05), Vector3(0.62, 0.56, 0.6), hide)
+	_part("Snout", Vector3(0, 0.62, -1.44), Vector3(0.36, 0.32, 0.42), dark)
+	_part("TuskL", Vector3(-0.19, 0.62, -1.62), Vector3(0.09, 0.1, 0.3), _material(Color("e6ddc4"), 0.5))
+	_part("TuskR", Vector3(0.19, 0.62, -1.62), Vector3(0.09, 0.1, 0.3), _material(Color("e6ddc4"), 0.5))
+	_part("EarL", Vector3(-0.26, 1.02, -1.1), Vector3(0.12, 0.2, 0.1), dark)
+	_part("EarR", Vector3(0.26, 1.02, -1.1), Vector3(0.12, 0.2, 0.1), dark)
+	for i in 4:
+		_part("Bristle", Vector3(0, 1.26, -0.85 + i * 0.45), Vector3(0.1, 0.22, 0.1), dark)
+	for sx in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			_part("Leg", Vector3(sx * 0.3, 0.21, sz * 0.55), Vector3(0.2, 0.42, 0.2), dark)
+
+func _build_golem(color: Color, trim: Color) -> void:
+	var flesh := _material(color, 0.9)
+	var dark := _material(trim, 0.95)
+	_part("Hips", Vector3(0, 0.5, 0), Vector3(0.56, 0.42, 0.46), dark)
+	_part("Torso", Vector3(0, 1.02, 0.06), Vector3(0.72, 0.86, 0.5), flesh)
+	_part("Chest", Vector3(0, 1.34, 0.02), Vector3(0.8, 0.34, 0.54), dark)
+	_part("Head", Vector3(0, 1.62, 0.12), Vector3(0.42, 0.44, 0.44), flesh)
+	_part("Jaw", Vector3(0, 1.42, 0.24), Vector3(0.3, 0.16, 0.3), dark)
+	for sx in [-1.0, 1.0]:
+		_part("UpperArm", Vector3(sx * 0.5, 1.16, 0.08), Vector3(0.2, 0.5, 0.22), flesh)
+		_part("Forearm", Vector3(sx * 0.52, 0.66, 0.12), Vector3(0.18, 0.5, 0.2), dark)
+		_part("Thigh", Vector3(sx * 0.19, 0.52, 0), Vector3(0.24, 0.5, 0.26), flesh)
+		_part("Shin", Vector3(sx * 0.19, 0.16, 0.02), Vector3(0.22, 0.32, 0.24), dark)
+
+## 练功木桩：十字形站桩，横杆当手臂、圆木当躯干，顶上挂一块红色圆靶。
+func _build_dummy(color: Color, trim: Color) -> void:
+	var wood := _material(color, 0.8)
+	var dark := _material(trim, 0.9)
+	var red := _material(Color("c0533d"), 0.6)
+	_part("Base", Vector3(0, 0.14, 0), Vector3(1.1, 0.28, 1.1), dark)
+	_part("Post", Vector3(0, 0.8, 0), Vector3(0.4, 1.05, 0.4), wood)
+	_part("ArmL", Vector3(-0.75, 1.05, 0), Vector3(1.1, 0.14, 0.4), wood)
+	_part("ArmR", Vector3(0.75, 1.05, 0), Vector3(1.1, 0.14, 0.4), wood)
+	_part("Head", Vector3(0, 1.62, 0), Vector3(0.44, 0.44, 0.44), wood)
+	_part("Bullseye", Vector3(0, 0.95, 0.26), Vector3(0.2, 0.36, 0.06), red)
+
+func _material(color: Color, roughness: float) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.roughness = roughness
+	mat.set_meta("base_color", color)  # 受击闪光要回到原色
+	return mat
+
+func _part(label_name: String, at: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
+	var mesh := MeshInstance3D.new()
+	mesh.name = label_name
+	var box := BoxMesh.new()
+	box.size = size
+	mesh.mesh = box
+	mesh.material_override = mat
+	mesh.position = at
+	body_root.add_child(mesh)
+	return mesh
+
+## 受击闪光：模型敌人逐个网格改色，CUSTOM 占位敌人沿用胶囊自发光。
+func _flash() -> void:
+	if body_root == null:
+		material.emission_enabled = true
+		material.emission = Color(0.65, 0.4, 0.3)
+		var flash := create_tween()
+		flash.tween_property(material, "emission", Color.BLACK, 0.16)
+		return
+	_flash_timer = 0.16
+	_apply_flash(true)
+
+func _apply_flash(lit: bool) -> void:
+	for child in body_root.get_children():
+		if child is MeshInstance3D and child.material_override is StandardMaterial3D:
+			var mat: StandardMaterial3D = child.material_override
+			var base: Color = mat.get_meta("base_color", mat.albedo_color)
+			mat.albedo_color = base.lightened(0.45) if lit else base
+
+func is_alive() -> bool:
+	return not dead
+
+## 是否为可拼刀目标：近战且在蓄力，剩余命中时刻不超过拼刀窗口（玩家此刻命中它即判定对拼）。
+func is_strike_imminent() -> bool:
+	return not ranged and windup > 0.0 and windup <= CLASH_WINDOW
+
+func can_be_clashed() -> bool:
+	return clash_immune_timer <= 0.0
+
+## 拼刀刚触发后的一小段时间：本次双方都不结算伤害，也阻止玩家该段攻击后续帧补刀。
+func is_clash_immune() -> bool:
+	return clash_immune_timer > 0.0
+
+## 拼刀命中：取消本次出手、被弹开并进入短硬直，预警圈提前收起。
+func on_clash(repel_dir := Vector3.FORWARD) -> void:
+	if dead:
+		return
+	windup = -1.0
+	if marker != null:
+		marker.visible = false
+	stun_timer = CLASH_STUN
+	clash_immune_timer = CLASH_IMMUNE
+	knock = repel_dir.normalized() * CLASH_REPEL
+	attack_cd = maxf(attack_cd, 1.4)
+
+## 出手落地瞬间：玩家若正处在挥击窗口则双方对拼（本次都不结算伤害），返回是否已判拼刀。
+func _resolve_strike() -> bool:
+	if ranged or clash_immune_timer > 0.0 or not is_instance_valid(player):
+		return false
+	if player.has_method("can_clash_now") and player.can_clash_now():
+		player.register_clash()
+		on_clash(global_position - player.global_position)
+		return true
+	return false
+
+func _physics_process(delta: float) -> void:
+	# 纯靶子：不动、不攻击、不预警，只保留受击闪白。
+	if kind == Kind.DUMMY:
+		if _flash_timer > 0.0:
+			_flash_timer -= delta
+			if _flash_timer <= 0.0:
+				_apply_flash(false)
+		velocity = Vector3.ZERO
+		return
+	if dead or not is_instance_valid(player) or not player.alive:
+		return
+	attack_cd -= delta
+	clash_immune_timer = maxf(0.0, clash_immune_timer - delta)
+	if _flash_timer > 0.0:
+		_flash_timer -= delta
+		if _flash_timer <= 0.0:
+			_apply_flash(false)
+	# 拼刀硬直：原地被弹开，期间不移动、不攻击
+	if stun_timer > 0.0:
+		stun_timer -= delta
+		knock = knock.move_toward(Vector3.ZERO, 14.0 * delta)
+		velocity = knock
+		move_and_slide()
+		position.y = 0
+		return
+	knock = knock.move_toward(Vector3.ZERO, 20 * delta)
+	if windup >= 0:
+		windup -= delta
+		marker.scale = Vector3.ONE * (1.0 + 0.04 * sin(windup * 40))
+		if windup <= 0:
+			# 出手落地：若玩家正处在挥击窗口则判定拼刀，双方都不结算伤害
+			var clashed := _resolve_strike()
+			if not clashed and player.global_position.distance_to(target_point) <= 1.65:
+				player.take_damage(attack_damage)
+			marker.visible = false
+			windup = -1
+			attack_cd = 1.4
+		velocity = knock
+	else:
+		var offset := player.global_position - global_position
+		offset.y = 0
+		velocity = offset.normalized() * move_speed if offset.length() > keep_distance else Vector3.ZERO
+		velocity += knock
+		if offset.length() <= attack_reach and attack_cd <= 0:
+			target_point = player.global_position
+			windup = attack_windup
+			marker.global_position = target_point + Vector3.UP * 0.045
+			marker.visible = true
+	_face_target(delta)
+	move_and_slide()
+	position.y = 0
+
+## 有白盒模型的敌人朝目标转向；胶囊占位敌人是对称体，不需要朝向。
+func _face_target(delta: float) -> void:
+	if body_root == null or not is_instance_valid(player):
+		return
+	var offset := player.global_position - global_position
+	offset.y = 0
+	if offset.length() < 0.2:
+		return
+	rotation.y = lerp_angle(rotation.y, atan2(-offset.x, -offset.z), minf(1.0, delta * 6.0))
+
+func take_damage(amount: float, knock_dir := Vector3.ZERO, _attacker: Node = null) -> void:
+	if dead:
+		return
+	if kind == Kind.DUMMY:
+		# 靶子打不坏：扣血只是留痕，最低保住 1 点，也不吃击退。
+		hp_ = maxf(1, hp_ - amount)
+		_update_health()
+		_flash()
+		return
+	hp_ = maxf(0, hp_ - amount)
+	knock = knock_dir
+	_update_health()
+	_flash()
+	if hp_ <= 0:
+		dead = true
+		defeated.emit()
+		marker.visible = false
+		collision_layer = 0
+		collision_mask = 0
+		var tween := create_tween()
+		tween.tween_property(self, "scale", Vector3.ONE * 0.05, 0.18)
+		tween.tween_callback(queue_free)
+
+func _update_health() -> void:
+	var tag := ""
+	if kind != Kind.CUSTOM and kind != Kind.DUMMY:
+		tag = "  [能量]" if has_energy else "  [无能量]"
+	health_label.text = "%s%s  %.0f%%" % [enemy_name, tag, hp_ / max_hp * 100.0]

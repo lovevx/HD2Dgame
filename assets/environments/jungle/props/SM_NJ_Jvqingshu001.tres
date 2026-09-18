@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_bvuvx"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_trv4b"]
+[ext_resource type="PackedScene" path="res://assets/environments/jungle/props/SM_NJ_Jvqingshu001.tscn" id="3_fqor0"]
+
+[resource]
+script = ExtResource("1_bvuvx")
+library_entry_id = &"jungle-SM_NJ_Jvqingshu001"
+title = "古树地标"
+category = "丛林 / 乔木"
+source = ExtResource("3_fqor0")
+source_path = "res://assets/environments/jungle/props/SM_NJ_Jvqingshu001.tscn"
+asset_id = &"SM_NJ_Jvqingshu001_01b8a155"
+family_id = &"family_01948a1b92459c61"
+material_slots = {
+"Geometry/SM_NJ_Jvqingshu001": Array[String](["mat_21af3e4a227ea622"])
+}
+facing = 2
+wind = 0.0

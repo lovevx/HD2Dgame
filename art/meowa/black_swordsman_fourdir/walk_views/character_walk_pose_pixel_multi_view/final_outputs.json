@@ -1,0 +1,51 @@
+{
+  "status": "success",
+  "job_id": "job_68e31fd5afd449d78b88fdfe333d97a5",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\iso_back_left.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\back.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\iso_back_right.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\left.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\right.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\iso_front_left.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\front.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\iso_front_right.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\walk_views\\character_walk_pose_pixel_multi_view\\preview_3x3.png",
+      "mime_type": "image/png"
+    }
+  ]
+}

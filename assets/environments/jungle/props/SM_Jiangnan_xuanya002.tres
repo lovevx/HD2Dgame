@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_wh8nv"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_yvyh2"]
+[ext_resource type="PackedScene" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya002.tscn" id="3_1spfi"]
+
+[resource]
+script = ExtResource("1_wh8nv")
+library_entry_id = &"jungle-SM_Jiangnan_xuanya002"
+title = "林缘山壁 B"
+category = "丛林 / 山石"
+source = ExtResource("3_1spfi")
+source_path = "res://assets/environments/jungle/props/SM_Jiangnan_xuanya002.tscn"
+asset_id = &"SM_Jiangnan_xuanya002_cc837069"
+family_id = &"family_5ba1dd07b44b2414"
+material_slots = {
+"Geometry/SM_Jiangnan_xuanya002": Array[String](["mat_1660dc1202df7ce4"])
+}
+static_collision = true
+wind = 0.0

@@ -1,0 +1,311 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/stage.gd" id="1_hrs8u"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/jungle_library.tres" id="2_5gnf5"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/foliage.gd" id="3_26bqe"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/prop.gd" id="4_oue00"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_1dashu001_LODs.tres" id="5_2xmhh"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_1dashu002_LODs.tres" id="6_ruo5e"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan006.tres" id="7_sl3jb"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan012.tres" id="8_3t1yp"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan016.tres" id="9_rauhd"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya001.tres" id="10_cps3w"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya002.tres" id="11_dtvbx"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya003.tres" id="12_yqpjl"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya005.tres" id="13_x6j4t"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_Jiangnan_xuanya007.tres" id="14_yw2dl"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu001.tres" id="15_vxnm1"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu002.tres" id="16_63bpi"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Yvlinzhiwu003.tres" id="17_s4i0k"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Jvqingshu001.tres" id="18_ejruy"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_kushuicun_pofangzi002.tres" id="19_kfh01"]
+[ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_NJ_Shitoudui001.tres" id="20_b1o77"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b2hr5"]
+albedo_color = Color(0.25882354, 0.3019608, 0.27058825, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_8ox75"]
+size = Vector3(34, 0.3, 34)
+
+[node name="JunglePalette" type="Node3D" unique_id=1642012924]
+script = ExtResource("1_hrs8u")
+library = ExtResource("2_5gnf5")
+sky_color = Color(0.14117648, 0.18431373, 0.19607843, 1)
+sky_mode = 1
+ambient_color = Color(0.6509804, 0.74509805, 0.79607844, 1)
+sun_color = Color(1, 0.9098039, 0.78039217, 1)
+sun_energy = 1.1
+fog_enabled = false
+
+[node name="Scenery" type="Node3D" parent="." unique_id=18966424]
+
+[node name="Foliage" type="Node3D" parent="Scenery" unique_id=1998182009]
+script = ExtResource("3_26bqe")
+
+[node name="SM_1dashu001_LODs" type="Node3D" parent="Scenery" unique_id=383651145]
+transform = Transform3D(0.837819, 0, 0.11774778, 0, 0.8460527, 0, -0.11774778, 0, 0.837819, 0, 0, 0)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("5_2xmhh")
+
+[node name="SM_1dashu002_LODs" type="Node3D" parent="Scenery" unique_id=1589780149]
+transform = Transform3D(0.837819, 0, 0.11774778, 0, 0.8460527, 0, -0.11774778, 0, 0.837819, 7, 0, 0)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("6_ruo5e")
+
+[node name="SM_XYNJiangnan006" type="Node3D" parent="Scenery" unique_id=277290566]
+transform = Transform3D(0.99026805, 0, 0.1391731, 0, 1, 0, -0.1391731, 0, 0.99026805, 14, 0, 0)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("7_sl3jb")
+
+[node name="SM_XYNJiangnan012" type="Node3D" parent="Scenery" unique_id=502753500]
+transform = Transform3D(0.99026805, 0, 0.1391731, 0, 1, 0, -0.1391731, 0, 0.99026805, 21, 0, 0)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("8_3t1yp")
+
+[node name="SM_XYNJiangnan016" type="Node3D" parent="Scenery" unique_id=106884730]
+transform = Transform3D(0.96821165, 0, 0.13607328, 0, 0.9777268, 0, -0.13607328, 0, 0.96821165, 0, 0, 7)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("9_rauhd")
+
+[node name="SM_Jiangnan_xuanya001" type="Node3D" parent="Scenery" unique_id=1579537188]
+transform = Transform3D(0.22477151, 0, 0.03158958, 0, 0.22698048, 0, -0.03158958, 0, 0.22477151, 7, 0, 7)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("10_cps3w")
+
+[node name="SM_Jiangnan_xuanya002" type="Node3D" parent="Scenery" unique_id=2109914773]
+transform = Transform3D(0.2662632, 0, 0.037420854, 0, 0.26887992, 0, -0.037420854, 0, 0.2662632, 14, 0, 7)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("11_dtvbx")
+
+[node name="SM_Jiangnan_xuanya003" type="Node3D" parent="Scenery" unique_id=1138792902]
+transform = Transform3D(0.25971115, 0, 0.03650002, 0, 0.26226348, 0, -0.03650002, 0, 0.25971115, 21, 0, 7)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("12_yqpjl")
+
+[node name="SM_Jiangnan_xuanya005" type="Node3D" parent="Scenery" unique_id=1773901429]
+transform = Transform3D(0.20649081, 0, 0.029020391, 0, 0.20852011, 0, -0.029020391, 0, 0.20649081, 0, 0, 14)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("13_x6j4t")
+
+[node name="SM_Jiangnan_xuanya007" type="Node3D" parent="Scenery" unique_id=1976272435]
+transform = Transform3D(0.192118, 0, 0.027000425, 0, 0.19400606, 0, -0.027000425, 0, 0.192118, 7, 0, 14)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("14_yw2dl")
+
+[node name="SM_NJ_Yvlinzhiwu001" type="Node3D" parent="Scenery" unique_id=1589583636]
+transform = Transform3D(0.49513403, 0, 0.06958655, 0, 0.5, 0, -0.06958655, 0, 0.49513403, 14, 0, 14)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("15_vxnm1")
+
+[node name="SM_NJ_Yvlinzhiwu002" type="Node3D" parent="Scenery" unique_id=1191551187]
+transform = Transform3D(0.99026805, 0, 0.1391731, 0, 1, 0, -0.1391731, 0, 0.99026805, 21, 0, 14)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("16_63bpi")
+
+[node name="SM_NJ_Yvlinzhiwu003" type="Node3D" parent="Scenery" unique_id=1987157024]
+transform = Transform3D(0.99026805, 0, 0.1391731, 0, 1, 0, -0.1391731, 0, 0.99026805, 0, 0, 21)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("17_s4i0k")
+
+[node name="SM_NJ_Jvqingshu001" type="Node3D" parent="Scenery" unique_id=602234665]
+transform = Transform3D(0.47881094, 0, 0.06729249, 0, 0.48351648, 0, -0.06729249, 0, 0.47881094, 7, 0, 21)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("18_ejruy")
+
+[node name="SM_kushuicun_pofangzi002" type="Node3D" parent="Scenery" unique_id=1063644479]
+transform = Transform3D(0.66143, 0, 0.09295793, 0, 0.66793025, 0, -0.09295793, 0, 0.66143, 14, 0, 21)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("19_kfh01")
+
+[node name="SM_NJ_Shitoudui001" type="Node3D" parent="Scenery" unique_id=1033307584]
+transform = Transform3D(0.99026805, 0, 0.1391731, 0, 1, 0, -0.1391731, 0, 0.99026805, 21, 0, 21)
+script = ExtResource("4_oue00")
+asset_overrides = {
+"static_collision": false
+}
+asset = ExtResource("20_b1o77")
+
+[node name="PaletteFloor_001" type="MeshInstance3D" parent="." unique_id=837803424]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, -0.15, 10.5)
+material_override = SubResource("StandardMaterial3D_b2hr5")
+mesh = SubResource("BoxMesh_8ox75")
+
+[node name="AssetLabel_00" type="Label3D" parent="." unique_id=388846626]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 2)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "阔叶乔木 A"
+font_size = 36
+
+[node name="AssetLabel_01" type="Label3D" parent="." unique_id=285180400]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.3, 2)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "阔叶乔木 B"
+font_size = 36
+
+[node name="AssetLabel_02" type="Label3D" parent="." unique_id=493687660]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0.3, 2)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "苔岩 A"
+font_size = 36
+
+[node name="AssetLabel_03" type="Label3D" parent="." unique_id=361568253]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0.3, 2)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "苔岩 B"
+font_size = 36
+
+[node name="AssetLabel_04" type="Label3D" parent="." unique_id=2122221293]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 9)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "苔岩 C"
+font_size = 36
+
+[node name="AssetLabel_05" type="Label3D" parent="." unique_id=1370050385]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.3, 9)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "林缘山壁 A"
+font_size = 36
+
+[node name="AssetLabel_06" type="Label3D" parent="." unique_id=770865396]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0.3, 9)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "林缘山壁 B"
+font_size = 36
+
+[node name="AssetLabel_07" type="Label3D" parent="." unique_id=1016612677]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0.3, 9)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "林缘山壁 C"
+font_size = 36
+
+[node name="AssetLabel_08" type="Label3D" parent="." unique_id=511780337]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 16)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "林缘山壁 D"
+font_size = 36
+
+[node name="AssetLabel_09" type="Label3D" parent="." unique_id=2075416632]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.3, 16)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "林缘山壁 E"
+font_size = 36
+
+[node name="AssetLabel_10" type="Label3D" parent="." unique_id=1826065250]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0.3, 16)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "林下蕨丛（原始宽度 11m）"
+font_size = 36
+
+[node name="AssetLabel_11" type="Label3D" parent="." unique_id=2026264588]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0.3, 16)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "低矮地被"
+font_size = 36
+
+[node name="AssetLabel_12" type="Label3D" parent="." unique_id=1182886337]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 23)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "卷叶蕨"
+font_size = 36
+
+[node name="AssetLabel_13" type="Label3D" parent="." unique_id=2130903011]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.3, 23)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "古树地标"
+font_size = 36
+
+[node name="AssetLabel_14" type="Label3D" parent="." unique_id=294881158]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0.3, 23)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "废弃林间木屋"
+font_size = 36
+
+[node name="AssetLabel_15" type="Label3D" parent="." unique_id=131302319]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0.3, 23)
+pixel_size = 0.014
+billboard = 1
+no_depth_test = true
+text = "碎石堆（备用）"
+font_size = 36
+
+[node name="PaletteCamera" type="Camera3D" parent="." unique_id=1680852425]
+transform = Transform3D(0.99026805, -0.09491583, 0.101784766, 0, 0.7313537, 0.6819984, -0.1391731, -0.6753612, 0.7242362, 15.080315, 30.689926, 43.09063)
+projection = 1
+current = true
+size = 32.0

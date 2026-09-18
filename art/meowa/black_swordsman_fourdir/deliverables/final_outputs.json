@@ -1,0 +1,29 @@
+{
+  "status": "success",
+  "outputs": [
+    {
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\deliverables\\walk_up.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\deliverables\\walk_down.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\deliverables\\walk_right.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\deliverables\\attack_left.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\deliverables\\attack_up.gif",
+      "mime_type": "image/gif"
+    },
+    {
+      "path": "E:\\godotproject\\hd-2d\\art\\meowa\\black_swordsman_fourdir\\deliverables\\attack_down.gif",
+      "mime_type": "image/gif"
+    }
+  ]
+}

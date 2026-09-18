@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://local_study/preset3d/meshes/SM_NJ_Yvlinzhiwu001_77b64161_01.res" id="1_4chpt"]
+[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/22a1f03ffb358818_T_NJ_Yvlingzhiwu003.png" id="2_1hmgy"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qmqq4"]
+resource_name = "mat_8bcd7b93f63b6cb0"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_color = Color(0.8352941, 0.8862745, 0.8392157, 1)
+albedo_texture = ExtResource("2_1hmgy")
+metallic_specular = 0.08
+roughness = 0.95
+texture_filter = 2
+
+[node name="Model" type="Node3D" unique_id=1267198848]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=975845201]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12501922, -4.742203e-06)
+
+[node name="SM_NJ_Yvlinzhiwu001" type="MeshInstance3D" parent="Geometry" unique_id=1265613970]
+mesh = ExtResource("1_4chpt")
+surface_material_override/0 = SubResource("StandardMaterial3D_qmqq4")

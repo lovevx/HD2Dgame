@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://local_study/preset3d/meshes/SM_XYNJiangnan016_edd58267_01.res" id="1_ken3b"]
+[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/2139dc34d93deacf_T_XuanyaNew001.png" id="2_8dvyc"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hpntg"]
+resource_name = "mat_50bc367cd72d3ee3"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_color = Color(0.76862746, 0.8352941, 0.8, 1)
+albedo_texture = ExtResource("2_8dvyc")
+metallic_specular = 0.08
+roughness = 0.95
+texture_filter = 2
+
+[node name="Model" type="Node3D" unique_id=680800001]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=491045505]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.3841858e-07, 2.8126466, 0)
+
+[node name="SM_XYNJiangnan016" type="MeshInstance3D" parent="Geometry" unique_id=845228507]
+mesh = ExtResource("1_ken3b")
+surface_material_override/0 = SubResource("StandardMaterial3D_hpntg")

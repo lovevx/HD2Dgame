@@ -1,0 +1,51 @@
+{
+  "status": "success",
+  "job_id": "job_bbcece9a9bac4d308d9c2cb3b0b2e0ec",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\iso_back_left.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\back.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\iso_back_right.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\left.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\right.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\iso_front_left.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\front.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\iso_front_right.png",
+      "mime_type": "image/png"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\guard_20260917\\reference_front_pixel_multi_view\\preview_3x3.png",
+      "mime_type": "image/png"
+    }
+  ]
+}

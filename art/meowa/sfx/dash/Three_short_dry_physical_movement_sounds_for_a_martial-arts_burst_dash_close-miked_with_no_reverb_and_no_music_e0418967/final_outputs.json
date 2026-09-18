@@ -1,0 +1,21 @@
+{
+  "status": "success",
+  "job_id": "job_236872912f934091a57f70c9248c109a",
+  "outputs": [
+    {
+      "type": "media",
+      "path": "art\\meowa\\sfx\\dash\\Three_short_dry_physical_movement_sounds_for_a_martial-arts_burst_dash_close-miked_with_no_reverb_and_no_music_e0418967\\01_Martial_Arts_Foot_Stomp.mp3",
+      "mime_type": "audio/mpeg"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\sfx\\dash\\Three_short_dry_physical_movement_sounds_for_a_martial-arts_burst_dash_close-miked_with_no_reverb_and_no_music_e0418967\\02_Fast_Dash_Whoosh.mp3",
+      "mime_type": "audio/mpeg"
+    },
+    {
+      "type": "media",
+      "path": "art\\meowa\\sfx\\dash\\Three_short_dry_physical_movement_sounds_for_a_martial-arts_burst_dash_close-miked_with_no_reverb_and_no_music_e0418967\\03_Heavy_Landing_Thud.mp3",
+      "mime_type": "audio/mpeg"
+    }
+  ]
+}
