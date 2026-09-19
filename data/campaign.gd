@@ -47,6 +47,43 @@ const ITEMS := {
 		"req": {}, "export": true, "growth": false,
 		"can_sell": true, "can_decompose": true,
 		"passive": ["力量+1", "支持隐藏装备外观"], "source": "欧卡的白色宝箱"},
+	# ---- 前期本土装备（1.2~1.6 掉落 / 场景宝箱产出；不可带出，结算时清除） ----
+	"worn_blade": {"name": "缺口铁刀", "slot": "main_weapon", "item_kind": "weapon", "weapon_type": "1h_sword",
+		"quality": "white", "score": 6, "attack_min": 4.0, "attack_max": 11.0, "stats": {},
+		"dur_max": 22, "req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
+	"iron_sword": {"name": "精铁刀", "slot": "main_weapon", "item_kind": "weapon", "weapon_type": "1h_sword",
+		"quality": "green", "score": 18, "attack_min": 5.0, "attack_max": 14.0, "stats": {},
+		"dur_max": 28, "req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
+	"leather_cap": {"name": "皮质护额", "slot": "head", "item_kind": "armor",
+		"quality": "white", "score": 5, "stats": {"con": 1}, "def_pct": 0.02,
+		"dur_max": 16, "req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
+	"hunter_hat": {"name": "猎户皮帽", "slot": "head", "item_kind": "armor",
+		"quality": "green", "score": 15, "stats": {"con": 1, "agi": 1}, "def_pct": 0.03,
+		"dur_max": 20, "req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
+	"ragged_vest": {"name": "褴褛皮甲", "slot": "body", "item_kind": "armor",
+		"quality": "white", "score": 7, "stats": {"con": 1}, "def_pct": 0.03,
+		"dur_max": 20, "req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
+	"leather_bracer": {"name": "皮质护臂", "slot": "left_arm", "item_kind": "armor",
+		"quality": "white", "score": 4, "stats": {}, "def_pct": 0.02,
+		"dur_max": 14, "req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
+	"worn_boots": {"name": "旧皮靴", "slot": "boots", "item_kind": "armor",
+		"quality": "white", "score": 4, "stats": {"agi": 1}, "def_pct": 0.01,
+		"dur_max": 14, "req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
+	"tattered_cloak": {"name": "破损披风", "slot": "cloak", "item_kind": "armor",
+		"quality": "white", "score": 5, "stats": {}, "def_pct": 0.02,
+		"dur_max": 16, "req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
+	"copper_ring": {"name": "铜戒指", "slot": "ring", "item_kind": "jewelry",
+		"quality": "white", "score": 6, "stats": {"luk": 1}, "dur_max": 0,
+		"req": {}, "export": false, "growth": false,
+		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
 	# ---- 消耗品 ----
 	"potion": {"name": "恢复药剂 · 2使用", "item_kind": "consumable", "export": true},
 	"trap": {"name": "火药陷阱 · 1投掷", "item_kind": "consumable", "export": false},
@@ -74,11 +111,25 @@ const CHESTS := {
 	"tiger_chest": {"coins": 400, "items": {"claw": 1, "crystal": 1}},
 }
 const HUNTS := {"1_0": 5, "3_0": 10, "3_1": 1, "tiger": 15}
+## 随机装备产出池：前期小关击杀掉落 / 场景宝箱共用（全为本土装备，结算时清除）。
+const RANDOM_EQUIP_POOL := ["worn_blade", "iron_sword", "leather_cap", "hunter_hat",
+	"ragged_vest", "leather_bracer", "worn_boots", "tattered_cloak", "copper_ring"]
+## 场景宝箱固定产出：1 炸弹 + 1 血药 + 1 随机装备。
+const SCENE_CHEST_ITEMS := {"trap": 1, "potion": 1}
+
+## 从随机装备池抽一件（池为空时返回空串）。
+static func random_equip_id(rng: RandomNumberGenerator = null) -> String:
+	if RANDOM_EQUIP_POOL.is_empty():
+		return ""
+	if rng != null:
+		return RANDOM_EQUIP_POOL[rng.randi_range(0, RANDOM_EQUIP_POOL.size() - 1)]
+	return RANDOM_EQUIP_POOL[randi() % RANDOM_EQUIP_POOL.size()]
 
 static func fresh() -> Dictionary:
 	return {"stage": 0, "cleared": false, "hub": false, "run": 1, "level": 1,
 		"source": 0.0, "world_mana": 0, "permanent_mana": 0, "kills": [],
 		"bag": {"knife": 1, "potion": 2}, "equipment": {"main_weapon": "knife"},
+		"opened_chests": [],
 		# 装备动态状态（按物品 id 存放；强化/耐久/成长值），旧档缺省由 load 兜底
 		"item_dura": {}, "item_enhance": {}, "item_fury": {},
 		"hp_ratio": 1.0, "mp_ratio": 1.0, "bullets": 6, "settled": false, "training": 0, "report": "", "colpo_outer_cleared": false}

@@ -727,7 +727,7 @@ func add_choice(text: String, action: Callable) -> Button:
 	_choice_buttons.append(button)
 	return button
 
-const SHORT_ITEMS := {"knife": "匕首", "flintlock": "燧发枪", "letter": "引荐信", "guard_badge": "侍卫证", "dragon": "斩龙闪", "pendant": "亡妻\n项坠", "potion": "药剂", "trap": "火药\n陷阱", "catnip": "木天芷", "tiger_tooth": "虎齿", "claw": "虎爪", "crystal": "灵魂\n结晶", "white_mat": "白锻材", "green_mat": "绿锻材", "blue_mat": "蓝锻材", "purple_mat": "紫锻材", "gold_mat": "淡金\n锻材", "carlos_chest": "商人\n白箱", "oka_chest": "欧卡\n白箱", "tiger_chest": "巨虎\n绿箱"}
+const SHORT_ITEMS := {"knife": "匕首", "flintlock": "燧发枪", "letter": "引荐信", "guard_badge": "侍卫证", "dragon": "斩龙闪", "pendant": "亡妻\n项坠", "potion": "药剂", "trap": "火药\n陷阱", "catnip": "木天芷", "tiger_tooth": "虎齿", "claw": "虎爪", "crystal": "灵魂\n结晶", "white_mat": "白锻材", "green_mat": "绿锻材", "blue_mat": "蓝锻材", "purple_mat": "紫锻材", "gold_mat": "淡金\n锻材", "carlos_chest": "商人\n白箱", "oka_chest": "欧卡\n白箱", "tiger_chest": "巨虎\n绿箱", "worn_blade": "缺口刀", "iron_sword": "精铁刀", "leather_cap": "皮护额", "hunter_hat": "猎户帽", "ragged_vest": "褴褛甲", "leather_bracer": "皮护臂", "worn_boots": "旧皮靴", "tattered_cloak": "破披风", "copper_ring": "铜戒指"}
 
 ## 词条摘要文本（详情与 tooltip 复用）。
 func _stats_text(def: Dictionary) -> String:

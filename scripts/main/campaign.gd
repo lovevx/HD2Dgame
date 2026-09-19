@@ -4,6 +4,8 @@ const Data := preload("res://data/campaign.gd")
 const HudScene := preload("res://scripts/ui/hud.tscn")
 const EnemyScene := preload("res://scripts/combat/enemy.tscn")
 const EnemyScript := preload("res://scripts/combat/enemy.gd")
+const EquipmentDropScript := preload("res://scripts/combat/equipment_drop.gd")
+const SceneChestScript := preload("res://scripts/world/scene_chest.gd")
 const ARENA := "res://scenes/main/main.tscn"
 const HARBOR := "res://scenes/world/harbor.tscn"
 const OUTER := "res://scenes/world/colpo_forest_outer.tscn"
@@ -52,6 +54,8 @@ func _ready() -> void:
 		player.mp = player.max_mp
 		player.potions = 2
 		player.bombs = 3
+	if location == "clearing":
+		_restore_full_state()
 	_refresh_objective()
 	if state == "prepare" and location not in ["practice", "hub"]:
 		_show_story()
@@ -78,6 +82,7 @@ func _build_world() -> void:
 		director.campaign_managed = true
 	add_child(world)
 	_wire_interactions()
+	_spawn_scene_chest()
 	player.hp = player.max_hp * float(GameState.campaign.hp_ratio)
 	player.mp = player.max_mp * clampf(float(GameState.campaign.mp_ratio), 0.0, 1.0)
 	player.potions = GameState.item_count("potion")
@@ -121,6 +126,52 @@ func _wire_interactions() -> void:
 		world.get_node("ForgeService").campaign_action = show_forge
 		world.get_node("QuestService").campaign_action = show_tasks
 
+## 每个场景一个场景宝箱（1.2~1.5 按关、科尔波山外围与 BOSS 房各一）：
+## 开启产出 1 炸弹 + 1 血药 + 1 随机装备，开启记录落档，重进同一关不再刷新。
+func _spawn_scene_chest() -> void:
+	var key := ""
+	var at := Vector3.ZERO
+	match location:
+		"arena":
+			key = "arena_%d" % GameState.campaign.stage
+			at = Vector3(7.5, 0, 5.0)
+		"outer":
+			key = "outer"
+			at = Vector3(5.0, 0, 15.5)
+		"clearing":
+			key = "clearing"
+			at = Vector3(5.0, 0, 16.0)
+		_:
+			return
+	if GameState.is_scene_chest_opened(key):
+		return
+	var chest := SceneChestScript.new()
+	chest.chest_key = key
+	world.add_child(chest)
+	chest.global_position = at
+
+## 击杀掉落：按概率在世界里放一件随机装备拾取物（精英概率更高；BOSS 不掉，由宝箱与结算负责）。
+func _spawn_equipment_drop(enemy: Node, chance: float) -> void:
+	if not is_instance_valid(enemy):
+		return
+	var id := GameState.roll_equipment_drop(chance)
+	if id == "":
+		return
+	var drop := EquipmentDropScript.new()
+	drop.item_id = id
+	world.add_child(drop)
+	drop.global_position = enemy.global_position
+
+## 进入 BOSS 房（林间决战空地）自动全回复：生命/法力回满 + 所有已持有装备耐久修满。
+func _restore_full_state() -> void:
+	player._refresh_derived_stats()
+	player.hp = player.max_hp
+	player.mp = player.max_mp
+	GameState.campaign.hp_ratio = 1.0
+	GameState.campaign.mp_ratio = 1.0
+	var repaired := GameState.repair_all_equipment()
+	GameState.push_message("[科尔波山] 决战前休整：生命与法力回满%s" % ("，装备耐久全部修满" if repaired > 0 else ""))
+
 func _process(_delta: float) -> void:
 	if state == "combat":
 		var living := 0
@@ -144,6 +195,9 @@ func _process(_delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact") and not hud.is_modal_open() and location not in ["hub", "practice"]:
+		# 站在场景宝箱触发圈里时，V 归宝箱，避免同时推进关卡流程
+		if get_tree().get_first_node_in_group("scene_chest_focus") != null:
+			return
 		if state != "outer_cleared": primary_action()
 		get_viewport().set_input_as_handled()
 
@@ -217,6 +271,8 @@ func start_encounter() -> void:
 			enemy.position = Vector3(-3 + i * 6, 0, -5)
 			add_child(enemy)
 			enemy.defeated.connect(_on_hunt.bind("%d_%d" % [GameState.campaign.stage, i]))
+			# 精英（欧卡）掉落概率更高；普通小怪给基础概率
+			enemy.defeated.connect(_spawn_equipment_drop.bind(enemy, 0.9 if profiles[i][1] >= 150 else 0.5))
 			enemies.append(enemy)
 
 func _on_boss_spawned(target: Node3D) -> void:

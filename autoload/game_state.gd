@@ -383,6 +383,59 @@ func open_chest(id: String) -> bool:
 	save_game()
 	return true
 
+## ---------- 场景宝箱（世界内放置，靠近按 V 开启） ----------
+## 每个场景一个，开启后记录 key 防重复领取（新试炼 begin_next_trial 时清空）。
+func is_scene_chest_opened(key: String) -> bool:
+	return campaign.get("opened_chests", []).has(key)
+
+## 开启场景宝箱：固定产出 1 炸弹 + 1 血药 + 1 随机装备；已开过返回空数组。
+func open_scene_chest(key: String) -> Array:
+	if key == "" or is_scene_chest_opened(key):
+		return []
+	var rewards: Array = []
+	for id in Campaign.SCENE_CHEST_ITEMS:
+		give_item(id, Campaign.SCENE_CHEST_ITEMS[id])
+		rewards.append(id)
+	var equip := Campaign.random_equip_id()
+	if equip != "":
+		give_item(equip, 1)
+		rewards.append(equip)
+	campaign.opened_chests.append(key)
+	save_game()
+	return rewards
+
+## ---------- 击杀随机装备掉落 ----------
+## 按概率判定是否掉落；命中则返回随机装备 id，未命中返回空串。
+func roll_equipment_drop(chance: float) -> String:
+	if randf() > chance:
+		return ""
+	return Campaign.random_equip_id()
+
+## 全回复（BOSS 房进入时调用）：所有已持有装备耐久修满，返回修复件数。
+func repair_all_equipment() -> int:
+	var ids: Array[String] = []
+	for id in campaign.bag.keys():
+		if item_count(str(id)) > 0:
+			ids.append(str(id))
+	for slot in campaign.equipment:
+		var eid := str(campaign.equipment[slot])
+		if eid != "" and not ids.has(eid):
+			ids.append(eid)
+	var repaired := 0
+	for id in ids:
+		var def := item_def(id)
+		if int(def.get("dur_max", 0)) <= 0:
+			continue
+		var st: Dictionary = Campaign.dura_state(campaign, id)
+		if st["cur"] >= st["max"]:
+			continue
+		st["cur"] = st["max"]
+		campaign.item_dura[id] = st
+		repaired += 1
+	if repaired > 0:
+		save_game()
+	return repaired
+
 ## 击杀由战斗实例触发；检查唯一ID，结算和读档不能重复领奖。
 func record_hunt(id: String) -> int:
 	if campaign.kills.has(id) or campaign.hub or campaign.cleared:
@@ -490,6 +543,7 @@ func begin_next_trial() -> bool:
 	campaign.world_mana = 0
 	campaign.colpo_outer_cleared = false
 	campaign.kills = []
+	campaign.opened_chests = []
 	campaign.bullets = 6
 	campaign.hp_ratio = 1.0
 	campaign.mp_ratio = 1.0

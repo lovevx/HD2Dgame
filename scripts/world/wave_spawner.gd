@@ -7,6 +7,7 @@ var campaign_managed := false
 
 const EnemyScene := preload("res://scripts/combat/enemy.tscn")
 const EnemyScript := preload("res://scripts/combat/enemy.gd")
+const EquipmentDropScript := preload("res://scripts/combat/equipment_drop.gd")
 const KIND_LABEL := {"wolf": "只野狼", "boar": "只野猪", "golem": "具肉体傀儡"}
 
 @export var first_delay := 1.5   # 进场到第一波的准备时间
@@ -78,6 +79,7 @@ func _spawn_wave() -> void:
 		enemy.set("kind", _kind_of(str(marker.get_meta("kind"))))
 		enemy.position = marker.position + Vector3(randf_range(-spawn_jitter, spawn_jitter), 0, randf_range(-spawn_jitter, spawn_jitter))
 		add_child(enemy)
+		enemy.defeated.connect(_spawn_equipment_drop.bind(enemy, 0.5))
 		var spawn := create_tween()
 		spawn.tween_property(enemy, "scale", Vector3.ONE, 0.25).from(Vector3.ONE * 0.25)
 		var key := str(marker.get_meta("kind"))
@@ -87,6 +89,18 @@ func _spawn_wave() -> void:
 		parts.append("%d %s" % [tally[key], KIND_LABEL.get(key, key)])
 	_fighting = true
 	GameState.push_message("[科尔波山] 第 %d / %d 波 · %s" % [_index, _planned, "、".join(parts)])
+
+## 击杀掉落：外围小怪按基础概率掉一件随机装备（本土装备，世界结算时清除）。
+func _spawn_equipment_drop(enemy: Node, chance: float) -> void:
+	if not is_instance_valid(enemy):
+		return
+	var id := GameState.roll_equipment_drop(chance)
+	if id == "":
+		return
+	var drop := EquipmentDropScript.new()
+	drop.item_id = id
+	get_parent().add_child(drop)
+	drop.global_position = enemy.global_position
 
 func _finish() -> void:
 	_finished = true
