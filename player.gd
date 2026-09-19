@@ -2,8 +2,10 @@ extends CharacterBody3D
 ## P0 独立战斗试炼：所有动作通过同一时间轴推进，重置不遗留回调。
 const BombScene := preload("res://scripts/combat/alchemy_bomb.tscn")
 const Attributes := preload("res://data/attributes.gd")
+const CombatSkills := preload("res://data/combat_skills.gd")
+const SwordWave := preload("res://scripts/combat/sword_wave.gd")
 const MAX_THROW := 11.0   # 数字 1 最远投掷距离
-@export var move_speed: float = 5.0
+@export var move_speed: float = 2.6
 ## 活动范围：x 正负上限 / z 上下限。场景构建脚本按各自尺寸写入，默认是 P0 试炼的小场地。
 @export var bounds_x: float = 12.0
 @export var bounds_z: Vector2 = Vector2(-12.0, 12.0)
@@ -50,11 +52,28 @@ var attack_hit: bool = false
 var buffer_time: float = 0.0
 var buffered_direction := Vector3.ZERO
 var shield_visual: MeshInstance3D
+var hunter_active := false
+var shield_hp := 0.0
+var shield_timer := 0.0
+var shield_cd := 0.0
+var ring_cd := 0.0
+var ring_windup := 0.0
+var ring_lock := 0.0
+var wave_cd := 0.0
+var wave_windup := 0.0
+var wave_direction := Vector3.FORWARD
+var pierced_target: Node3D
+var pierce_marker: MeshInstance3D
+var pierce_timer := 0.0
+var shadow_target: Node3D
+var shadow_cd := 0.0
+var shadow_windup := 0.0
 signal hp_changed(current: float, maximum: float)
 signal bombs_changed(count: int)
 signal attacked(stage: int)
 signal hit_target(target: Node, dmg: float)
 signal received_hit   # 受到伤害时触发（用于受击动画）
+signal guarded       # 傲歌起手复用已有防御姿态帧
 signal died
 
 func _ready() -> void:
@@ -63,11 +82,16 @@ func _ready() -> void:
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.85
 	sphere.height = 1.7
+	sphere.radial_segments = 12
+	sphere.rings = 6
 	shield_visual.mesh = sphere
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(1.0, 0.3, 0.22, 0.28)  # 能量护盾统一暗红，规避原作蓝光视觉
+	material.albedo_color = Color(1.0, 0.3, 0.22, 0.18)  # 保留角色可读性的暗红晶体护盾
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.emission_enabled = true
+	material.emission = Color(0.45, 0.05, 0.035)
+	material.emission_energy_multiplier = 0.8
 	shield_visual.material_override = material
 	shield_visual.position.y = 0.85
 	add_child(shield_visual)
@@ -88,7 +112,28 @@ func reset() -> void:
 	dodge_timer = 0.0
 	clash_cd = 0.0
 	attack_elapsed = -1.0
+	attack_hit = false
 	buffer_time = 0.0
+	buffered_direction = Vector3.ZERO
+	input_dir = Vector2.ZERO
+	dodge_dir = Vector3.ZERO
+	healing_time = 0.0
+	healing_uses = 0
+	shot_cd = 0.0
+	hunter_active = false
+	shield_hp = 0.0
+	shield_timer = 0.0
+	shield_cd = 0.0
+	ring_cd = 0.0
+	ring_windup = 0.0
+	ring_lock = 0.0
+	wave_cd = 0.0
+	wave_windup = 0.0
+	wave_direction = Vector3.FORWARD
+	_clear_pierce()
+	shadow_target = null
+	shadow_cd = 0.0
+	shadow_windup = 0.0
 	potions = 2
 	velocity = Vector3.ZERO
 	shield_visual.visible = false
@@ -143,6 +188,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		_fire_flintlock()
 	if healing_time > 0:
 		return
+	if event.is_action_pressed("hunter_toggle"):
+		_toggle_hunter()
+	if event.is_action_pressed("aoge"):
+		_toggle_shield()
+	if event.is_action_pressed("huanduan"):
+		_start_ring()
+	if event.is_action_pressed("sword_wave"):
+		_start_wave()
+	if event.is_action_pressed("shadow_stab"):
+		_start_shadow()
 	if event.is_action_pressed("attack"):
 		# 攻击朝鼠标所指的地面方向出手
 		var point = mouse_ground_point()
@@ -154,7 +209,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				buffer_time = 0.15
 	if event.is_action_pressed("bomb") and bombs > 0 and not dodging and attack_cd <= 0:
 		_throw_bomb()
-	if event.is_action_pressed("potion") and potions > 0 and hp < max_hp:
+	if event.is_action_pressed("potion") and potions > 0 and hp < max_hp and ring_windup <= 0.0 and wave_windup <= 0.0 and shadow_windup <= 0.0:
 		potions -= 1
 		if campaign_mode:
 			healing_time = 1.2
@@ -167,6 +222,23 @@ func _physics_process(delta: float) -> void:
 	if not alive:
 		return
 	shot_cd = maxf(0.0, shot_cd - delta)
+	shield_cd = maxf(0.0, shield_cd - delta)
+	ring_cd = maxf(0.0, ring_cd - delta)
+	wave_cd = maxf(0.0, wave_cd - delta)
+	shadow_cd = maxf(0.0, shadow_cd - delta)
+	if pierce_timer > 0.0:
+		pierce_timer -= delta
+		if pierce_timer <= 0.0 or not is_instance_valid(pierced_target) or not pierced_target.is_alive():
+			_clear_pierce()
+	if shield_hp > 0.0:
+		shield_timer -= delta
+		if shield_timer <= 0.0:
+			_end_shield()
+	if hunter_active:
+		mp = maxf(0.0, mp - CombatSkills.HUNTER_DRAIN_PER_SECOND * delta)
+		if mp <= max_mp * 0.01:
+			hunter_active = false
+			GameState.push_message("青钢影 · 法力不足，猎魔已关闭")
 	if healing_time > 0:
 		healing_time -= delta
 		velocity = Vector3.ZERO
@@ -178,10 +250,23 @@ func _physics_process(delta: float) -> void:
 	attack_cd = maxf(0, attack_cd - delta)
 	dodge_cd = maxf(0, dodge_cd - delta)
 	clash_cd = maxf(0, clash_cd - delta)
+	ring_lock = maxf(0.0, ring_lock - delta)
+	if ring_windup > 0.0:
+		ring_windup -= delta
+		if ring_windup <= 0.0:
+			_resolve_ring()
+	if wave_windup > 0.0:
+		wave_windup -= delta
+		if wave_windup <= 0.0:
+			_release_wave()
+	if shadow_windup > 0.0:
+		shadow_windup -= delta
+		if shadow_windup <= 0.0:
+			_resolve_shadow()
 	combo_timer = maxf(0, combo_timer - delta)
 	if combo_timer <= 0:
 		combo_stage = -1
-	mp = clampf(mp + (3.0 / 3600.0 if campaign_mode else 12.0) * delta, 0, max_mp)
+	mp = clampf(mp + max_mp * CombatSkills.MP_REGEN_PER_SECOND * delta, 0, max_mp)
 	if Input.is_action_just_pressed("dodge") and dodge_cd <= 0 and attack_cd <= 0 and _is_grounded():
 		dodging = true
 		dodge_timer = dodge_duration
@@ -194,9 +279,9 @@ func _physics_process(delta: float) -> void:
 	buffer_time = maxf(0, buffer_time - delta)
 	if attack_elapsed >= 0:
 		attack_elapsed += delta
-		if attack_elapsed >= ATTACK_HIT_TIME and not attack_hit:
+		if attack_elapsed >= CombatSkills.COMBO_HIT_TIMES[combo_stage] and not attack_hit:
 			attack_hit = true
-			_hurt_in_cone(attack_range + 0.3 * combo_stage, roll_attack_damage() * [1.0, 1.15, 1.8][combo_stage])
+			_hurt_in_cone(attack_range + CombatSkills.COMBO_REACH_BONUS[combo_stage], roll_attack_damage() * CombatSkills.COMBO_MULTIPLIERS[combo_stage], CombatSkills.COMBO_ARC_HALF[combo_stage])
 		if attack_cd <= 0:
 			attack_elapsed = -1
 	if input_dir != Vector2.ZERO and attack_cd <= 0 and not dodging:
@@ -209,6 +294,8 @@ func _physics_process(delta: float) -> void:
 			dodging = false
 			invulnerable = false
 	var target := Vector3(input_dir.x, 0, input_dir.y) * move_speed * (0.35 if attack_cd > 0 else 1.0)
+	if ring_lock > 0.0:
+		target = Vector3.ZERO
 	if campaign_mode and hp / max_hp < 0.1:
 		target *= 0.6
 	if dodging:
@@ -269,12 +356,209 @@ func _throw_bomb() -> void:
 func _start_attack() -> void:
 	combo_stage = 0 if combo_timer <= 0 else (combo_stage + 1) % 3
 	combo_timer = combo_window
-	attack_cd = base_attack_cooldown
+	attack_cd = CombatSkills.COMBO_COOLDOWNS[combo_stage]
 	attack_elapsed = 0
 	attack_hit = false
 	attacked.emit(combo_stage)
 
-func _hurt_in_cone(reach: float, damage: float) -> void:
+func _start_wave(forward := Vector3.ZERO) -> void:
+	if wave_cd > 0.0 or attack_cd > 0.0 or dodging or mp < CombatSkills.WAVE_MP_COST:
+		return
+	var direction: Vector3 = forward
+	if direction.length_squared() < 0.01:
+		var point = mouse_ground_point()
+		if point != null:
+			direction = point - global_position
+	direction.y = 0.0
+	if direction.length_squared() < 0.01:
+		direction = facing
+	wave_direction = direction.normalized()
+	facing = wave_direction
+	mp -= CombatSkills.WAVE_MP_COST
+	wave_cd = CombatSkills.WAVE_COOLDOWN
+	wave_windup = CombatSkills.WAVE_WINDUP
+	attack_cd = base_attack_cooldown
+	attack_elapsed = -1.0
+	buffer_time = 0.0
+	attacked.emit(0)
+
+func _release_wave() -> void:
+	var wave := SwordWave.new()
+	wave.configure(self, wave_direction, roll_attack_damage() * CombatSkills.WAVE_WEAPON_MULTIPLIER)
+	get_parent().add_child(wave)
+	wave.global_position = global_position + wave_direction * 1.2
+
+func _mark_pierced(enemy: Node3D) -> void:
+	_clear_pierce()
+	pierced_target = enemy
+	pierce_timer = CombatSkills.PIERCE_WINDOW
+	pierce_marker = MeshInstance3D.new()
+	var mesh := SphereMesh.new()
+	mesh.radius = 0.16
+	mesh.height = 0.32
+	pierce_marker.mesh = mesh
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.7, 0.04, 0.04)
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.emission_enabled = true
+	mat.emission = Color(0.7, 0.04, 0.04)
+	pierce_marker.material_override = mat
+	pierce_marker.position.y = 5.6 if enemy.has_method("hit_radius") else 2.5
+	enemy.add_child(pierce_marker)
+
+func _clear_pierce() -> void:
+	if is_instance_valid(pierce_marker):
+		pierce_marker.queue_free()
+	pierce_marker = null
+	pierced_target = null
+	pierce_timer = 0.0
+
+func _start_shadow() -> void:
+	# 没有前刺命中标记时完全空放：不扣蓝、不进入冷却。
+	if not is_instance_valid(pierced_target) or not pierced_target.is_alive() or pierce_timer <= 0.0:
+		return
+	if global_position.distance_to(pierced_target.global_position) > CombatSkills.SHADOW_MAX_DISTANCE:
+		_clear_pierce()
+		return
+	if shadow_cd > 0.0 or dodging or mp < CombatSkills.SHADOW_MP_COST:
+		return
+	shadow_target = pierced_target
+	_clear_pierce()
+	mp -= CombatSkills.SHADOW_MP_COST
+	shadow_cd = CombatSkills.SHADOW_COOLDOWN
+	shadow_windup = CombatSkills.SHADOW_WINDUP
+	attack_elapsed = -1.0
+	attack_cd = maxf(attack_cd, 0.24)
+	buffer_time = 0.0
+
+func _resolve_shadow() -> void:
+	var target := shadow_target
+	shadow_target = null
+	if not is_instance_valid(target) or not target.is_alive() or global_position.distance_to(target.global_position) > CombatSkills.SHADOW_MAX_DISTANCE:
+		mp = minf(max_mp, mp + CombatSkills.SHADOW_MP_COST)
+		shadow_cd = 0.0
+		return
+	var bonus := CombatSkills.SHADOW_TRUE_DAMAGE if target.get("has_energy") == true else 0.0
+	_damage_target(target, roll_attack_damage() * CombatSkills.SHADOW_WEAPON_MULTIPLIER, Vector3.ZERO, bonus)
+	_show_shadow_fx(target.global_position)
+
+func _show_shadow_fx(at: Vector3) -> void:
+	var holder := Node3D.new()
+	get_parent().add_child(holder)
+	holder.global_position = at + Vector3.UP * 0.85
+	for i in 6:
+		var spike := MeshInstance3D.new()
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = 0.0
+		mesh.bottom_radius = 0.11
+		mesh.height = 1.3
+		spike.mesh = mesh
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.5, 0.025, 0.035, 0.85)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.emission_enabled = true
+		mat.emission = Color(0.65, 0.04, 0.04)
+		spike.material_override = mat
+		spike.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var angle := TAU * i / 6.0
+		spike.position = Vector3(cos(angle) * 0.28, 0, sin(angle) * 0.28)
+		spike.rotation = Vector3(sin(angle) * 0.65, 0, cos(angle) * 0.65)
+		holder.add_child(spike)
+	holder.scale = Vector3.ONE * 0.1
+	var tween := create_tween()
+	tween.tween_property(holder, "scale", Vector3.ONE, 0.12)
+	tween.tween_property(holder, "scale", Vector3.ONE * 0.05, 0.22)
+	tween.tween_callback(holder.queue_free)
+
+func _toggle_hunter() -> void:
+	if hunter_active:
+		hunter_active = false
+		GameState.push_message("青钢影 · 猎魔关闭")
+	elif mp > max_mp * 0.01:
+		hunter_active = true
+		GameState.push_message("青钢影 · 猎魔开启")
+
+func _toggle_shield() -> void:
+	if shield_hp > 0.0:
+		_end_shield()
+		return
+	if shield_cd > 0.0 or mp < CombatSkills.SHIELD_MP_COST or dodging:
+		return
+	mp -= CombatSkills.SHIELD_MP_COST
+	shield_hp = CombatSkills.shield_capacity(int(GameState.effective_attributes().get("int", Attributes.BASE)))
+	shield_timer = CombatSkills.SHIELD_DURATION
+	shield_cd = CombatSkills.SHIELD_COOLDOWN
+	shield_visual.visible = true
+	guarded.emit()
+	GameState.push_message("傲歌 · 护盾 %.0f" % shield_hp)
+
+func _end_shield() -> void:
+	shield_hp = 0.0
+	shield_timer = 0.0
+	shield_visual.visible = false
+
+func _start_ring() -> void:
+	if ring_cd > 0.0 or attack_cd > 0.0 or dodging or mp < CombatSkills.RING_MP_COST:
+		return
+	mp -= CombatSkills.RING_MP_COST
+	ring_cd = CombatSkills.RING_COOLDOWN
+	ring_windup = CombatSkills.RING_WINDUP
+	ring_lock = CombatSkills.RING_RECOVERY
+	attack_cd = CombatSkills.RING_RECOVERY
+	buffer_time = 0.0
+	attacked.emit(2)  # 复用已有第三段挥刀帧，命中仍按环断时间轴结算
+
+func _resolve_ring() -> void:
+	var damage := roll_attack_damage() * CombatSkills.RING_WEAPON_MULTIPLIER
+	var foes := get_tree().get_nodes_in_group("enemies")
+	foes.append_array(get_tree().get_nodes_in_group("targets"))
+	for enemy in foes:
+		if not enemy.is_alive():
+			continue
+		var offset: Vector3 = enemy.global_position - global_position
+		offset.y = 0.0
+		var bulk := float(enemy.hit_radius()) if enemy.has_method("hit_radius") else 0.0
+		if offset.length() > CombatSkills.RING_RADIUS + bulk:
+			continue
+		_damage_target(enemy, damage, offset.normalized() * 5.0)
+	_show_ring_fx()
+
+func _show_ring_fx() -> void:
+	var fx := MeshInstance3D.new()
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = 0.92
+	mesh.outer_radius = 1.0
+	fx.mesh = mesh
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.55, 0.07, 0.06, 0.75)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.emission_enabled = true
+	mat.emission = Color(0.65, 0.07, 0.05)
+	fx.material_override = mat
+	fx.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	get_parent().add_child(fx)
+	fx.global_position = global_position + Vector3(0, 0.12, 0)
+	fx.scale = Vector3(0.25, 1.0, 0.25)
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(fx, "scale", Vector3(CombatSkills.RING_RADIUS, 1.0, CombatSkills.RING_RADIUS), 0.27)
+	tween.tween_property(fx, "transparency", 1.0, 0.27)
+	tween.chain().tween_callback(fx.queue_free)
+
+func _damage_target(enemy: Node, damage: float, knock_dir: Vector3, true_damage := 0.0) -> void:
+	var was: bool = enemy.is_alive()
+	enemy.take_damage(damage, knock_dir, self, true_damage)
+	# 命中回蓝：每次打到敌人回复最大法力的 1%（炸弹等不经本函数的伤害不计）。
+	mp = minf(max_mp, mp + max_mp * CombatSkills.MP_ON_HIT_RATIO)
+	hit_target.emit(enemy, damage + true_damage)
+	if was and not enemy.is_alive() and campaign_mode:
+		var wid := str(GameState.campaign.equipment.get("main_weapon", ""))
+		if wid != "":
+			var tier := int(enemy.get("kill_tier") if enemy.get("kill_tier") != null else 1)
+			GameState.damage_item_dura(wid, GameState.Equip.kill_dur(tier))
+
+func _hurt_in_cone(reach: float, damage: float, arc_half := -1.0) -> void:
 	var foes := get_tree().get_nodes_in_group("enemies")
 	# 纯靶子挂在 targets 组，不进敌人组（不影响清场判定），但吃同样的近战判定。
 	foes.append_array(get_tree().get_nodes_in_group("targets"))
@@ -289,7 +573,8 @@ func _hurt_in_cone(reach: float, damage: float) -> void:
 			bulk = enemy.hit_radius()
 		if offset.length() > reach + bulk:
 			continue
-		if offset.length() > 0.2 and offset.normalized().dot(facing) < cos(attack_arc_half):
+		var used_arc: float = arc_half if arc_half >= 0.0 else attack_arc_half
+		if offset.length() > 0.2 and offset.normalized().dot(facing) < cos(used_arc):
 			continue
 		# 拼刀：对方近战攻击正处在出手窗口内（其命中时刻与我们相差 ≤ CLASH_WINDOW），
 		# 本次双方都不结算伤害，敌人被弹开并进入短硬直。
@@ -301,19 +586,16 @@ func _hurt_in_cone(reach: float, damage: float) -> void:
 		# 拼刀刚触发后短免疫：防止敌人先手判定拼刀后，玩家本段攻击的后续命中帧再补刀
 		if enemy.has_method("is_clash_immune") and enemy.is_clash_immune():
 			continue
-		var was: bool = enemy.is_alive()
-		enemy.take_damage(damage, facing * 6, self)
-		hit_target.emit(enemy, damage)
-		# 击杀判定 → 主武器耐久（普通 1 / 精英 3 / BOSS 8）
-		if was and not enemy.is_alive() and campaign_mode:
-			var wid := str(GameState.campaign.equipment.get("main_weapon", ""))
-			if wid != "":
-				var tier := int(enemy.get("kill_tier") if enemy.get("kill_tier") != null else 1)
-				GameState.damage_item_dura(wid, GameState.Equip.kill_dur(tier))
+		var bonus := 0.0
+		if hunter_active and enemy.get("has_energy") == true and enemy.get("max_hp") != null:
+			bonus = float(enemy.get("max_hp")) * CombatSkills.HUNTER_TRUE_RATIO
+		_damage_target(enemy, damage, facing * 6, bonus)
+		if combo_stage == 1 and attack_elapsed >= 0.0 and enemy.is_alive():
+			_mark_pierced(enemy)
 
 ## 玩家是否处于可拼刀的挥击窗口：出手到命中后一小段。敌人攻击在这期间落地则双方对拼。
 func can_clash_now() -> bool:
-	return clash_cd <= 0.0 and attack_elapsed >= 0.0 and attack_elapsed <= ATTACK_HIT_TIME + CLASH_WINDOW
+	return clash_cd <= 0.0 and attack_elapsed >= 0.0 and attack_elapsed <= CombatSkills.COMBO_HIT_TIMES[combo_stage] + CLASH_WINDOW
 
 ## 拼刀已触发（玩家侧冷却与提示，玩家本次攻击与敌人攻击均不结算伤害）。
 func register_clash() -> void:
@@ -324,11 +606,18 @@ func take_damage(amount: float, _from_dir := Vector3.ZERO) -> void:
 	if not alive or invulnerable:
 		return
 	healing_time = 0.0 # 受击打断饮用；消耗不返还。
-	var final := amount
+	var final := maxf(0.0, amount)
 	if campaign_mode:
 		# 结算链路（策划案 §4.2）：护甲百分比减免(③) → 肉体修正系数查表(④)
-		final = amount * (1.0 - GameState.armor_reduction())
+		final *= 1.0 - GameState.armor_reduction()
 		final *= GameState.Equip.con_hit_factor(int(GameState.effective_attributes().get("con", Attributes.BASE)))
+	if shield_hp > 0.0:
+		var absorbed := minf(shield_hp, final)
+		shield_hp -= absorbed
+		final -= absorbed
+		if shield_hp <= 0.0:
+			_end_shield()
+			GameState.push_message("傲歌 · 护盾破碎")
 	var before := hp
 	hp = maxf(0, hp - final)
 	hp_changed.emit(hp, max_hp)
@@ -341,6 +630,9 @@ func take_damage(amount: float, _from_dir := Vector3.ZERO) -> void:
 			_spend_armor_dura(cost)
 	if hp <= 0:
 		alive = false
+		_clear_pierce()
+		hunter_active = false
+		shield_hp = 0.0
 		shield_visual.visible = false
 		died.emit()
 

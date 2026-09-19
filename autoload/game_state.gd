@@ -406,12 +406,17 @@ func clear_region(hp_ratio: float) -> bool:
 	save_game()
 	return true
 
-func advance_region() -> bool:
+func can_advance_region() -> bool:
 	if not campaign.cleared or campaign.hub or campaign.stage >= 4:
 		return false
 	if campaign.stage == 1 and item_count("letter") == 0:
 		return false
 	if campaign.stage == 2 and campaign.equipment.get("main_weapon") != "dragon":
+		return false
+	return true
+
+func advance_region() -> bool:
+	if not can_advance_region():
 		return false
 	campaign.stage += 1
 	campaign.cleared = false
@@ -452,6 +457,7 @@ func settle_trial() -> bool:
 			if not owned.has(str(id)):
 				table.erase(id)
 	campaign.hp_ratio = 1.0
+	campaign.mp_ratio = 1.0
 	save_game()
 	return true
 
@@ -486,6 +492,7 @@ func begin_next_trial() -> bool:
 	campaign.kills = []
 	campaign.bullets = 6
 	campaign.hp_ratio = 1.0
+	campaign.mp_ratio = 1.0
 	if campaign.equipment.get("main_weapon", "") == "":
 		give_item("knife", 1)
 		campaign.equipment.main_weapon = "knife"

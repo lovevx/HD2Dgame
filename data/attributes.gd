@@ -54,6 +54,8 @@ static func max_mp(a: Dictionary) -> float:
 static func attack(a: Dictionary) -> float:
 	return float(WEAPON_BASE_ATK + a.get(KEY_STR, BASE))
 
-## 移动速度：基准 5.0，敏捷每点小幅修正 +0.05（待校准，P1 不改攻速/缓冲/闪避）。
+## 移动速度：基准 2.6，敏捷每点小幅修正 +0.026（待校准，P1 不改攻速/缓冲/闪避）。
+## 2026-09-19 整体降速：原基准 5.0 要求行走动画跑到约 2.9 倍速，视觉上抽搐；
+## 降到 2.6 后步频约 1.5 倍速，脚底不再打滑。敌人速度已同比例下调（见 enemy.gd PROFILES）。
 static func move_speed(a: Dictionary) -> float:
-	return 5.0 + (a.get(KEY_AGI, BASE) - BASE) * 0.05
+	return 2.6 + (a.get(KEY_AGI, BASE) - BASE) * 0.026

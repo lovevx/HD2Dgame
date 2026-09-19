@@ -31,6 +31,8 @@ const ATTACKS := {
 @export var ambush_range: float = 6.5  # 以身体中心算：正面约离身体 2.8 米就够触发暴起偷袭
 
 var hp: float
+var has_energy := true
+var physical_reduction := 0.0
 var kill_tier: int = 8  # BOSS 级：击杀扣主武器 8 点耐久（策划案 §6.3.1）
 var phase: int = Phase.P1
 var state: int = State.ROAR
@@ -269,7 +271,7 @@ func _face_player(delta: float) -> void:
 
 # ---------------------------------------------------------------- 阶段
 
-func take_damage(amount: float, _knock_dir := Vector3.ZERO, _attacker: Node = null) -> void:
+func take_damage(amount: float, _knock_dir := Vector3.ZERO, _attacker: Node = null, true_damage := 0.0) -> void:
 	if state == State.DEAD:
 		return
 	if _attacker is Node3D and not tendon_broken:
@@ -281,7 +283,7 @@ func take_damage(amount: float, _knock_dir := Vector3.ZERO, _attacker: Node = nu
 				walk_speed *= 0.6
 				charge_speed *= 0.65
 				GameState.push_message("巨虎后腿筋腱受损，移动与扑击速度降低")
-	hp = maxf(0.0, hp - amount)
+	hp = maxf(0.0, hp - maxf(0.0, amount) * (1.0 - clampf(physical_reduction, 0.0, 0.9)) - maxf(0.0, true_damage))
 	_flash()
 	_update_label()
 	# 装死时被打：骗不到人，自己起身继续打

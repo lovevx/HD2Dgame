@@ -5,20 +5,37 @@ signal defeated
 ## 其余 kind 走 PROFILES：野狼、野猪为能量型，肉体傀儡为无能量实验体
 ## —— 青钢影的真实伤害对它无效，白盒阶段靠这个区分来验证苏晓的弱点。
 
-enum Kind { CUSTOM, WOLF, BOAR, GOLEM, DUMMY }
+enum Kind { CUSTOM, WOLF, BOAR, GOLEM, DUMMY, HUMAN }
+
+## 人形敌人（HUMAN）外观查表：按 model key 取肤色/衣着/武器/体型。
+## 数值仍由关卡（campaign.gd）写入，这里只负责白盒模型的样子。
+const HUMAN_PROFILES := {
+	"vagrant": {"name": "持械流民", "color": Color("8a7662"), "trim": Color("574a3c"),
+		"weapon": "dagger", "energy": true, "tall": 1.0},
+	"carlos": {"name": "黑市商人·卡洛斯", "color": Color("4a4a58"), "trim": Color("2b2b34"),
+		"weapon": "dagger", "energy": true, "tall": 1.05},
+	"instructor": {"name": "考核教官", "color": Color("5d6a86"), "trim": Color("3a4255"),
+		"weapon": "sword", "energy": true, "tall": 1.08},
+	"oka": {"name": "布兰登·欧卡", "color": Color("6b3f3a"), "trim": Color("3a2320"),
+		"weapon": "sword", "energy": true, "tall": 1.1},
+	"guard": {"name": "欧卡护卫", "color": Color("6e7262"), "trim": Color("40423a"),
+		"weapon": "spear", "energy": true, "tall": 1.03},
+}
 
 ## color 是主体毛色，trim 是四肢/头部等暗部；energy 决定头顶有没有能量核。
+## 2026-09-19 整体降速：玩家移速 5.0→2.6，敌人速度同比例下调（约 0.52 倍）以保持相对快慢。
+## reach / keep 是距离不是速度，保持不变。
 const PROFILES := {
 	Kind.WOLF: {
-		"name": "野狼", "hp": 34.0, "speed": 3.3, "damage": 10.0, "reach": 2.3,
+		"name": "野狼", "hp": 34.0, "speed": 1.7, "damage": 10.0, "reach": 2.3,
 		"windup": 0.5, "keep": 1.6, "color": Color("8fa0bb"), "trim": Color("59647a"), "energy": true,
 	},
 	Kind.BOAR: {
-		"name": "野猪", "hp": 72.0, "speed": 2.4, "damage": 16.0, "reach": 2.4,
+		"name": "野猪", "hp": 72.0, "speed": 1.25, "damage": 16.0, "reach": 2.4,
 		"windup": 0.75, "keep": 1.6, "color": Color("a9643c"), "trim": Color("67381f"), "energy": true,
 	},
 	Kind.GOLEM: {
-		"name": "肉体傀儡", "hp": 58.0, "speed": 1.8, "damage": 18.0, "reach": 2.4,
+		"name": "肉体傀儡", "hp": 58.0, "speed": 0.95, "damage": 18.0, "reach": 2.4,
 		"windup": 0.85, "keep": 1.7, "color": Color("9a8fb5"), "trim": Color("5d5670"), "energy": false,
 	},
 	## 纯靶子：血量极高且打不坏（见 take_damage），站桩不动、永不攻击。
@@ -29,9 +46,12 @@ const PROFILES := {
 }
 
 @export var max_hp: float = 48.0
-@export var move_speed: float = 2.3
+@export_range(0.0, 0.9, 0.05) var physical_reduction: float = 0.0
+@export var move_speed: float = 1.2
 @export var ranged: bool = false
 @export var kind: Kind = Kind.CUSTOM
+## 人形敌人（Kind.HUMAN）的外观档位：见 HUMAN_PROFILES。空串 = 保持默认近战守卫。
+@export var model: String = ""
 
 var has_energy: bool = true
 var hp_: float
@@ -54,6 +74,8 @@ var keep_distance := 1.6
 var _flash_timer := 0.0
 var stun_timer: float = 0.0          # 拼刀硬直：被弹开期间不能行动
 var clash_immune_timer: float = 0.0  # 拼刀后短暂免疫再次判定，与玩家冷却配合防双判
+var _arm_weapon: Node3D              # 人形敌人右臂（含武器），前摇举刀/出手挥击靠它
+var _strike_timer := 0.0             # 挥击动作计时：出手后 0.22 秒内完成劈下-回摆
 const CLASH_WINDOW := 0.3   # 与 player.gd 拼刀窗口一致：双方命中时刻相差 ≤ 0.3 秒视为重叠
 const CLASH_STUN := 0.8     # 拼刀硬直时长
 const CLASH_REPEL := 8.0    # 拼刀弹开初速度
@@ -87,6 +109,13 @@ func _ready() -> void:
 		has_energy = profile["energy"]
 		body_color = profile["color"]
 		trim_color = profile["trim"]
+	# 人形敌人：数值由关卡写入，这里只接管名字/颜色/能量，按 model 搭白盒模型。
+	var human: Dictionary = HUMAN_PROFILES.get(model, {}) if kind == Kind.HUMAN else {}
+	if not human.is_empty():
+		enemy_name = human["name"]
+		body_color = human["color"]
+		trim_color = human["trim"]
+		has_energy = human["energy"]
 	hp_ = max_hp
 	player = get_tree().get_first_node_in_group("player")
 	material = StandardMaterial3D.new()
@@ -158,6 +187,9 @@ func _build_body(color: Color, trim: Color) -> void:
 			_build_golem(color, trim)
 		Kind.DUMMY:
 			_build_dummy(color, trim)
+		Kind.HUMAN:
+			var human: Dictionary = HUMAN_PROFILES.get(model, {})
+			_build_human(color, trim, str(human.get("weapon", "dagger")), float(human.get("tall", 1.0)))
 
 func _build_wolf(color: Color, trim: Color) -> void:
 	var fur := _material(color, 0.8)
@@ -216,6 +248,93 @@ func _build_dummy(color: Color, trim: Color) -> void:
 	_part("ArmR", Vector3(0.75, 1.05, 0), Vector3(1.1, 0.14, 0.4), wood)
 	_part("Head", Vector3(0, 1.62, 0), Vector3(0.44, 0.44, 0.44), wood)
 	_part("Bullseye", Vector3(0, 0.95, 0.26), Vector3(0.2, 0.36, 0.06), red)
+
+## 人形敌人（流民/卡洛斯/教官/欧卡/护卫）：四肢+躯干+头的方块拼装。
+## 右手持武器，_arm_weapon 是右手引用——前摇举刀、出手挥击都靠它旋转。
+func _build_human(color: Color, trim: Color, weapon: String, tall: float) -> void:
+	var cloth := _material(color, 0.9)
+	var dark := _material(trim, 0.95)
+	var skin := _material(Color("e0b48c"), 0.65)
+	# 腿
+	for sx in [-1.0, 1.0]:
+		_part("Leg", Vector3(sx * 0.2, 0.36 * tall, 0), Vector3(0.2, 0.72 * tall, 0.22), dark)
+	# 躯干
+	_part("Hips", Vector3(0, 0.82 * tall, 0), Vector3(0.56, 0.3, 0.34), dark)
+	_part("Torso", Vector3(0, 1.18 * tall, 0), Vector3(0.62, 0.66, 0.4), cloth)
+	_part("Chest", Vector3(0, 1.5 * tall, -0.04), Vector3(0.66, 0.3, 0.44), cloth)
+	# 头 + 兜帽/头发（暗部）
+	_part("Head", Vector3(0, 1.84 * tall, 0.02), Vector3(0.4, 0.38, 0.4), skin)
+	_part("Hood", Vector3(0, 1.98 * tall, 0), Vector3(0.46, 0.2, 0.46), dark)
+	# 左手（垂在身侧）
+	_part("ArmL", Vector3(-0.42, 1.34 * tall, 0), Vector3(0.18, 0.56 * tall, 0.2), cloth)
+	# 右手：单独节点便于旋转，武器挂在它下面
+	_arm_weapon = Node3D.new()
+	_arm_weapon.name = "ArmWeapon"
+	_arm_weapon.position = Vector3(0.42, 1.34 * tall, 0)
+	body_root.add_child(_arm_weapon)
+	var hand := MeshInstance3D.new()
+	var arm_mesh := BoxMesh.new()
+	arm_mesh.size = Vector3(0.18, 0.56 * tall, 0.2)
+	hand.mesh = arm_mesh
+	hand.material_override = cloth
+	hand.position = Vector3(0, -0.28 * tall, 0)
+	_arm_weapon.add_child(hand)
+	_build_human_weapon(weapon, tall)
+	# 初始举刀姿态：右手略抬，接近警戒位
+	_arm_weapon.rotation_degrees.x = 18.0
+
+## 右手上的武器：匕首 / 单手剑 / 长枪，挂在高举的前臂下。
+func _build_human_weapon(weapon: String, tall: float) -> void:
+	var steel := _material(Color("cdd6de"), 0.35)
+	var grip := _material(Color("6a4a30"), 0.8)
+	var blade: Vector3
+	var grip_len: float
+	match weapon:
+		"dagger":
+			blade = Vector3(0.1, 0.5, 0.08)
+			grip_len = 0.16
+		"spear":
+			blade = Vector3(0.09, 1.5, 0.09)
+			grip_len = 0.18
+		_:
+			blade = Vector3(0.12, 0.9, 0.1)
+			grip_len = 0.18
+	var blade_mesh := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = blade * Vector3(1, tall, 1)
+	blade_mesh.mesh = bm
+	blade_mesh.material_override = steel
+	blade_mesh.position = Vector3(0, -0.42 * tall - blade.y * tall * 0.5, 0)
+	_arm_weapon.add_child(blade_mesh)
+	var grip_mesh := MeshInstance3D.new()
+	var gm := BoxMesh.new()
+	gm.size = Vector3(0.09, grip_len * tall, 0.09)
+	grip_mesh.mesh = gm
+	grip_mesh.material_override = grip
+	grip_mesh.position = Vector3(0, -0.3 * tall, 0)
+	_arm_weapon.add_child(grip_mesh)
+
+## 前摇举刀：右手从警戒位抬高到头顶，同时身体微微后仰蓄力。
+## 出手挥击：右手快速劈下再回警戒位——攻击动作跟红圈一起表达，不再只有红圈。
+func _animate_arm(delta: float) -> void:
+	if _arm_weapon == null:
+		return
+	if windup >= 0.0:
+		var t := clampf(1.0 - windup / maxf(0.01, attack_windup), 0.0, 1.0)
+		_arm_weapon.rotation_degrees.x = lerpf(18.0, -115.0, ease(t, 0.55))
+		body_root.rotation_degrees.x = lerpf(body_root.rotation_degrees.x, -4.0, minf(1.0, delta * 8.0))
+	elif _strike_timer > 0.0:
+		_strike_timer -= delta
+		var phase := 1.0 - _strike_timer / 0.22
+		if phase < 0.5:
+			# 前 0.11 秒：从头顶快速劈下到身前
+			_arm_weapon.rotation_degrees.x = lerpf(-115.0, 55.0, phase * 2.0)
+		else:
+			# 后 0.11 秒：回摆到警戒位
+			_arm_weapon.rotation_degrees.x = lerpf(55.0, 18.0, (phase - 0.5) * 2.0)
+		body_root.rotation_degrees.x = lerpf(body_root.rotation_degrees.x, 0.0, minf(1.0, delta * 10.0))
+	else:
+		body_root.rotation_degrees.x = lerpf(body_root.rotation_degrees.x, 0.0, minf(1.0, delta * 6.0))
 
 func _material(color: Color, roughness: float) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
@@ -313,6 +432,7 @@ func _physics_process(delta: float) -> void:
 		velocity = knock
 		move_and_slide()
 		position.y = 0
+		_animate_arm(delta)
 		return
 	knock = knock.move_toward(Vector3.ZERO, 20 * delta)
 	if windup >= 0:
@@ -323,6 +443,7 @@ func _physics_process(delta: float) -> void:
 			var clashed := _resolve_strike()
 			if not clashed and player.global_position.distance_to(target_point) <= 1.65:
 				player.take_damage(attack_damage)
+			_strike_timer = 0.22  # 人形敌人：挥击动作（劈下→回摆）只在出手后播放
 			marker.visible = false
 			windup = -1
 			attack_cd = 1.4
@@ -338,6 +459,7 @@ func _physics_process(delta: float) -> void:
 			marker.global_position = target_point + Vector3.UP * 0.045
 			marker.visible = true
 	_face_target(delta)
+	_animate_arm(delta)
 	move_and_slide()
 	position.y = 0
 
@@ -351,16 +473,17 @@ func _face_target(delta: float) -> void:
 		return
 	rotation.y = lerp_angle(rotation.y, atan2(-offset.x, -offset.z), minf(1.0, delta * 6.0))
 
-func take_damage(amount: float, knock_dir := Vector3.ZERO, _attacker: Node = null) -> void:
+func take_damage(amount: float, knock_dir := Vector3.ZERO, _attacker: Node = null, true_damage := 0.0) -> void:
 	if dead:
 		return
+	var final := maxf(0.0, amount) * (1.0 - clampf(physical_reduction, 0.0, 0.9)) + maxf(0.0, true_damage)
 	if kind == Kind.DUMMY:
 		# 靶子打不坏：扣血只是留痕，最低保住 1 点，也不吃击退。
-		hp_ = maxf(1, hp_ - amount)
+		hp_ = maxf(1, hp_ - final)
 		_update_health()
 		_flash()
 		return
-	hp_ = maxf(0, hp_ - amount)
+	hp_ = maxf(0, hp_ - final)
 	knock = knock_dir
 	_update_health()
 	_flash()
