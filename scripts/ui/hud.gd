@@ -19,6 +19,8 @@ var action_button: Button
 var message_tween: Tween
 var key_guide: Control
 var prompt: Label
+var story_banner: PanelContainer  # 进关剧情条：贴底横幅、小字、按任意操作自动收起
+var story_body: Label
 var menu: Control
 var boss_box: VBoxContainer
 var boss_name: Label
@@ -64,14 +66,31 @@ func _ready() -> void:
 	stats = _label(box, "", 18)
 	objective = _label(root, "战斗试炼 / 等待开始", 22, Color("ebd6a2"))
 	objective.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	objective.position = Vector2(1450, 30)
+	objective.offset_left = -452
+	objective.offset_right = -32
+	objective.offset_top = 28
+	objective.offset_bottom = 130
 	objective.custom_minimum_size.x = 420
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var hint := _label(root, KeyBindings.HINT, 20, Color("b2c5d5"))
-	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	hint.position = Vector2(32, 1022)
+	var objective_style := StyleBoxFlat.new()
+	objective_style.bg_color = Color(0.025, 0.05, 0.08, 0.76)
+	objective_style.border_color = Color(0.35, 0.55, 0.68, 0.55)
+	objective_style.set_border_width_all(1)
+	objective_style.set_content_margin_all(12)
+	objective.add_theme_stylebox_override("normal", objective_style)
+	var hint := _label(root, KeyBindings.HINT, 18, Color("b2c5d5"))
+	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	hint.offset_left = 32
+	hint.offset_right = -32
+	hint.offset_top = -45
+	hint.offset_bottom = -12
 	message = _label(root, "", 24, Color("7cd9ff"))
-	message.position = Vector2(460, 950)
+	message.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	message.offset_left = 260
+	message.offset_right = -260
+	message.offset_top = -142
+	message.offset_bottom = -102
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# 交互提示：贴底居中、小字号，只在进圈时出现，离开或按下操作就消失
 	prompt = _label(root, "", 22, Color("ffe58a"))
 	prompt.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -80,6 +99,7 @@ func _ready() -> void:
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	prompt.hide()
+	_build_story_banner(root)
 	GameState.message.connect(_on_message)
 	overlay = ColorRect.new()
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -107,7 +127,7 @@ func _ready() -> void:
 	_build_boss_bar(root)
 	_build_cursor(root)
 	if campaign_controller:
-		hint.text = "WASD 移动 · 左键连击 · Shift 闪避 · F 燧发枪 · 1 陷阱 · 2 药剂 · V 交互 · C 角色 · Esc 菜单"
+		hint.text = KeyBindings.HINT
 		for control in [overlay, menu, char_panel, key_guide]:
 			control.visibility_changed.connect(campaign_controller.sync_pause)
 
@@ -118,10 +138,12 @@ func _process(_delta: float) -> void:
 	mp_bar.max_value = player.max_mp
 	stats.text = "HP %d / %d    MP %d / %d\n药剂 %d    炸弹 %d    剃 %s    连段 %d" % [player.hp, player.max_hp, player.mp, player.max_mp, player.potions, player.bombs, _cd_text(player.dodge_cd), maxi(0, player.combo_stage + 1)]
 	if campaign_controller:
-		stats.text = "生命 %.0f%%    MP %.0f / %.0f\n药剂 %d · 陷阱 %d · 弹药 %d · 闪避 %s\n世界之源 %.1f%% · 噬灵者 %d/100 · 乐园币 %d" % [player.hp / player.max_hp * 100, player.mp, player.max_mp, player.potions, player.bombs, player.bullets, _cd_text(player.dodge_cd), GameState.campaign.source, GameState.campaign.world_mana, GameState.coins]
-	# 按下操作键就自动收起说明，避免长时间挡住视野
+		stats.text = "生命 %.0f%%    MP %.0f / %.0f\n药剂 %d · 陷阱 %d · 弹药 %d · 闪避 %s\n猎魔 %s · 傲歌 %s\n刀芒 %s · 环断 %s · 影刺 %s\n世界之源 %.1f%% · 噬灵者 %d/100 · 乐园币 %d" % [player.hp / player.max_hp * 100, player.mp, player.max_mp, player.potions, player.bombs, player.bullets, _cd_text(player.dodge_cd), "开启" if player.hunter_active else "关闭", "护盾 %.0f" % player.shield_hp if player.shield_hp > 0 else _cd_text(player.shield_cd), _cd_text(player.wave_cd), _cd_text(player.ring_cd), "就绪" if player.pierce_timer > 0 and player.shadow_cd <= 0 else ("待前刺" if player.shadow_cd <= 0 else _cd_text(player.shadow_cd)), GameState.campaign.source, GameState.campaign.world_mana, GameState.coins]
+	# 按下操作键就自动收起说明与剧情条，避免长时间挡住视野
 	if key_guide.visible and _player_action_pressed():
 		key_guide.hide()
+	if story_banner.visible and _player_action_pressed():
+		story_banner.hide()
 	_sync_mouse_mode()
 
 ## 战斗中用游戏内光标，隐藏系统光标；结算面板 / Esc 菜单 / C 角色面板打开时交还系统光标。
@@ -183,9 +205,40 @@ func show_prompt(text: String, locked := false) -> void:
 func hide_prompt() -> void:
 	prompt.hide()
 
+## 进关剧情条：底部横幅、小字多行，不挡视野；按任意操作键自动收起。
+## 代替旧的全屏剧情弹窗——弹窗会冻结玩家且遮住战斗画面。
+func _build_story_banner(root: Control) -> void:
+	story_banner = PanelContainer.new()
+	story_banner.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	story_banner.offset_top = -244
+	story_banner.offset_bottom = -146
+	story_banner.offset_left = 32
+	story_banner.offset_right = -32
+	story_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(0.03, 0.06, 0.1, 0.62)
+	st.border_color = Color(0.35, 0.55, 0.68, 0.35)
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(10)
+	st.set_content_margin_all(16)
+	story_banner.add_theme_stylebox_override("panel", st)
+	story_banner.hide()
+	root.add_child(story_banner)
+	story_body = _label(story_banner, "", 17, Color("dbe7ee"))
+	story_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	story_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	story_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+func show_story(title: String, text: String) -> void:
+	story_body.text = "[%s]\n%s" % [title, text]
+	story_banner.show()
+
+func hide_story() -> void:
+	story_banner.hide()
+
 ## 是否按下了任一操作键（自动收起按键说明用）。
 func _player_action_pressed() -> bool:
-	for action in ["move_left", "move_right", "move_up", "move_down", "attack", "dodge", "interact", "open_menu", "bomb", "potion"]:
+	for action in ["move_left", "move_right", "move_up", "move_down", "attack", "dodge", "interact", "open_menu", "bomb", "potion", "hunter_toggle", "aoge", "huanduan", "sword_wave", "shadow_stab"]:
 		if InputMap.has_action(action) and Input.is_action_just_pressed(action):
 			return true
 	return false
@@ -210,8 +263,9 @@ func _build_key_guide(root: Control) -> void:
 	_label(page, "按键映射 / 苏晓", 30, Color("a5dfff"))
 	if campaign_controller:
 		_label(page, "WASD 移动 · 鼠标取景 · 左键三连击 · Shift 闪避", 23)
-		_label(page, "F 燧发枪（需获得，有限弹药） · 1 火药陷阱 · 2 饮用药剂", 23)
-		_label(page, "V 遭遇 / 拾取 / 传送门 / 港口服务 · C 装备背包 · Esc 菜单", 23)
+		_label(page, "右键 燧发枪（需装备） · 1 火药陷阱 · 2 饮用药剂", 23)
+		_label(page, "Q 猎魔 · E 傲歌 · R 刀芒 · F 环断 · T 影刺（第二段前刺命中后）", 23)
+		_label(page, "V 遭遇 / 拾取 / 港口服务 · C 装备背包 · Esc 菜单", 23)
 		_label(page, "拼刀：近战有效帧重叠自动触发；饮用药剂时受击会打断。", 21)
 		_label(page, "F1 关闭说明。科尔波山保留原外围三波和决战15秒准备。", 20)
 		key_guide.hide()
@@ -275,7 +329,7 @@ func _build_menu(root: Control) -> void:
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 12)
 	card.add_child(page)
-	_label(page, "面板 / 菜单", 30, Color("a5dfff"))
+	_label(page, "[轮回乐园] · 行动菜单", 30, Color("a5dfff"))
 	var back := Button.new()
 	back.text = "保存检查点并返回主菜单" if campaign_controller else "返回选关"
 	back.custom_minimum_size = Vector2(420, 58)
@@ -303,7 +357,7 @@ func _build_menu(root: Control) -> void:
 		harbor_button.add_theme_font_size_override("font_size", 24)
 		harbor_button.pressed.connect(func(): GameState.change_scene("res://scenes/world/harbor.tscn"))
 		page.add_child(harbor_button)
-	_label(page, "Esc 关闭菜单 · 进度自动存档到本机", 17, Color("7f949b"))
+	_label(page, "Esc 关闭菜单 · 检查点自动保存", 17, Color("7f949b"))
 	menu.hide()
 
 ## C 键角色面板：左右两大块 —— 左侧为 DNF 参考图排版（穿戴栏 + 8×8 背包，
@@ -413,6 +467,7 @@ func _build_char_panel(root: Control) -> void:
 				GameState.unequip_item(_selected_slot)
 				_selected_slot = ""
 				_selected_item = ""
+				campaign_controller._refresh_objective()
 			else:
 				campaign_controller.use_item(_selected_item)
 			_refresh_char_panel())

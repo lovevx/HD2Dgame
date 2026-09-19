@@ -8,7 +8,7 @@ const PLANNED := 2   # 键位已定，功能随后续任务接入
 const DEFERRED := 3  # P1 明确后置，暂不制作
 
 ## 底部提示条：只列当前真正能按出来的键。换键后同步这一行。
-const HINT := "WASD 移动 · 左键 朝鼠标连击 · 右键 副手武器 · Shift 剃 · 数字 1 炸弹 · 数字 2 药剂 · V 交互 · C 角色面板 · F1 按键说明"
+const HINT := "WASD 移动 · 左键 三连 · 右键 枪 · Q 猎魔 · E 护盾 · R 刀芒 · F 环断 · T 影刺 · Shift 剃 · 1 陷阱 · 2 药剂 · V 交互 · C 背包"
 
 const GROUPS := [
 	{
@@ -29,16 +29,16 @@ const GROUPS := [
 	{
 		"title": "刀术",
 		"entries": [
-			{"keys": "R", "action": "刀芒：中距离远程刀气，只打物理伤害", "status": PLANNED},
-			{"keys": "F", "action": "环断：原地环形刀芒，清包围的复数敌人，耗蓝更高", "status": PLANNED},
-			{"keys": "T", "action": "影刺：必须先刺击命中敌人，能量从敌人体内爆发", "status": PLANNED},
+			{"keys": "R", "action": "刀芒：中距离远程刀气，只打物理伤害", "status": READY},
+			{"keys": "F", "action": "环断：原地环形刀芒，清包围的复数敌人，耗蓝更高", "status": READY},
+			{"keys": "T", "action": "影刺：第二段前刺命中后，对该目标引爆能量", "status": READY},
 		],
 	},
 	{
 		"title": "青钢影（能量）",
 		"entries": [
-			{"keys": "Q", "action": "猎魔：开启 / 关闭，燃烧敌人能量打真实伤害", "status": PLANNED},
-			{"keys": "E", "action": "傲歌：生成 / 撤销能量护盾，有吸收上限与时限", "status": PLANNED},
+			{"keys": "Q", "action": "猎魔：开启 / 关闭，对能量敌人附加穿透物理减免的伤害", "status": READY},
+			{"keys": "E", "action": "傲歌：生成 / 撤销能量护盾，有吸收上限与时限", "status": READY},
 		],
 	},
 	{

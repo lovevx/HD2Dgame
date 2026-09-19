@@ -161,14 +161,18 @@ func run() -> void:
 			await capture("inventory")
 		if stage == 1:
 			check(not gs.advance_region(), "引荐信推进门槛")
+			check(scene.world.get_node("ExitPortal")._locked(), "缺引荐信时出口保持锁定")
 			use_inventory("carlos_chest")
 			check(gs.item_count("letter") == 1 and gs.item_count("carlos_chest") == 0, "原背包按钮开箱取得引荐信")
+			check(not scene.world.get_node("ExitPortal")._locked(), "取得引荐信后出口解锁")
 			check(not gs.open_chest("carlos_chest"), "宝箱不能重复开启")
 		if stage == 2:
 			check(not gs.advance_region(), "斩龙闪装备门槛")
+			check(scene.world.get_node("ExitPortal")._locked(), "未装备斩龙闪时出口保持锁定")
 			use_inventory("dragon")
 			# 新攻击模型：区间中点 10.5 × 力量倍率 1.10（str 6）× 刀术训练 1.0 = 11.55
 			check(gs.campaign.equipment.main_weapon == "dragon" and is_equal_approx(scene.player.attack_damage, 11.55), "原背包装备按钮即时提高攻击")
+			check(not scene.world.get_node("ExitPortal")._locked(), "装备斩龙闪后出口解锁")
 		if stage == 3:
 			use_inventory("oka_chest")
 			use_inventory("pendant")
@@ -185,7 +189,12 @@ func run() -> void:
 	check(is_equal_approx(float(gs.campaign.source), 8.9), "世界之源8.9%")
 	check(gs.campaign.permanent_mana == 31, "噬灵者5+10+1+15 =31")
 	check(gs.item_count("tiger_tooth") == 1 and gs.item_count("tiger_chest") == 1, "虎齿与绿宝箱入库")
-	check(gs.settle_trial(), "阶段结算返回乐园")
+	if scene.sheet.visible: scene.close_sheet()
+	scene.primary_action()
+	check(not gs.campaign.hub and scene.state == "cleared", "猎虎结算只能经返回门触发")
+	scene.world.get_node("ReturnPortal").enter()
+	check(gs.campaign.hub and gs.campaign.settled, "原返回门触发阶段结算")
+	await create_timer(0.85).timeout
 	var coins: int = gs.coins
 	check(not gs.settle_trial() and gs.coins == coins, "结算幂等")
 	check(gs.attr_points == 4 and gs.campaign.level == 2, "首轮噩梦双倍，等级仅权限")

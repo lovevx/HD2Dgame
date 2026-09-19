@@ -3,6 +3,7 @@ extends Node3D
 const Data := preload("res://data/campaign.gd")
 const HudScene := preload("res://scripts/ui/hud.tscn")
 const EnemyScene := preload("res://scripts/combat/enemy.tscn")
+const EnemyScript := preload("res://scripts/combat/enemy.gd")
 const ARENA := "res://scenes/main/main.tscn"
 const HARBOR := "res://scenes/world/harbor.tscn"
 const OUTER := "res://scenes/world/colpo_forest_outer.tscn"
@@ -48,10 +49,19 @@ func _ready() -> void:
 	if location == "practice":
 		world._spawn_dummy()
 		player.hp = player.max_hp
+		player.mp = player.max_mp
 		player.potions = 2
 		player.bombs = 3
 	_refresh_objective()
+	if state == "prepare" and location not in ["practice", "hub"]:
+		_show_story()
 	sync_pause()
+
+## 正式关卡开场剧情：进关在底部显示剧情条（小字不挡视野），按任意操作自动收起。
+## 战斗仍由 V 开始，与各区域原有流程一致。
+func _show_story() -> void:
+	var stage: Dictionary = Data.STAGES[GameState.campaign.stage]
+	hud.show_story(stage.name, str(stage.get("story", stage.brief)))
 
 func _build_world() -> void:
 	var path: String = {"hub": HARBOR, "outer": OUTER, "clearing": CLEARING}.get(location, ARENA)
@@ -66,9 +76,10 @@ func _build_world() -> void:
 	elif location == "clearing":
 		director = world.get_node("BossDirector")
 		director.campaign_managed = true
-	_wire_interactions()
 	add_child(world)
+	_wire_interactions()
 	player.hp = player.max_hp * float(GameState.campaign.hp_ratio)
+	player.mp = player.max_mp * clampf(float(GameState.campaign.mp_ratio), 0.0, 1.0)
 	player.potions = GameState.item_count("potion")
 	player.bombs = GameState.item_count("trap")
 	player.bullets = GameState.campaign.bullets
@@ -89,12 +100,18 @@ func _wire_interactions() -> void:
 		portal.locked_text = "先清除外围三波威胁"
 	elif location == "clearing":
 		var portal = world.get_node("ReturnPortal")
-		portal.campaign_action = primary_action
+		portal.campaign_action = advance_next
 		portal.campaign_can_enter = func(): return state == "cleared"
 		portal.prompt_text = "阶段结算 · 返回灰潮港"
 		portal.locked_text = "先击杀巨虎并领取战利品"
 		world.get_node("AreaLabel_007").text = "结算 · 返回灰潮港"
 		_set_return_gate_visible(GameState.campaign.cleared)
+	elif location == "arena":
+		var portal = world.get_node("ExitPortal")
+		portal.campaign_action = advance_next
+		portal.campaign_can_enter = func(): return state == "cleared" and GameState.can_advance_region()
+		portal.prompt_text = "进入下一地区"
+		portal.locked_text = "清场领奖后，完成当前地区目标"
 	elif location == "hub":
 		world.get_node("DeparturePortal").campaign_action = depart
 		world.get_node("DeparturePortal").prompt_text = "接受下一次阶段试炼"
@@ -148,12 +165,13 @@ Esc 返回灰潮港"
 		title = "科尔波山 · 原始丛林外围"
 		text = "清除三波威胁后，经北侧传送门进入决战空地"
 	elif state == "cleared":
-		text = "战利品已保存 · C开箱/换装
-V " + ("阶段结算 / 回灰潮港" if GameState.campaign.stage == 4 else "前往下一地区")
+		text = "战利品已保存 · C 开箱/换装\n前往北侧出口传送门" + (" · 阶段结算 / 回灰潮港" if GameState.campaign.stage == 4 else " · 进入下一地区")
+		if location == "arena" and not GameState.can_advance_region():
+			text = "打开 C 背包中的卡洛斯宝箱，取得引荐信后前往北侧出口" if GameState.campaign.stage == 1 else "在 C 背包装备斩龙闪后前往北侧出口"
 	hud.configure(title, text)
 	if state == "prepare": hud.show_prompt("V 开始15秒猎虎准备 · 1预埋陷阱" if location == "clearing" else "V 开始遭遇")
 	elif state == "loot": hud.show_prompt("靠近战利品 · V领取 · C查看背包")
-	elif state == "cleared": hud.show_prompt("C 开箱/换装 · V继续")
+	elif state == "cleared": hud.show_prompt("C 开箱/换装 · 走向北侧传送门")
 	else: hud.hide_prompt()
 
 func primary_action() -> void:
@@ -162,13 +180,18 @@ func primary_action() -> void:
 		"prepare": start_encounter()
 		"loot": claim_loot()
 		"cleared":
-			_store_supplies()
-			if GameState.campaign.stage == 4:
-				if GameState.settle_trial(): reload_scene()
-			elif GameState.advance_region(): reload_scene()
-			else: GameState.push_message("先在 C 背包中开启卡洛斯宝箱取得引荐信，或装备斩龙闪。")
+			GameState.push_message("前往北侧出口传送门" + ("结算并返回灰潮港" if location == "clearing" else "进入下一地区"))
 		"hub": depart()
 		"dead": reload_scene()
+
+## 清场结算后推进：arena 由出口传送门走进触发；科尔波山决战由返回门触发。
+func advance_next() -> void:
+	if state != "cleared": return
+	_store_supplies()
+	if GameState.campaign.stage == 4:
+		if GameState.settle_trial(): reload_scene()
+	elif GameState.advance_region(): reload_scene()
+	else: GameState.push_message("先在 C 背包中开启卡洛斯宝箱取得引荐信，或装备斩龙闪。")
 
 func start_encounter() -> void:
 	if state != "prepare": return
@@ -181,18 +204,20 @@ func start_encounter() -> void:
 		director.set_process(true)
 		director._begin_prep()
 	else:
-			state = "combat"
-			var profiles: Array = Data.STAGES[GameState.campaign.stage].enemies
-			for i in profiles.size():
-				var enemy = EnemyScene.instantiate()
-				enemy.enemy_name = profiles[i][0]
-				enemy.max_hp = profiles[i][1]
-				enemy.attack_damage = profiles[i][2]
-				enemy.kill_tier = 3 if profiles[i][1] >= 170 else 1  # 精英（欧卡）击杀扣 3 点耐
-				enemy.position = Vector3(-3 + i * 6, 0, -5)
-				add_child(enemy)
-				enemy.defeated.connect(_on_hunt.bind("%d_%d" % [GameState.campaign.stage, i]))
-				enemies.append(enemy)
+		state = "combat"
+		var profiles: Array = Data.STAGES[GameState.campaign.stage].enemies
+		for i in profiles.size():
+			var enemy = EnemyScene.instantiate()
+			enemy.enemy_name = profiles[i][0]
+			enemy.max_hp = profiles[i][1]
+			enemy.attack_damage = profiles[i][2]
+			enemy.kill_tier = 3 if profiles[i][1] >= 170 else 1  # 精英（欧卡）击杀扣 3 点耐
+			enemy.kind = EnemyScript.Kind.HUMAN  # 人形白盒模型 + 举刀/挥击动作
+			enemy.model = str(profiles[i][3]) if profiles[i].size() > 3 else ""
+			enemy.position = Vector3(-3 + i * 6, 0, -5)
+			add_child(enemy)
+			enemy.defeated.connect(_on_hunt.bind("%d_%d" % [GameState.campaign.stage, i]))
+			enemies.append(enemy)
 
 func _on_boss_spawned(target: Node3D) -> void:
 	boss = target
@@ -217,7 +242,9 @@ func _on_hunt(id: String) -> void:
 	pending_hunts.append(id)
 	var total := int(GameState.campaign.world_mana)
 	for hunted in pending_hunts: total = mini(100, total + int(Data.HUNTS.get(hunted, 0)))
+	var before: float = player.max_mp
 	player.max_mp = GameState.effective_attributes().int * 10 + GameState.campaign.permanent_mana + total - GameState.campaign.world_mana
+	player.mp = minf(player.max_mp, player.mp + player.max_mp - before)
 	GameState.push_message("目标已击败 · 噬灵者法力 +%d（领取战利品后保存）" % int(Data.HUNTS.get(id, 0)))
 
 func claim_loot() -> void:
@@ -279,6 +306,7 @@ func use_item(id: String) -> void:
 	else: GameState.equip_item(id)
 	player._refresh_derived_stats()
 	hud._refresh_char_panel()
+	_refresh_objective()
 
 func _use_item(id: String) -> void:
 	use_item(id)
@@ -462,6 +490,7 @@ func _copy_supplies() -> void:
 	GameState.campaign.bag.trap = player.bombs
 	GameState.campaign.bullets = player.bullets
 	GameState.campaign.hp_ratio = player.hp / player.max_hp
+	GameState.campaign.mp_ratio = player.mp / player.max_mp
 
 func _store_supplies() -> void:
 	_copy_supplies()

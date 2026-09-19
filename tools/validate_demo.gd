@@ -46,7 +46,7 @@ func run_checks() -> void:
 	player.take_damage(30)
 	check(player.hp == 100, "invulnerability prevents damage")
 	player.reset()
-	check(not player.dodging and player.attack_cd == 0 and player.hp == 100 and player.mp == 100, "reset clears action state")
+	check(not player.dodging and player.attack_cd == 0 and player.hp == player.max_hp and player.mp == player.max_mp, "reset clears action state")
 	# 倒下 → 重开练习：玩家重生、木桩还在
 	scene.start_practice()
 	player.take_damage(999)
