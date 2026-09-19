@@ -1,5 +1,7 @@
 extends SceneTree
-## 把四向格挡接进玩家精灵：左右沿用现有侧面格挡图，上下换成各自方向的格挡图。
+## [已废弃] 八方向改造后 player_frames.tres 由 tools/package_8dir.py 统一生成，
+## 本脚本会把 8-clip 的 .tres 覆盖成四方向旧结构，请勿再运行。留档参考。
+## 原用途：把四向格挡接进玩家精灵：左右沿用现有侧面格挡图，上下换成各自方向的格挡图。
 ## 重新生成 guard_down.png / guard_up.png（768×320，4×2 帧）后重跑本脚本即可。
 const FRAMES_PATH := "res://assets/characters/black_swordsman/player_frames.tres"
 const SHEETS := {

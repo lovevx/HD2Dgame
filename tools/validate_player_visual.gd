@@ -21,22 +21,49 @@ func _run() -> void:
 	# main.gd 试炼开场面板会禁用玩家物理；本验证只测视觉层，直接启用物理绕过开场门。
 	player.set_physics_process(true)
 	var visual = player.get_node("pivot/CharacterSprite")
-	for direction in ["up", "down", "left", "right"]:
-		var action = "move_" + direction
+	var dirs := ["up", "up_right", "right", "down_right", "down", "down_left", "left", "up_left"]
+	var move_axes := {
+		"up": ["move_up"], "up_right": ["move_up", "move_right"], "right": ["move_right"],
+		"down_right": ["move_down", "move_right"], "down": ["move_down"],
+		"down_left": ["move_down", "move_left"], "left": ["move_left"],
+		"up_left": ["move_up", "move_left"],
+	}
+	var mirrored := ["left", "up_left", "down_left"]
+	for direction in dirs:
 		var before: Vector3 = player.position
-		Input.action_press(action)
+		for action in move_axes[direction]:
+			Input.action_press(action)
 		await create_timer(0.25).timeout
 		check(visual.animation == "walk_" + direction, "Move input selects " + direction)
 		check(player.position.distance_to(before) > 0.1, "Player actually moves " + direction)
-		check(visual.flip_h == (direction == "left"), "Walk mirror " + direction)
-		Input.action_release(action)
+		check(visual.flip_h == (direction in mirrored), "Walk mirror " + direction)
+		var observed_frames := {}
+		for _sample in 4:
+			observed_frames[visual.frame] = true
+			await create_timer(0.1).timeout
+		check(observed_frames.size() > 1, "Walk animation advances frames " + direction)
+		# 步频必须跟随实际移速（脚不打滑）：speed_scale = 移速 × CLIP_LEN / 步幅，并受上下限夹取
+		var ground_speed := Vector2(player.velocity.x, player.velocity.z).length()
+		var expected_scale: float = clampf(
+			ground_speed * visual.CLIP_LEN / visual.WALK_STRIDE_PER_CYCLE,
+			visual.WALK_SPEED_SCALE.x, visual.WALK_SPEED_SCALE.y)
+		check(absf(visual.speed_scale - expected_scale) < 0.01,
+			"Walk cycle syncs to ground speed " + direction)
+		# 45° 斜向图集偏大，必须按补偿系数缩小，否则斜向移动时角色会突然变大
+		var expect_scale: float = (
+			float(visual.DIAGONAL_SCALE.get("walk", 1.0))
+			if direction in visual.DIAGONAL_DIRS else 1.0)
+		check(absf(visual.pixel_size - visual.BASE_PIXEL_SIZE * expect_scale) < 0.0001,
+			"Walk pixel_size compensates diagonal " + direction)
+		for action in move_axes[direction]:
+			Input.action_release(action)
 		await create_timer(0.05).timeout
 		check(visual.animation == "idle_" + direction, "Stopping keeps facing " + direction)
 		_buffer_attack_toward(player, direction)
 		await physics_frame
 		await process_frame
 		check(visual.animation == "attack_" + direction, "Attack selects " + direction)
-		check(visual.flip_h == (direction == "right"), "Attack mirror " + direction)
+		check(visual.flip_h == (direction in mirrored), "Attack mirror " + direction)
 		check(player.attack_cd > 0.0, "Attack gameplay still triggers")
 		if DisplayServer.get_name() != "headless" and direction in ["up", "down"]:
 			await create_timer(0.12).timeout
@@ -58,7 +85,7 @@ func _run() -> void:
 	await create_timer(0.05).timeout
 	check(player.dodging, "Dash triggers")
 	check(visual.animation == "dodge_right", "Dash follows movement direction")
-	check(visual.flip_h, "Right dash uses the mirrored clip")
+	check(not visual.flip_h, "Right dash uses the unmirrored clip")
 	check(absf(visual.speed_scale - visual.CLIP_LEN / player.dodge_duration) < 0.05, "Dash clip spans dash duration")
 	# 蓄力下蹲：踩地借力，人还留在原地，但按下的瞬间已获得无敌帧
 	check(player.velocity.length() < 0.5, "Windup keeps the player planted")
@@ -107,13 +134,13 @@ func _run() -> void:
 	check(not player.dodging, "Cooldown blocks an immediate second dash")
 	Input.action_release("dodge")
 	player.dodge_cd = 0.0  # 跳过冷却，继续验证左侧镜像
-	# 左向剃不镜像
+	# 左向剃走镜像 clip
 	Input.action_press("move_left")
 	await create_timer(0.1).timeout
 	Input.action_press("dodge")
 	await create_timer(0.05).timeout
 	check(visual.animation == "dodge_left", "Left dash selects left clip")
-	check(not visual.flip_h, "Left dash uses the unmirrored clip")
+	check(visual.flip_h, "Left dash uses the mirrored clip")
 	Input.action_release("move_left")
 	Input.action_release("dodge")
 	# 等最后一个残影渐隐完（末尾残影在冲刺末段生成，需再等一个 AFTERIMAGE_LIFE）
@@ -148,6 +175,11 @@ func _run() -> void:
 ## 填充攻击方向缓冲以驱动攻击。headless 下 64×64 虚拟窗口与 1920×1080 内容缩放不一致，
 ## 鼠标事件坐标会被错误放大导致瞄准射线失效，故跳过鼠标射线，直接走缓冲→物理帧→攻击→信号链路。
 func _buffer_attack_toward(player: Node, direction: String) -> void:
-	var dir: Vector3 = {"up": Vector3(0, 0, -1), "down": Vector3(0, 0, 1), "left": Vector3(-1, 0, 0), "right": Vector3(1, 0, 0)}[direction]
+	var dir: Vector3 = {
+		"up": Vector3(0, 0, -1), "up_right": Vector3(1, 0, -1).normalized(),
+		"right": Vector3(1, 0, 0), "down_right": Vector3(1, 0, 1).normalized(),
+		"down": Vector3(0, 0, 1), "down_left": Vector3(-1, 0, 1).normalized(),
+		"left": Vector3(-1, 0, 0), "up_left": Vector3(-1, 0, -1).normalized(),
+	}[direction]
 	player.buffered_direction = dir
 	player.buffer_time = 0.15
