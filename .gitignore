@@ -16,6 +16,16 @@
 # AI 工具目录与本地配置
 .agents/
 
+# 第三方素材工具链副本（本地安装，不随仓库分发）
+tools/meowa-skills-update-20260919-v2/
+tools/meowa_out/
+tools/__pycache__/
+__pycache__/
+
+# 素材历史备份（中间产物，不推送）
+art/**/backups/
+tools/backups/
+
 # 原著小说全文（版权文本，本地查阅用）
 background/
 

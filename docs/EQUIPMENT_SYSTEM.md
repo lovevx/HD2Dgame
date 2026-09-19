@@ -186,8 +186,8 @@
 | UI 层 | 面板只读显示作战属性，请求逻辑层结果；**UI 不写任何公式** |
 
 **派生公式（集中存放）**
-- attack = 武器 attack + str（沿现有 player.gd）
-- max_hp = 50 + con×10；max_mp = int×10；move_speed = 5.0 + (agi−5)×0.05
+- attack：非战役 = 武器基础 7 + str；战役 = 武器区间中点 × 力量倍率 `str_atk_coef` × (1 + 0.1×刀术训练)（`player.gd`；不再是「武器 attack + str」）
+- max_hp = 50 + con×10；max_mp = int×10；move_speed = 2.6 + (agi−5)×0.026（2026-09-19 降速；原 5.0 + ×0.05 已废弃）
 - 肉体修正系数 `con_hit_factor`：**查表 ±2%/点（con=5 → 1.00）**，受击侧 ④ 步：
 
 | con | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
@@ -200,7 +200,7 @@
 
 | 六维 | 落点 |
 |---|---|
-| str | ①原始攻击（武器攻击×倍率 + str） |
+| str | ①原始攻击（战役：武器区间中点 × 力量倍率 × 刀术训练；裸装口径为武器基础 7 + str） |
 | con | 最大HP + ④受击肉体修正（查表） |
 | int | 最大MP |
 | agi | 移速（攻速/回避后续查表预留） |
@@ -638,14 +638,14 @@ Base_Weapon_Damage = (rand(wMin,wMax) + rand(wMin,wMax)) / 2   // 含幸运倾�
 
 ## 十六、游戏化落地对照（现状 vs 目标）
 
-### 16.1 当前代码现状（v0.1 底盘）
+### 16.1 当前代码现状（v0.1 底盘，数值已按当前代码更新）
 
 | 层 | 现状 |
 |---|---|
-| 数据 | data/campaign.gd：SLOTS 8 槽；ITEMS 仅 3 件可装备；字段 name/slot/attack/str/export；CHESTS 固定宝箱 |
-| 状态 | game_state.gd：bag/equipment；equip_item 只装不卸；effective_attributes 硬编码项坠 str+1 |
-| 战斗 | player.gd：attack = (武器.attack + str) × (1 + 0.1×训练) |
-| UI | hud.gd：C 面板 8 槽 + 64 格背包；悬停金边/选中高亮；详情+单按钮（装备/开箱） |
+| 数据 | data/campaign.gd：SLOTS **11 槽**（主武器/副手/头/躯干/护臂×2/足/披风/项链/戒指×2）；ITEMS 仅 3 件可装备；字段 name/slot/attack_min/attack_max/str/export；CHESTS 固定宝箱 |
+| 状态 | game_state.gd：bag/equipment；equip_item 支持装/卸；effective_attributes 聚合装备词条（旧硬编码项坠 str+1 已并入词条） |
+| 战斗 | player.gd：战役 attack = 武器区间中点 × 力量倍率 `str_atk_coef` × (1 + 0.1×训练)；非战役为 7 + str |
+| UI | hud.gd：C 面板 **11 槽**（左翼防具 6 + 右翼武器与首饰 5）+ 64 格背包；悬停金边/选中高亮；详情+单按钮（装备/开箱） |
 
 ### 16.2 本次实现范围（建议切片，拍板后定稿）
 

@@ -95,10 +95,10 @@ const GROW_MAX_FURY := 100.0  # 斩龙闪锋刃值阈值（晋升品质）
 const SELL_R := 0.4
 const DECOMP_R := 0.35
 
-## ---------- 击杀武器扣耐表 ----------
-const KILL_DUR := {"normal": 1, "elite": 3, "boss": 8}
+## ---------- 击杀武器扣耐表（key 与敌人 kill_tier 同为整数） ----------
+const KILL_DUR := {1: 1, 3: 3, 8: 8}
 static func kill_dur(tier: int) -> int:
-	return {"normal": 1, "elite": 3, "boss": 8}.get(tier, 1)
+	return KILL_DUR.get(tier, 1)
 
 ## 强化成功 +1 的耐久上限提升（武器 +3~5 取 4、护甲 +4~7 取 5、首饰无耐久）
 static func enhance_dur_max_add(item: Dictionary) -> int:

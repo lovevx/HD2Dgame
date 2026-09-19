@@ -1,14 +1,19 @@
 extends RefCounted
-## 本次纵向切片的唯一数值表。区域使用同一白盒，之后可替换场景表现。
+## 本次纵向切片的区域、奖励与物品表；战斗技能初值见 combat_skills.gd。
 ## 装备口径见 docs/EQUIPMENT_SYSTEM.md；查表配置集中 data/equip_tables.gd。
 const SCENE := "res://scenes/main/campaign.tscn"
 const BASE_STATS := {"str": 6, "agi": 7, "con": 5, "int": 6, "cha": 3, "luk": 1}
 const STAGES := [
-	{"name": "1.2 废品终点站", "brief": "击败持械流民，搜集燧发枪与恢复品。", "enemies": [["持械流民", 38, 8]], "loot": {"flintlock": 1, "potion": 2}, "source": 0.0},
-	{"name": "1.3 王都入口", "brief": "击败卡洛斯，打开白色宝箱取得引荐信。", "enemies": [["黑市商人·卡洛斯", 75, 12]], "loot": {"carlos_chest": 1}, "source": 0.0},
-	{"name": "1.4 侍卫总部", "brief": "持引荐信完成入队实战考核，领取并装备斩龙闪。", "enemies": [["考核教官（切磋）", 100, 10]], "loot": {"dragon": 1, "guard_badge": 1}, "source": 2.1},
-	{"name": "1.5 欢乐街", "brief": "击败欧卡与护卫，开启白色宝箱，准备猎虎。", "enemies": [["布兰登·欧卡", 170, 17], ["欧卡护卫", 55, 10]], "loot": {"oka_chest": 1, "trap": 3, "potion": 2, "catnip": 1}, "source": 3.6},
-	{"name": "1.6 科尔波山", "brief": "先用 1 预埋火药陷阱，V 引诱巨虎。注意狂暴和诈死。", "enemies": [], "loot": {"tiger_chest": 1, "tiger_tooth": 1}, "source": 3.2},
+	{"name": "1.2 废品终点站", "brief": "击败持械流民，搜集燧发枪与恢复品。", "enemies": [["持械流民", 38, 8, "vagrant"]], "loot": {"flintlock": 1, "potion": 2}, "source": 0.0,
+	 "story": "签订乐园契约的苏晓，从剧痛中醒来——身下是堆满锈铁与碎布的废品山丘。\n\n这里是王都郊外的废品终点站，流民握刀在垃圾堆间逡巡。活下去，然后进城。"},
+	{"name": "1.3 王都入口", "brief": "击败卡洛斯，打开白色宝箱取得引荐信。", "enemies": [["黑市商人·卡洛斯", 75, 12, "carlos"]], "loot": {"carlos_chest": 1}, "source": 0.0,
+	 "story": "伪装成商人的苏晓混进了王都入口。城门口的黑市商人卡洛斯眯起眼——这面孔太陌生了。\n\n他拔出了腰间的匕首。要进城，先过这一关。"},
+	{"name": "1.4 侍卫总部", "brief": "持引荐信完成入队实战考核，领取并装备斩龙闪。", "enemies": [["考核教官（切磋）", 100, 10, "instructor"]], "loot": {"dragon": 1, "guard_badge": 1}, "source": 2.1,
+	 "story": "引荐信递到侍卫长手里，换来一句冷笑：\n\n“入队前先过实战考核。”操场上，考核教官提着佩刀，缓步走进演武圈。"},
+	{"name": "1.5 欢乐街", "brief": "击败欧卡与护卫，开启白色宝箱，准备猎虎。", "enemies": [["布兰登·欧卡", 170, 17, "oka"], ["欧卡护卫", 55, 10, "guard"]], "loot": {"oka_chest": 1, "trap": 3, "potion": 2, "catnip": 1}, "source": 3.6,
+	 "story": "欢乐街的灯笼还没点完，前侍卫首领布兰登·欧卡正带着护卫巡视夜市。\n\n在他身后，是一口封好的白色宝箱。苏晓压低斗笠，踏入红灯下的街巷。"},
+	{"name": "1.6 科尔波山", "brief": "先用 1 预埋火药陷阱，V 引诱巨虎。注意狂暴和诈死。", "enemies": [], "loot": {"tiger_chest": 1, "tiger_tooth": 1}, "source": 3.2,
+	 "story": "科尔波山的虎啸在林间回荡。山民说，一头小山般的巨虎盘踞山顶，噬人无数。\n\n苏晓掂了掂怀里的火药陷阱——猎杀这头山林之主的时候到了。"},
 ]
 ## 装备位（原著 11 位，见策划案 §3.3）：主武器/副武器/头部/躯干/护臂左/护臂右/足部/披风/项链/戒指/戒指2
 const SLOTS := ["main_weapon", "offhand", "head", "body", "left_arm", "right_arm", "boots", "cloak", "necklace", "ring", "ring_sub"]
@@ -76,7 +81,7 @@ static func fresh() -> Dictionary:
 		"bag": {"knife": 1, "potion": 2}, "equipment": {"main_weapon": "knife"},
 		# 装备动态状态（按物品 id 存放；强化/耐久/成长值），旧档缺省由 load 兜底
 		"item_dura": {}, "item_enhance": {}, "item_fury": {},
-		"hp_ratio": 1.0, "bullets": 6, "settled": false, "training": 0, "report": "", "colpo_outer_cleared": false}
+		"hp_ratio": 1.0, "mp_ratio": 1.0, "bullets": 6, "settled": false, "training": 0, "report": "", "colpo_outer_cleared": false}
 
 ## 该物品是否为可穿戴装备（有 slot）
 static func is_equippable(id: String) -> bool:

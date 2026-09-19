@@ -152,7 +152,7 @@
 | 4 | **强化经济断链**：斩龙闪单次 1500 币 vs 一局收入≈1000~1760 | [equip_tables.gd](../data/equip_tables.gd) | 强化/分解/出售难进入玩家决策 |
 | 5 | **伤害公式双轨**：campaign 走区间链，独立试炼/面板仍用"武器7+力量" | [attributes.gd](../data/attributes.gd#L53-L55) | 口径两套，易遗漏 |
 | 6 | **护盾视觉死代码**：红球 Mesh 创建后永久隐藏 | [player.gd](../player.gd#L60-L73) | 待 E 傲歌接入 |
-| 7 | **文档过期**：CORE_LOOP_PLAYTEST 仍写"8槽装备"（hud 已 11 槽） | [CORE_LOOP_PLAYTEST.md](CORE_LOOP_PLAYTEST.md) | 阅读者误判现状 |
+| 7 | **文档过期**（✅ 2026-09-19 已修）：CORE_LOOP_PLAYTEST 原写"8槽装备"（hud 已 11 槽） | [CORE_LOOP_PLAYTEST.md](CORE_LOOP_PLAYTEST.md) | 已改为 11 槽 |
 
 ---
 
