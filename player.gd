@@ -206,10 +206,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if battle_mode:
 		return  # 回合战中按键由 battle_runner 的菜单处理，实时输入一律忽略
-	# 副手武器（燧发枪）由鼠标右键触发；旧 F 键方案已迁移（策划案 §3.3）。
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+	# 副手武器（燧发枪）由 shoot 动作触发（默认鼠标右键；旧 F 键方案已迁移，策划案 §3.3）。
+	# 走 InputMap 而不是硬判 MOUSE_BUTTON_RIGHT：右键也要能在设置页改键。
+	if event.is_action_pressed("shoot"):
 		_fire_flintlock()
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_K:
+	# 野战战技·直踹（默认 K）：走 InputMap，可在设置页改键。
+	if event.is_action_pressed("kick"):
 		_start_kick()
 	if healing_time > 0:
 		return

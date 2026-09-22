@@ -2,6 +2,7 @@ extends CanvasLayer
 const SystemUI := preload("res://scripts/ui/system_ui.gd")
 const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
 const QuestPanelScript := preload("res://scripts/ui/quest_panel.gd")
+const SettingsPanelScript := preload("res://scripts/ui/settings_panel.gd")
 const Attributes := preload("res://data/attributes.gd")
 const PlayerFrames := preload("res://assets/characters/player_frames_video.tres")
 const CursorTexture := preload("res://assets/ui/cursor.png")
@@ -22,6 +23,7 @@ var action_button: Button
 var message_tween: Tween
 var key_guide: Control
 var prompt: Label
+var hint_bar: Label                     # 底部键位提示条：文案由 KeyBindings 现读，改键后重算
 var story_banner: PanelContainer  # 进关剧情条：贴底横幅、小字、按任意操作自动收起
 var story_body: Label
 var menu: Control
@@ -32,6 +34,10 @@ var boss_title := ""
 var cursor: TextureRect
 var char_panel: Control                 # C 键角色面板：左形象+装备环，右属性
 var quest_panel: CanvasLayer            # J 键任务面板：左任务列表，右任务详情（脚本自建，见 quest_panel.gd）
+var settings_panel: CanvasLayer         # 设置面板：主菜单与 Esc 菜单都能开（脚本自建，见 settings_panel.gd）
+## F1 说明里会随改键变化的两类行：整行（键+短语）与只有键名那一列。改键后按同一份数据重算文字。
+var _guide_lines: Array = []            # [{label, items}] → KeyBindings.line(items)
+var _guide_keys: Array = []             # [{label, item}] → KeyBindings.keys_of(item)
 var char_portrait: TextureRect
 var char_attr_labels: Dictionary = {}   # 六维键 → 数值 Label（面板右侧）
 var char_derived_label: Label
@@ -79,12 +85,13 @@ func _ready() -> void:
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var objective_style := SystemUI.flat(SystemUI.BG_BLOCK, SystemUI.BORDER, 1, SystemUI.RADIUS, 12)
 	objective.add_theme_stylebox_override("normal", objective_style)
-	var hint := _label(root, KeyBindings.HINT, 18, SystemUI.TEXT_DIM)
+	var hint := _label(root, KeyBindings.hint_text(), 18, SystemUI.TEXT_DIM)
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	hint.offset_left = 32
 	hint.offset_right = -32
 	hint.offset_top = -45
 	hint.offset_bottom = -12
+	hint_bar = hint
 	message = _label(root, "", 24, SystemUI.ACCENT)
 	message.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	message.offset_left = 260
@@ -127,12 +134,26 @@ func _ready() -> void:
 	_build_menu(root)
 	_build_char_panel(root)
 	_build_quest_panel()
+	_build_settings_panel()
 	_build_boss_bar(root)
 	_build_cursor(root)
+	GameSettings.changed.connect(_on_settings_changed)
 	if campaign_controller:
-		hint.text = KeyBindings.HINT
-		for control in [overlay, menu, char_panel, key_guide]:
+		hint_bar.text = KeyBindings.hint_text()
+		for control in [overlay, menu, char_panel, key_guide, settings_panel]:
 			control.visibility_changed.connect(campaign_controller.sync_pause)
+
+## 设置改动后要同步的地方：这里是「键名」——底部提示条与 F1 说明的键名都是开机时读一次画上去的，
+## 改键后必须重算，否则玩家看到的是旧键（设置页自己会重画，不用管）。
+## 画面/声音/游玩三项由 GameSettings 自己即时套用，HUD 无需再做什么。
+func _on_settings_changed(section: String) -> void:
+	if section != "keys":
+		return
+	hint_bar.text = KeyBindings.hint_text()
+	for row in _guide_lines:
+		row["label"].text = KeyBindings.line(row["items"])
+	for row in _guide_keys:
+		row["label"].text = KeyBindings.keys_of(row["item"])
 
 func _process(_delta: float) -> void:
 	hp_bar.value = player.hp
@@ -151,9 +172,14 @@ func _process(_delta: float) -> void:
 		story_banner.hide()
 	_sync_mouse_mode()
 
-## 战斗中用游戏内光标，隐藏系统光标；结算面板 / Esc 菜单 / C 角色面板 / 商店 / 任务面板打开时交还系统光标。
+## 当前是否该用游戏内光标：设置里选了系统光标、或有任何模态面板开着时都不是。
+func wants_game_cursor() -> bool:
+	return bool(GameSettings.game_cursor) and not is_modal_open()
+
+## 战斗中用游戏内光标，隐藏系统光标；结算面板 / Esc 菜单 / C 角色面板 / 商店 / 任务面板 / 设置
+## 打开时交还系统光标。设置里选了「系统光标」的玩家一律不隐藏 —— 那是他明确要的手感。
 func _sync_mouse_mode() -> void:
-	var wanted := Input.MOUSE_MODE_VISIBLE if (overlay.visible or menu.visible or char_panel.visible or _shop_open() or quest_panel.visible) else Input.MOUSE_MODE_HIDDEN
+	var wanted := Input.MOUSE_MODE_HIDDEN if wants_game_cursor() else Input.MOUSE_MODE_VISIBLE
 	if Input.get_mouse_mode() != wanted:
 		Input.set_mouse_mode(wanted)
 	_update_cursor()
@@ -178,8 +204,15 @@ func _exit_tree() -> void:
 	# 离开关卡（回选关面板等）时恢复系统光标，别把它留在隐藏状态
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-## F1 开关按键说明面板，Esc 开关菜单，C 开关角色面板，J 开关任务面板。
+## F1 开关按键说明面板，Esc 开关菜单，C 开关角色面板，J 开关任务面板，设置面板另有入口。
 func _unhandled_input(event: InputEvent) -> void:
+	# 设置面板是最上一层模态：开着时独占 open_menu（Esc），先关它而不是顺手翻下面的菜单。
+	# 面板自己的 Esc 兜底在 settings_panel._input 里（改键把 open_menu 移走时用那条）。
+	if _settings_open():
+		if event.is_action_pressed("open_menu"):
+			settings_panel.close()
+			get_viewport().set_input_as_handled()
+		return
 	if campaign_controller and event.is_action_pressed("open_menu") and (overlay.visible or char_panel.visible or key_guide.visible):
 		hide_panel()
 		char_panel.hide()
@@ -274,10 +307,9 @@ func _build_key_guide(root: Control) -> void:
 	card.add_child(page)
 	_label(page, "按键映射 / 苏晓", 30, SystemUI.ACCENT)
 	if campaign_controller:
-		_label(page, "WASD 移动 · 鼠标取景 · 左键三连击 · Shift 闪避", 23)
-		_label(page, "右键 燧发枪（需装备） · 1 火药陷阱 · 2 饮用药剂", 23)
-		_label(page, "Q 猎魔 · E 傲歌 · R 刀芒 · F 环断 · T 影刺（第二段前刺命中后）", 23)
-		_label(page, "V 遭遇 / 拾取 / 港口服务 · C 装备背包 · Esc 菜单", 23)
+		# 四行键位都由 KeyBindings 现读，改键后 _on_settings_changed 会重算这些 Label。
+		for items in KeyBindings.CAMPAIGN_GUIDE_LINES:
+			_guide_lines.append({"label": _label(page, KeyBindings.line(items), 23), "items": items})
 		_label(page, "拼刀：近战有效帧重叠自动触发；饮用药剂时受击会打断。", 21)
 		_label(page, "F1 关闭说明。科尔波山保留原外围三波和决战15秒准备。", 20)
 		key_guide.hide()
@@ -308,9 +340,10 @@ func _guide_group(column: Node, group: Dictionary) -> void:
 	grid.add_theme_constant_override("v_separation", 4)
 	column.add_child(grid)
 	for entry in group["entries"]:
-		var keys := _label(grid, entry["keys"], 19, Color("ffd9a0"))
+		var keys := _label(grid, KeyBindings.keys_of(entry), 19, Color("ffd9a0"))
 		keys.custom_minimum_size.x = 118
-		var action := _label(grid, entry["action"], 19)
+		_guide_keys.append({"label": keys, "item": entry})
+		var action := _label(grid, entry["desc"], 19)
 		action.custom_minimum_size.x = 452
 		var status := _label(grid, KeyBindings.status_text(entry["status"]), 17, KeyBindings.status_color(entry["status"]))
 		status.custom_minimum_size.x = 56
@@ -350,6 +383,14 @@ func _build_menu(root: Control) -> void:
 	SystemUI.style_button(back)
 	back.pressed.connect(_back_to_select)
 	page.add_child(back)
+	# 设置对两种场景都在同一位置（战斗关卡与只看地图的场景），所以不进上面的分支。
+	var settings_button := Button.new()
+	settings_button.text = "设 置 · 画面 / 声音 / 按键"
+	settings_button.custom_minimum_size = Vector2(420, 54)
+	settings_button.add_theme_font_size_override("font_size", 24)
+	SystemUI.style_button(settings_button)
+	settings_button.pressed.connect(_open_settings)
+	page.add_child(settings_button)
 	if campaign_controller:
 		var tasks := Button.new()
 		tasks.text = "任务档案 · 阶段进度"
@@ -374,6 +415,22 @@ func _build_menu(root: Control) -> void:
 		page.add_child(harbor_button)
 	_label(page, "Esc 关闭菜单 · 检查点自动保存", 17, SystemUI.TEXT_DIM)
 	menu.hide()
+
+## Esc 菜单里的「设置」入口。设置面板是独立的一层 CanvasLayer（layer 45），
+## 开在菜单之上；关掉设置后菜单保持收起，再按一次 Esc 才回到菜单。
+func _open_settings() -> void:
+	menu.hide()
+	settings_panel.open()
+
+## 设置面板：脚本自建（见 settings_panel.gd），与任务面板同一套做法 ——
+## 面板自己管显隐，HUD 只负责「谁算模态」与按键路由。
+func _build_settings_panel() -> void:
+	settings_panel = SettingsPanelScript.new()
+	settings_panel.name = "SettingsPanel"
+	add_child(settings_panel)
+
+func _settings_open() -> bool:
+	return settings_panel != null and settings_panel.visible
 
 ## C 键角色面板：左右两大块 —— 左侧为 DNF 参考图排版（穿戴栏 + 8×8 背包，
 ## 背包格支持悬停高亮与点选），右侧为属性面板（六维 + 派生值 + 可用属性点）。
@@ -707,7 +764,7 @@ func _shop_open() -> bool:
 	return panel != null and panel.visible
 
 func is_modal_open() -> bool:
-	return overlay.visible or menu.visible or char_panel.visible or key_guide.visible or _shop_open() or quest_panel.visible
+	return overlay.visible or menu.visible or char_panel.visible or key_guide.visible or _shop_open() or quest_panel.visible or _settings_open()
 
 func show_character() -> void:
 	menu.hide()

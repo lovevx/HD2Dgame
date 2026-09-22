@@ -291,15 +291,9 @@ func _style_row(row: Button, status: String, selected: bool) -> void:
 	row.add_theme_color_override("font_focus_color", Color("dceeff"))
 
 ## 详情可能长过一屏（目标 + 说明 + 奖励），默认滚动条在深色面板上几乎看不见，
-## 会让人以为内容被截断 —— 换成银灰轨道 + 幽蓝滑块，明确「下面还有」。
+## 会让人以为内容被截断 —— 样式统一放在 SystemUI.style_scrollbar（设置页的按键表共用同一套）。
 func _style_scrollbar(scroll: ScrollContainer) -> void:
-	var bar := scroll.get_v_scroll_bar()
-	bar.custom_minimum_size.x = 12
-	bar.add_theme_stylebox_override("scroll", SystemUI.track())
-	bar.add_theme_stylebox_override("scroll_focus", SystemUI.track())
-	bar.add_theme_stylebox_override("grabber", SystemUI.flat(Color(SystemUI.BORDER, 0.75), Color(0, 0, 0, 0), 0, SystemUI.RADIUS, 0))
-	bar.add_theme_stylebox_override("grabber_highlight", SystemUI.flat(Color(SystemUI.ACCENT), Color(0, 0, 0, 0), 0, SystemUI.RADIUS, 0))
-	bar.add_theme_stylebox_override("grabber_pressed", SystemUI.flat(Color(SystemUI.ACCENT), Color(0, 0, 0, 0), 0, SystemUI.RADIUS, 0))
+	SystemUI.style_scrollbar(scroll)
 
 ## 详情小节：分块底衬 + 标题，返回可继续追加内容的列。
 func _section(title: String) -> VBoxContainer:

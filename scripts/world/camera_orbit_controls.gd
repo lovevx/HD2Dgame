@@ -13,7 +13,11 @@ extends RefCounted
 ## 反面做法（旧版）：把平滑加在 camera.position 上，让相机去"追"一个已经转过角度的目标。
 ## 拖动越快，相机离轨道球越远——实测角色最多被甩出 800~1300 px，就是玩家看到的"转视角屏幕抖"。
 
-## 中键拖动的灵敏度（度 / 像素）。
+## 设置项按路径读（见 data/prefs.gd：本文件在校验脚本里被文件顶层 preload，不能直接写自动加载名）。
+const Prefs := preload("res://data/prefs.gd")
+
+## 中键拖动的灵敏度（度 / 像素）。这是 1.0 倍率下的基准值，
+## 玩家在设置页调的是倍率（GameSettings.camera_sensitivity，0.4~2.0），两者相乘才是实际灵敏度。
 const ORBIT_SENSITIVITY := 0.22
 ## 每格滚轮的等比步长：距离乘 (1 + ZOOM_STEP) 为拉远，乘倒数即拉近，远近手感一致。
 const ZOOM_STEP := 0.12
@@ -118,11 +122,25 @@ func handle_input(event: InputEvent) -> bool:
 					return true
 	elif event is InputEventMouseMotion and dragging:
 		var motion := event as InputEventMouseMotion
+		var sensitivity := ORBIT_SENSITIVITY * _sensitivity_scale()
 		# 向右拖＝视线向右转（相机绕到左侧），向上拖＝抬高机位。
-		yaw_deg = wrapf(yaw_deg - motion.relative.x * ORBIT_SENSITIVITY, -180.0, 180.0)
-		pitch_deg = clampf(pitch_deg - motion.relative.y * ORBIT_SENSITIVITY, MIN_PITCH, MAX_PITCH)
+		# 上下反转只翻 pitch 的方向：想「推上去＝往下看」的玩家按设置页的开关即可。
+		var pitch_step := motion.relative.y * sensitivity
+		if _invert_y():
+			pitch_step = -pitch_step
+		yaw_deg = wrapf(yaw_deg - motion.relative.x * sensitivity, -180.0, 180.0)
+		pitch_deg = clampf(pitch_deg - pitch_step, MIN_PITCH, MAX_PITCH)
 		return true
 	return false
+
+## 设置页的镜头灵敏度倍率。
+## 这里按节点路径取而不是直接写 `GameSettings.` —— 本文件被 tools/validate_camera_orbit.gd
+## 在文件顶层 preload，那种上下文里自动加载名还没注册，直接引用会编译失败（见 data/prefs.gd）。
+func _sensitivity_scale() -> float:
+	return float(Prefs.value("camera_sensitivity", 1.0))
+
+func _invert_y() -> bool:
+	return bool(Prefs.value("camera_invert_y", false))
 
 ## 是否有模态面板打开。HUD 是唯一权威（各面板自己加进 "hud" 组并由 is_modal_open 汇总），
 ## 没有 HUD 的场景（纯机位回归脚本等）按"无面板"处理，不影响原行为。

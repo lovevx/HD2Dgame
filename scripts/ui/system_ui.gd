@@ -77,6 +77,44 @@ static func decor(parent: Control, rivet: Color = ACCENT) -> Control:
 	parent.add_child(d)
 	return d
 
+## 滚动条：长内容（任务详情、按键表）会超出面板，默认滚动条在深色底上几乎看不见，
+## 玩家会以为内容被截断 —— 换成银灰轨道 + 幽蓝滑块，明确「下面还有」。
+static func style_scrollbar(scroll: ScrollContainer) -> void:
+	var bar := scroll.get_v_scroll_bar()
+	bar.custom_minimum_size.x = 12
+	bar.add_theme_stylebox_override("scroll", track())
+	bar.add_theme_stylebox_override("scroll_focus", track())
+	bar.add_theme_stylebox_override("grabber", flat(Color(BORDER, 0.75), Color(0, 0, 0, 0), 0, RADIUS, 0))
+	bar.add_theme_stylebox_override("grabber_highlight", flat(ACCENT, Color(0, 0, 0, 0), 0, RADIUS, 0))
+	bar.add_theme_stylebox_override("grabber_pressed", flat(ACCENT, Color(0, 0, 0, 0), 0, RADIUS, 0))
+
+## 滑条（主音量 / 音效 / 镜头灵敏度）：默认主题是圆头灰条，与「方块直角、无圆角」的设计语言冲突，
+## 所以轨道与已填充段自己拼（Slider 拿样式盒的**最小高度**当条厚，内容边距为 0 会画成一条 2px 细线，
+## 所以这里显式给上下内容边距），拖块用现场生成的硬边方块贴图（不落资源文件）。
+static func style_slider(slider: Slider) -> void:
+	slider.add_theme_stylebox_override("slider", bar(Color(BG_TRACK, 0.95), Color(BORDER, 0.45)))
+	slider.add_theme_stylebox_override("grabber_area", bar(Color(ACCENT, 0.5), Color(0, 0, 0, 0)))
+	slider.add_theme_stylebox_override("grabber_area_highlight", bar(Color(ACCENT, 0.75), Color(0, 0, 0, 0)))
+	slider.add_theme_icon_override("grabber", pixel_block(12, 22, BORDER, ACCENT_DIM))
+	slider.add_theme_icon_override("grabber_disabled", pixel_block(12, 22, BORDER, ACCENT_DIM))
+	slider.add_theme_icon_override("grabber_highlight", pixel_block(12, 22, ACCENT, Color("dceeff")))
+
+## 滑条用的横条样式：1px 描边 + 8px 厚（border 1 + 上下内容边距 3）。
+static func bar(bg: Color, border: Color, thickness := 8) -> StyleBoxFlat:
+	var st := flat(bg, border, 1 if border.a > 0.0 else 0, RADIUS, 0)
+	st.content_margin_top = maxi(0, thickness / 2 - 1)
+	st.content_margin_bottom = maxi(0, thickness / 2 - 1)
+	return st
+
+## 生成一枚硬边方块贴图：1px 描边色 + 实心填充色，无圆角无抗锯齿（像素风拖块用）。
+static func pixel_block(w: int, h: int, border: Color, body: Color) -> ImageTexture:
+	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	for y in h:
+		for x in w:
+			var on_edge := x == 0 or y == 0 or x == w - 1 or y == h - 1
+			image.set_pixel(x, y, border if on_edge else body)
+	return ImageTexture.create_from_image(image)
+
 ## 标签胶囊（职业/状态徽记）：左侧幽蓝像素点 + 文字。
 static func chip(parent: Node, text: String, accent: Color = ACCENT) -> PanelContainer:
 	var tag := PanelContainer.new()

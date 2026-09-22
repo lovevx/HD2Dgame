@@ -207,10 +207,13 @@ func run() -> void:
 	check(gs.is_scene_chest_opened("arena_0") == false, "未开箱时记录为空")
 	gs.begin_sortie()
 	gs.open_scene_chest("arena_0")
-	gs.give_item("worn_blade", 1)
+	# 这一件必须挑宝箱开不出来的 id：宝箱固定给 1 炸弹 + 1 血药 + 1 件随机装备，
+	# 而随机池里有 worn_blade —— 用它的话，宝箱那次 save_game() 会把 worn_blade 提交进基线，
+	# 于是下面「未提交的拾取被回滚」就成了 1/9 概率的假红（实测 14 跑 1 红）。
+	gs.give_item("tiger_tooth", 1)
 	gs.settle_sortie(gs.Sortie.DEATH)
 	check(gs.is_scene_chest_opened("arena_0"), "阵亡不回滚已提交的宝箱开启记录")
-	check(gs.item_count("worn_blade") == 0, "同一局里未提交的拾取照样回滚")
+	check(gs.item_count("tiger_tooth") == 0, "同一局里未提交的拾取照样回滚")
 
 	if is_instance_valid(scene):
 		scene.free()

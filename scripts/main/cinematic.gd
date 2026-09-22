@@ -7,6 +7,10 @@ extends Node2D
 enum SceneId { CITY, CONTRACT }
 enum SubId { ESTABLISH, PHONE, TRUCK, IMPACT, DYING }
 
+## 设置项按路径读（见 data/prefs.gd）：本类带 class_name，可能被校验脚本在
+## 自动加载注册之前就编译到，直接写 `GameSettings.` 有编译失败的风险。
+const Prefs := preload("res://data/prefs.gd")
+
 const W := 1920.0
 const H := 1080.0
 const HORIZON_CITY := 560.0
@@ -101,6 +105,9 @@ func _draw_city() -> void:
 			shake = Vector2(sin(tt * 70.0), cos(tt * 53.0)) * 36.0 * exp(-tt * 2.4)
 		SubId.DYING:
 			shake = Vector2(sin(tt * 11.0), cos(tt * 9.0)) * 3.0 * exp(-tt * 0.6)
+	# 运镜震动可在设置页关掉（晕动症友好）。只掐震动，推近与缩放照旧。
+	if not bool(Prefs.value("cinematic_shake", true)):
+		shake = Vector2.ZERO
 	draw_set_transform(shake, 0.0, Vector2(zoom, zoom))
 
 	_sky_city()

@@ -4,6 +4,8 @@ extends Node3D
 
 enum Phase { IDLE, WINDUP, BURST }
 
+const Prefs := preload("res://data/prefs.gd")
+
 const STOMP_SOUND := preload("res://assets/audio/dash/dash_stomp.mp3")
 const WHOOSH_SOUND := preload("res://assets/audio/dash/dash_whoosh.mp3")
 const LAND_SOUND := preload("res://assets/audio/dash/dash_land.mp3")
@@ -192,5 +194,7 @@ func _add_audio(stream: AudioStream) -> AudioStreamPlayer:
 	var audio := AudioStreamPlayer.new()
 	audio.stream = stream
 	audio.volume_db = -5.0
+	# 挂在 SFX 总线上，设置页的「音效」滑条才管得到它（正本见 res://default_bus_layout.tres）。
+	audio.bus = Prefs.SFX_BUS
 	add_child(audio)
 	return audio

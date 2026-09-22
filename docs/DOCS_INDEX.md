@@ -55,6 +55,7 @@
 | [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) | v1.1 · 整理 09-21 · 回合补录 09-22 | 📌 as-built | 战斗**实际是什么**。真值源是代码；§3 有「设计 vs 已实现」差异框（8 行） |
 | [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) | v0.2 原著向整合版 · 2026-09-18 | 🟡 主体已落地 | 装备策划与实施：11 槽 / 5 品质 / 评分 / 耐久 / 强化 / 分解 / 成长吞噬。`export=true` 的高阶防具首饰仍缺 |
 | [QUEST_PANEL.md](QUEST_PANEL.md) | 2026-09-22 | ✅ 已落地 | 任务档案面板（<kbd>J</kbd>）三个入口与只读映射设计；数据源 `data/quest_log.gd` |
+| [SETTINGS.md](SETTINGS.md) | 2026-09-23 | ✅ 已落地 | 设置页（画面 / 声音 / 游玩 / 按键）的四个分页、每项的作用点、改键对调规则与未做项；正本 `autoload/game_settings.gd` + `scripts/ui/settings_panel.gd` |
 | [NOVEL_CORE_SYSTEMS.md](NOVEL_CORE_SYSTEMS.md) | v0.3 · 2026-09-17（09-18 补槽位核对） | 📌 生效 | 原著通用底层规则（半数据化、等价交换、乐园契约）。跨卷复用 |
 | [NOVEL_VOL1_LEVELS.md](NOVEL_VOL1_LEVELS.md) | v0.3 · 2026-09-17 | 🟡 1.2~1.6 已接通 | 卷一关卡设计（海贼王·哥亚王国篇）。1.7 之后仅留原著规划，不作验收 |
 | [HARBOR_MAP.md](HARBOR_MAP.md) | 09-17 起逐轮追加 | 🔒 追加式日志 | 灰潮港主城逐轮施工记录与坐标表。**约定永不回改历史轮次**，新事实往后追加 |

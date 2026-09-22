@@ -4,15 +4,27 @@ extends Control
 ## 配色沿用系统面板风：深蓝灰底 + 电光青系统色（蓝=系统），金色仅保留高价值（标题/悬停）。
 
 const SystemUI := preload("res://scripts/ui/system_ui.gd")
+const SettingsPanelScript := preload("res://scripts/ui/settings_panel.gd")
 const OPENING_SCENE := "res://scenes/main/opening.tscn"
 const LEVEL_SELECT_SCENE := "res://scenes/main/level_select.tscn"
 const HARBOR_SCENE := "res://scenes/world/harbor.tscn"
 const VERSION_HINT := "海贼王 · 核心循环原型  /  截止科尔波山猎虎"
 
+var settings_panel: CanvasLayer
+var settings_button: Button
+
 func _ready() -> void:
 	_build_background()
 	var first := _build_center()
+	_build_settings()
 	first.grab_focus()
+
+## 设置面板：与游戏内是同一个面板脚本，只是这里挂在主菜单自己身上（主菜单没有 HUD）。
+func _build_settings() -> void:
+	settings_panel = SettingsPanelScript.new()
+	settings_panel.name = "SettingsPanel"
+	add_child(settings_panel)
+	settings_panel.closed.connect(func(): settings_button.grab_focus())
 
 ## 深蓝夜色渐变底 + 顶部细金线，按下菜单后过场进入开场剧情。
 func _build_background() -> void:
@@ -77,6 +89,7 @@ func _build_center() -> Button:
 	if first == null:
 		first = start_button
 	_button(buttons, "关卡调试 · 选关", func(): GameState.change_scene(LEVEL_SELECT_SCENE), 460, 58, 24)
+	settings_button = _button(buttons, "设 置", func(): settings_panel.open(), 460, 58, 24)
 	_button(buttons, "退出游戏", func(): get_tree().quit(), 460, 58, 24)
 	return first
 

@@ -26,6 +26,7 @@ SUITE=(
   validate_combo_skills      # 连段技能
   validate_core_loop         # 核心循环
   validate_quest_panel       # J 任务面板
+  validate_settings          # 设置页：设置档读写兜底 + 画面/声音/游玩/按键是否真生效 + 两个入口
   validate_onboarding_flow   # 开场 → 港口引导
   validate_level_refine      # 关卡细化
   validate_colpo             # 科尔波山白盒（最慢：装整场景 + 三波敌人）

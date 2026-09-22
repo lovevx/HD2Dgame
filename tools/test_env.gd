@@ -47,3 +47,23 @@ static func isolate(gs: Node, tag: String, keep_persistence := false) -> String:
 static func cleanup(gs: Node) -> void:
 	gs.set("persistence_enabled", false)
 	purge(str(gs.get("save_path")))
+
+## 隔离**偏好档**（GameSettings，user://settings.cfg）。与存档分开一支的理由：
+## 设置不在 GameState 名下，而且它不是「进度」而是偏好 —— 校验脚本不该因为跑一次测试
+## 就改掉玩家的音量与键位。用法与 isolate() 对应：
+##   TestEnv.isolate_settings(settings, "settings")
+##   ...
+##   TestEnv.cleanup_settings(settings)
+## 注意本函数**不**重置内存里的值：GameSettings._ready() 早已读过真实偏好，
+## 所以校验脚本要么自己写死要测的值，要么显式再走一次 load_settings()。
+static func isolate_settings(settings: Node, tag: String, keep_persistence := false) -> String:
+	var path := "user://%s_settings_validation.cfg" % tag
+	settings.set("settings_path", path)
+	settings.set("persistence_enabled", keep_persistence)
+	purge(path)
+	return path
+
+## 收尾：断写盘 + 清掉隔离的偏好档。
+static func cleanup_settings(settings: Node) -> void:
+	settings.set("persistence_enabled", false)
+	purge(str(settings.get("settings_path")))
