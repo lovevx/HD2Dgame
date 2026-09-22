@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
-[ext_resource type="ArrayMesh" path="res://local_study/preset3d/meshes/SM_1dashu002_LODs_ebce892b_01.res" id="1_a78cj"]
-[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/4ce5cf7ed24f166b_T_dashu.png" id="2_kohi4"]
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_1dashu002_LODs_ebce892b_01.res" id="1_a78cj"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/4ce5cf7ed24f166b_T_dashu.png" id="2_kohi4"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xm88h"]
 resource_name = "mat_27551525688d5b40"

@@ -1,4 +1,4 @@
-﻿extends SceneTree
+extends SceneTree
 ## 科尔波山场景重建脚本：地形、刷怪点、传送门、波次与 BOSS 流程沿用原白盒布局，
 ## 树木 / 岩石 / 边界山壁 / 地被改用 HD-2D 共享素材库预设（tools/import_presets.gd 入库）。
 ## 生成：scenes/world/colpo_forest_outer.tscn（山林外围）、scenes/world/colpo_forest_clearing.tscn（林间决战空地）
@@ -615,6 +615,7 @@ func camera_rig(arena := false) -> void:
 	camera.name = "Camera3D"
 	CameraStyle.configure(camera, arena)
 	map.set("camera_focus_bounds", CameraStyle.focus_bounds(arena))
+	map.set("camera_arena", arena)
 	map.add_child(camera)
 
 func sun_rig(direction: Vector3, color: Color, energy: float) -> void:

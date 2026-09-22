@@ -11,10 +11,10 @@
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan006.tres" id="9_2k36l"]
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan012.tres" id="10_pujpx"]
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan016.tres" id="11_074qt"]
-[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/4ce5cf7ed24f166b_T_dashu.png" id="12_2xcav"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/4ce5cf7ed24f166b_T_dashu.png" id="12_2xcav"]
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_1dashu002_LODs.tres" id="13_sjwnr"]
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_1dashu001_LODs.tres" id="14_hlksp"]
-[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/2139dc34d93deacf_T_XuanyaNew001.png" id="15_hpwnu"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/2139dc34d93deacf_T_XuanyaNew001.png" id="15_hpwnu"]
 [ext_resource type="Script" path="res://scripts/world/scene_portal.gd" id="16_xh0al"]
 [ext_resource type="Script" path="res://scripts/world/wave_spawner.gd" id="17_d8nm8"]
 [ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/foliage.gd" id="18_uph62"]
@@ -823,11 +823,11 @@ volumetric_fog_ambient_inject = 0.25
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_tmuj1"]
 dof_blur_far_enabled = true
-dof_blur_far_distance = 47.0
-dof_blur_far_transition = 16.0
+dof_blur_far_distance = 72.756
+dof_blur_far_transition = 27.072
 dof_blur_near_enabled = true
-dof_blur_near_distance = 26.0
-dof_blur_near_transition = 8.0
+dof_blur_near_distance = 37.224
+dof_blur_near_transition = 13.536
 
 [node name="ColpoForestOuter" type="Node3D" unique_id=1442397554]
 script = ExtResource("1_0i1ht")
@@ -6817,10 +6817,10 @@ metadata/phase = 1.5228478
 environment = SubResource("Environment_oeu7p")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=85143670]
-transform = Transform3D(0.99026793, -0.056606803, 0.12714095, 0, 0.9135454, 0.40673664, -0.13917309, -0.4027783, 0.90465486, 3.6870878, 11.795362, 26.234991)
+transform = Transform3D(0.9999998, 0, 0, 0, 0.9612617, 0.27563736, 0, -0.27563736, 0.9612617, 0, 11.65946, 40.66137)
 attributes = SubResource("CameraAttributesPractical_tmuj1")
 current = true
-fov = 30.0
+fov = 18.0
 size = 16.0
 near = 0.15
 far = 160.0

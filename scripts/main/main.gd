@@ -1,18 +1,24 @@
 extends Node
 ## 自由练习场：不写正式货币、任务或存档。场上只有一根打不坏的练功木桩，
 ## 用来练习攻击、剃与拼刀格挡；没有敌人波次，也没有清场结算。
-## 机位与港口/科波山统一：低俯角透视 HD2D 镜头，鼠标让出 + 移动前瞻 + 焦点收边。
+## 机位与港口/科波山统一：低俯角透视 HD2D 镜头，移动前瞻 + 焦点收边；
+## 视角与远近由玩家自己操作（中键拖动转视角、滚轮推拉距离），光标不再带动镜头。
 const EnemyScene := preload("res://scripts/combat/enemy.tscn")
 const EnemyScript := preload("res://scripts/combat/enemy.gd")
 const HudScene := preload("res://scripts/ui/hud.tscn")
 const AssetCatalog := preload("res://tools/preset_catalog.gd")
 const CameraStyle := preload("res://scripts/world/jungle_camera_style.gd")
-const MouseLead := preload("res://scripts/world/camera_mouse_lead.gd")
+const Orbit := preload("res://scripts/world/camera_orbit_controls.gd")
 const PortalScript := preload("res://scripts/world/scene_portal.gd")
-## 练武场是空旷对称场地，沿用 Port 的正面取景（yaw 0）：石板行条横平竖直，
-## 不会像 8° 偏航那样把 60 米平板的网格带成斜向菱形。
-const CAM_YAW := 0.0
+## 双形态战斗（P1 v1）：白盒遭遇演示——练习场里放一只游荡野狼，
+## 玩家踏入 8m 遭遇圈即切回合战（AT 顺序 + 走位/指令 + 敌人回合）。
+const Attributes := preload("res://data/attributes.gd")
+const CombatSkills := preload("res://data/combat_skills.gd")
+## 取景正对（与相机同偏航）：石板行条横平竖直，外圈取景树也按这个基准摆放。
+const CAM_YAW := CameraStyle.YAW
 const CAMERA_LEAD := 0.75
+## 锚点的跟随收敛率（每秒，帧率无关）：转视角不需要加速，相机刚性挂在朝向上。
+const FOLLOW_SPEED := 5.5
 var campaign_managed := false
 ## 练武场 25 米见方、玩家活动范围 ±12：焦点收边略大于场地，边缘贴图不出画。
 const FOCUS_BOUNDS := Rect2(-13, -13, 26, 26)
@@ -20,30 +26,36 @@ var practice := false
 @onready var player: CharacterBody3D = $player
 @onready var camera: Camera3D = $Camera3D
 var hud: CanvasLayer
-var _cam_offset := Vector3.ZERO
-var _mouse_lead := MouseLead.new()
+var _orbit := Orbit.new()
 var _camera_lead := Vector3.ZERO
+## 白盒遭遇战场地（P1 v1）：练习场专属，不进正式关卡。
+var _wolf: Node = null
+var _encounter: EncounterZone = null
+var _battle_running := false
+var _battle_controller := BattleController.new()
+var _order_bar: OrderBar = null
+var _battle_menu: BattleMenu = null
 
 func _input(event: InputEvent) -> void:
-	_mouse_lead.note_input(event)
+	if _orbit.handle_input(event):
+		get_viewport().set_input_as_handled()
 
 func _ready() -> void:
 	if not campaign_managed:
 		player.died.connect(_on_player_died)
 		player.set_physics_process(false)
-	# 机位用装修两关的同一套参数：当前相机角度是生成好的，先记下视线偏移再原地就位。
+	# 机位用装修两关的同一套参数：先按风格就位，再交给轨道控制（中键/滚轮可改）。
 	CameraStyle.configure(camera, true)
-	# 练武场是空旷对称场地，正面取景（yaw 0）保持石板横平竖直
-	camera.rotation_degrees = Vector3(-CameraStyle.PITCH, CAM_YAW, 0)
-	_cam_offset = camera.basis * Vector3(0, 0, CameraStyle.DISTANCE)
-	camera.position = _camera_target() + _cam_offset
+	_orbit.configure(camera, CameraStyle.PITCH, CameraStyle.YAW, CameraStyle.distance(true))
+	_orbit.snap(camera, _camera_target(), CameraStyle.composition(_orbit.forward_flat()))
 	_build_arena()
 	if campaign_managed:
 		return
 	hud = HudScene.instantiate()
 	add_child(hud)
 	hud.configure("灰潮 · 自由练习场", "自由练习  /  打木桩练手")
-	hud.show_panel("灰潮 · 自由练习场", "轻松练习场地 / 不影响正式资源\n\n场上练功木桩不会移动、不会反击，用来练习攻击、剃与拼刀格挡。\n\nWASD 移动 · 左键朝鼠标三连击 · Shift 剃\n数字 1 炸弹 · 数字 2 药剂 · V 交互 · F1 按键说明", "开始练习", start_practice)
+	hud.show_panel("灰潮 · 自由练习场", "轻松练习场地 / 不影响正式资源\n\n场上练功木桩不会移动、不会反击，用来练习攻击、剃与拼刀格挡。\n\nWASD 移动 · 左键朝鼠标斩击 · Space 剃 · K 直踢\n数字 1 炸弹 · 数字 2 药剂 · V 交互 · F1 按键说明\n\n靠近练习场里的野狼会触发回合制遭遇战。", "开始练习", start_practice)
+	_build_encounter_demo()
 
 func start_practice() -> void:
 	player.position = Vector3.ZERO
@@ -61,17 +73,31 @@ func _on_player_died() -> void:
 
 func _process(delta: float) -> void:
 	_update_camera(delta)
+	_try_trigger_battle()
 
-## 移动前瞻 + 鼠标让出 + 焦点收边：与科波山/港口同一套运镜，保证玩家在画面里。
+## 白盒遭遇触发：练习中且圈内野狼存活 → 切回合战。
+func _try_trigger_battle() -> void:
+	if not practice or _battle_running:
+		return
+	if _wolf == null or not is_instance_valid(_wolf):
+		return
+	if not _wolf.is_alive():
+		return
+	if _encounter == null or not _encounter.in_radius(player.position):
+		return
+	start_battle()
+
+## 移动前瞻 + 焦点收边：与科波山/港口同一套运镜，保证玩家在画面里。
+## 平滑只作用在锚点上，构图偏移挂在机位朝向上——转视角时取景关系完全不变。
 func _update_camera(delta: float) -> void:
-	_mouse_lead.update(camera, get_viewport(), delta)
 	var movement := Vector3(player.velocity.x, 0, player.velocity.z)
 	var lead_target := movement.limit_length(4.0) * (CAMERA_LEAD / 4.0)
 	_camera_lead = _camera_lead.lerp(lead_target, 1.0 - exp(-3.0 * delta))
-	camera.position = camera.position.lerp(_camera_target() + _cam_offset, 1.0 - exp(-5.5 * delta))
+	_orbit.place(camera, _camera_target(), CameraStyle.composition(_orbit.forward_flat()), delta, FOLLOW_SPEED)
 
+## 锚点：玩家位置 + 移动前瞻，只做收边；构图偏移由轨道控制按朝向加上去。
 func _camera_target() -> Vector3:
-	var focus := player.position + CameraStyle.COMPOSITION_OFFSET + _camera_lead + _mouse_lead.offset
+	var focus := player.position + _camera_lead
 	focus.x = clampf(focus.x, FOCUS_BOUNDS.position.x, FOCUS_BOUNDS.end.x)
 	focus.z = clampf(focus.z, FOCUS_BOUNDS.position.y, FOCUS_BOUNDS.end.y)
 	return focus
@@ -81,7 +107,8 @@ func _build_arena() -> void:
 	# 正式关卡按 stage 换砖色/砖块尺寸/砖缝宽度，避免四关共用同一块地面。
 	var paving := ShaderMaterial.new()
 	paving.shader = preload("res://shaders/trial_floor.gdshader")
-	var floor_cfg: Dictionary = _floor_config(GameState.campaign.stage) if campaign_managed else {}
+	# 地板/背景按 stage 取色，直接打开场景（campaign_managed=false）也与正式流程一致，方便调试。
+	var floor_cfg: Dictionary = _floor_config(GameState.campaign.stage)
 	paving.set_shader_parameter("stone_color", floor_cfg.get("stone_color", Color("3a4a52")))
 	paving.set_shader_parameter("tile_scale", floor_cfg.get("tile_scale", 0.5))
 	paving.set_shader_parameter("grout", floor_cfg.get("grout", 0.06))
@@ -116,10 +143,9 @@ func _build_arena() -> void:
 	# 补光（CoolSkyFill）已在场景里配好，与港口同一套参数。
 	_build_boundary()
 	_backdrop_ring()
-	# 关卡环境差异化：试炼场保持空旷；正式关卡按 stage 摆放专属布景。
-	if campaign_managed:
-		_dress_stage(GameState.campaign.stage)
-		_build_portals(GameState.campaign.stage)
+	# 关卡环境差异化：按 stage 摆放专属布景与传送门；直接打开场景也一致呈现，方便调试。
+	_dress_stage(GameState.campaign.stage)
+	_build_portals(GameState.campaign.stage)
 	if not campaign_managed:
 		_spawn_dummy()
 
@@ -350,3 +376,193 @@ func _prop(title: String, at: Vector3, yaw := 0.0, size := 1.0) -> void:
 	add_child(node)
 
 var rng := RandomNumberGenerator.new()
+
+## ---------- 白盒遭遇战（P1 v1） ----------
+
+## 练习场布置：遭遇圈（圆心在场地中央）+ 一只游荡野狼 + AT 顺序条 + 指令面板。
+func _build_encounter_demo() -> void:
+	_encounter = EncounterZone.new()
+	_encounter.position = Vector3.ZERO
+	add_child(_encounter)
+	_spawn_training_wolf()
+	_order_bar = OrderBar.new()
+	_order_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_order_bar.offset_top = 96.0
+	_order_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	_order_bar.visible = false
+	hud.add_child(_order_bar)
+	_battle_menu = BattleMenu.new()
+	_battle_menu.visible = false
+	hud.add_child(_battle_menu)
+
+## 练习场野狼：慢速绕圈游荡、永不主动攻击，只等玩家踏入遭遇圈。
+func _spawn_training_wolf() -> void:
+	var wolf: Node = EnemyScene.instantiate()
+	wolf.name = "TrainingWolf"
+	wolf.set("kind", EnemyScript.Kind.WOLF)
+	wolf.set("move_speed", 0.8)
+	wolf.set("patrol_only", true)
+	wolf.position = Vector3(3.0, 0, -2.0)
+	add_child(wolf)
+	_wolf = wolf
+
+func start_battle() -> void:
+	_battle_running = true
+	player.battle_mode = true
+	player.velocity = Vector3.ZERO
+	if is_instance_valid(_wolf):
+		_wolf.set("battle_driven", true)
+	var agi := int(GameState.effective_attributes().get("agi", Attributes.BASE))
+	_battle_controller.set_units([
+		BattleUnit.from_player(player, agi),
+		BattleUnit.from_enemy(_wolf),
+	])
+	_battle_controller.begin_battle()
+	_order_bar.visible = true
+	_run_battle()
+
+## 回合主循环：按 AT 顺序轮流行动，直到全歼 / 逃跑 / 玩家阵亡。
+func _run_battle() -> void:
+	while _battle_running:
+		var unit := _battle_controller.current()
+		if unit == null:
+			_battle_running = false
+			break
+		if _battle_controller.all_enemies_dead():
+			_end_battle(true)
+			return
+		if not player.alive:
+			_end_battle(false)
+			return
+		_order_bar.build(_battle_controller.order_labels(), _battle_controller.index)
+		if not BattleController.node_alive(unit.node):
+			_battle_controller.finish_turn()
+			await get_tree().process_frame
+			continue
+		if unit.is_player:
+			await _player_command(unit)
+		else:
+			await _enemy_command(unit)
+		if _battle_running and not _battle_controller.all_enemies_dead() and player.alive:
+			_battle_controller.finish_turn()
+			# 每整轮回蓝结算在作战单位上，wrap 后抄回玩家实体（玩家才是权威）。
+			_battle_controller.flush_player_mp()
+		await get_tree().process_frame
+
+## 玩家回合：自动走位到攻击距离 → 五选一指令（指令集见 BattleMenu.COMMANDS，两套场景共用）。
+func _player_command(unit: BattleUnit) -> void:
+	_auto_approach(unit)
+	_battle_menu.open(BattleMenu.COMMANDS)
+	var idx: int = await _battle_menu.confirmed
+	_battle_menu.close()
+	if not _battle_running:
+		return
+	var foe := _battle_controller.nearest_foe_to(unit)
+	_face(foe)
+	match idx:
+		0:  # 攻击
+			if foe != null and _in_attack_range(foe):
+				player.battle_execute_attack(_battle_controller.attack_bonus(unit, foe))
+			else:
+				GameState.push_message("攻击落空 · 距离不够")
+		1:  # 战技
+			await _player_skill(unit)
+		2:  # 防御
+			unit.set_defend(true)
+			GameState.push_message("防御姿态 · 本回合受伤大幅降低")
+		3:  # 道具
+			await _player_item()
+		4:  # 逃跑
+			if _battle_controller.flee(unit):
+				GameState.push_message("成功脱离战斗")
+				_end_battle(true, true)
+			else:
+				GameState.push_message("逃跑失败 · 白白浪费一回合")
+	# 玩家实体是 HP/MP 的唯一权威：出手（战技扣蓝 / 药剂回血）后立刻抄回作战单位，
+	# 这样整轮 wrap 时把回蓝抄回实体才是安全的（见 battle_controller 的两个同步点）。
+	_battle_controller.pull_player_stats()
+
+func _auto_approach(unit: BattleUnit) -> void:
+	var foe := _battle_controller.nearest_foe_to(unit)
+	if foe == null:
+		return
+	_face(foe)
+	var dist := foe.node.global_position.distance_to(player.global_position)
+	if dist > player.attack_range + 0.1:
+		var step := minf(unit.move_power, dist - player.attack_range)
+		player.battle_execute_move(step)
+
+## 把 _face 用到的"看向敌方/朝向目标"统一。
+func _face(foe: BattleUnit) -> void:
+	if foe == null or foe.node == null:
+		return
+	var to_target: Vector3 = foe.node.global_position - player.global_position
+	to_target.y = 0.0
+	if to_target.length_squared() > 0.001:
+		player.battle_turn_dir = to_target.normalized()
+
+func _in_attack_range(foe: BattleUnit) -> bool:
+	if foe.node == null:
+		return false
+	var bulk := 0.0
+	if foe.node.has_method("hit_radius"):
+		bulk = foe.node.hit_radius()
+	return foe.node.global_position.distance_to(player.global_position) <= player.attack_range + bulk + 0.05
+
+func _player_skill(unit: BattleUnit) -> void:
+	_battle_menu.open(["剑气·断空", "环断"])
+	var opt: int = await _battle_menu.confirmed
+	_battle_menu.close()
+	var label: String = "剑气·断空" if opt == 0 else "环断"
+	var skill: String = "sword_wave" if opt == 0 else "ring"
+	var ok: bool = player.battle_execute_skill(skill)
+	if not ok:
+		var cost: float = CombatSkills.WAVE_MP_COST if opt == 0 else CombatSkills.RING_MP_COST
+		GameState.push_message("蓝量不足 · %s 需要 %d MP" % [label, int(cost)])
+
+func _player_item() -> void:
+	_battle_menu.open(["药剂", "炼金炸弹"])
+	var opt: int = await _battle_menu.confirmed
+	_battle_menu.close()
+	match opt:
+		0:
+			if player.potions <= 0:
+				GameState.push_message("药剂用完了")
+			else:
+				player.battle_execute_item("potion")
+		1:
+			if player.bombs <= 0:
+				GameState.push_message("没有炸弹")
+			else:
+				player.battle_execute_item("bomb")
+
+## 敌人回合：一步接近或攻击；玩家处于防御态时可弹反。
+func _enemy_command(unit: BattleUnit) -> void:
+	await get_tree().create_timer(0.55).timeout
+	if not _battle_running or not player.alive:
+		return
+	var intent: String = unit.node.battle_advance(player.global_position)
+	if intent != "攻击":
+		return
+	var dmg := float(unit.attack_power)
+	var pu := _battle_controller.player_unit()
+	if pu != null and pu.is_defending():
+		if randf() < 0.3:
+			GameState.push_message("弹反！攻势被荡开")
+			return
+		dmg *= 0.25
+	player.take_damage(dmg)
+	await get_tree().process_frame
+
+func _end_battle(won: bool, fled := false) -> void:
+	_battle_running = false
+	player.battle_mode = false
+	_order_bar.visible = false
+	_battle_menu.visible = false
+	if is_instance_valid(_wolf):
+		_wolf.set("battle_driven", false)
+	# 不再把快照 MP 写回玩家 —— 玩家的蓝由实体自己持有，收尾时单位只是镜像。
+	# 旧实现正是在这里用开战快照覆盖 player.mp，把回合内花掉的蓝整笔退了回来。
+	_battle_controller.force_win() if won else _battle_controller.force_lose()
+	if won and not fled:
+		GameState.push_message("练习战胜利 · 敌人全灭")

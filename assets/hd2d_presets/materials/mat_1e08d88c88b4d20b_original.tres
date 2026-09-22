@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/e762adbc5a89e45a_T_NJ_CSD_Guanmu001.png" id="1_bskht"]
+
+[resource]
+resource_name = "mat_1e08d88c88b4d20b"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_bskht")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

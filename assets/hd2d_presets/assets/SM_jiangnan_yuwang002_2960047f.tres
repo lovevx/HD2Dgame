@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3 uid="uid://8s0iycm8f0jq"]
+
+[ext_resource type="Script" uid="uid://tfihpnl3bnrw" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_f7q8w"]
+[ext_resource type="Script" uid="uid://ddb66wr46eh8h" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_0mims"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_jiangnan_yuwang002_2960047f.tscn" id="3_v0haw"]
+
+[resource]
+script = ExtResource("1_f7q8w")
+title = "SM_jiangnan_yuwang002"
+category = "建筑"
+source = ExtResource("3_v0haw")
+source_path = "res://assets/hd2d_presets/scenes/SM_jiangnan_yuwang002_2960047f.tscn"
+asset_id = &"SM_jiangnan_yuwang002_2960047f"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_jiangnan_yuwang002": Array[String](["mat_afcc548cf40150ff"])
+}
+facing = 2
+static_collision = true
+wind = 0.0

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_xgr04"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_c35dq"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_1songbaiC02_LODs_5e5a0d02.tscn" id="3_visrd"]
+
+[resource]
+script = ExtResource("1_xgr04")
+title = "SM_1songbaiC02_LODs"
+category = "植被"
+source = ExtResource("3_visrd")
+source_path = "res://assets/hd2d_presets/scenes/SM_1songbaiC02_LODs_5e5a0d02.tscn"
+asset_id = &"SM_1songbaiC02_LODs_5e5a0d02"
+family_id = &"family_25b6177dffbae417"
+material_slots = {
+"Geometry/SM_1songbaiC02_LODs": Array[String](["mat_d96aa1f046d2595a"])
+}
+facing = 2
+wind = 0.0

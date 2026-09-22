@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_w1rk5"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_86duh"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_NJ_Zhuziweilan002_78122031.tscn" id="3_l1ey8"]
+
+[resource]
+script = ExtResource("1_w1rk5")
+title = "SM_NJ_Zhuziweilan002"
+category = "建筑"
+source = ExtResource("3_l1ey8")
+source_path = "res://assets/hd2d_presets/scenes/SM_NJ_Zhuziweilan002_78122031.tscn"
+asset_id = &"SM_NJ_Zhuziweilan002_78122031"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_NJ_Zhuziweilan002": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

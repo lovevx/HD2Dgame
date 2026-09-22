@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_kv2t5"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_lckcd"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_XYNJiangnan027_981e5c8c.tscn" id="3_rk68f"]
+
+[resource]
+script = ExtResource("1_kv2t5")
+title = "SM_XYNJiangnan027"
+category = "山石"
+source = ExtResource("3_rk68f")
+source_path = "res://assets/hd2d_presets/scenes/SM_XYNJiangnan027_981e5c8c.tscn"
+asset_id = &"SM_XYNJiangnan027_981e5c8c"
+family_id = &"family_7cf52af80eb551c8"
+material_slots = {
+"Geometry/SM_XYNJiangnan027": Array[String](["mat_50bc367cd72d3ee3"])
+}
+static_collision = true
+wind = 0.0

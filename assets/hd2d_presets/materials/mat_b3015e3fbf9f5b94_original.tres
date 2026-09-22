@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/4603980a46cbfd6e_T_yuanbai002.png" id="1_obsik"]
+
+[resource]
+resource_name = "mat_b3015e3fbf9f5b94"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_obsik")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

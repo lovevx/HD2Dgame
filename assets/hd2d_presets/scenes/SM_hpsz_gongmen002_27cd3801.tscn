@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_hpsz_gongmen002_27cd3801_01.res" id="1_ufmip"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_6a0eb02224633daf_original.tres" id="2_uhs73"]
+
+[node name="Model" type="Node3D" unique_id=154822325]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1734271240]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.1525574e-07, 6.1035155e-07, 1.1920929e-07)
+
+[node name="SM_hpsz_gongmen002" type="MeshInstance3D" parent="Geometry" unique_id=1155717026]
+mesh = ExtResource("1_ufmip")
+surface_material_override/0 = ExtResource("2_uhs73")

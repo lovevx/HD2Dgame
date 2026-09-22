@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_wt067"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_xi25u"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Item_Baibulian006_3487c3c2.tscn" id="3_eypte"]
+
+[resource]
+script = ExtResource("1_wt067")
+title = "SM_Item_Baibulian006"
+category = "道具"
+source = ExtResource("3_eypte")
+source_path = "res://assets/hd2d_presets/scenes/SM_Item_Baibulian006_3487c3c2.tscn"
+asset_id = &"SM_Item_Baibulian006_3487c3c2"
+family_id = &"family_0a56faa7ba81dc82"
+material_slots = {
+"Geometry/SM_Item_Baibulian006": Array[String](["mat_ad1193358bf6ebfb"])
+}
+static_collision = true
+wind = 0.0

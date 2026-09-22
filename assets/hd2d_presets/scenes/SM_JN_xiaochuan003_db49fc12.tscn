@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_JN_xiaochuan003_db49fc12_01.res" id="1_w3ohf"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_afcc548cf40150ff_original.tres" id="2_ke6iq"]
+
+[sub_resource type="Skin" id="Skin_j3s35"]
+resource_name = "Skin"
+bind_count = 1
+bind/0/name = &"Dummy001"
+bind/0/bone = -1
+bind/0/pose = Transform3D(0.9998477, -0.017452406, 0, 0.017452406, 0.9998477, 0, 0, 0, 1, 0, 0, -8.304576e-09)
+
+[node name="Model" type="Node3D" unique_id=1781447654]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1913919275]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.0517576e-06, 5.9604645e-07)
+
+[node name="SM_JN_xiaochuan003" type="Node3D" parent="Geometry" unique_id=1718811257]
+
+[node name="Skeleton3D" type="Skeleton3D" parent="Geometry/SM_JN_xiaochuan003" unique_id=1972992897]
+bones/0/name = "Dummy001"
+bones/0/parent = -1
+bones/0/rest = Transform3D(0.9998477, 0.017452415, 0, -0.017452415, 0.9998477, 0, 0, 0, 1, 0, 0, 8.30458e-09)
+bones/0/enabled = true
+bones/0/position = Vector3(0, 0, 8.30458e-09)
+bones/0/rotation = Quaternion(0, 0, -0.00872654, 0.9999619)
+bones/0/scale = Vector3(1, 1, 1)
+
+[node name="SM_JN_xiaochuan003" type="MeshInstance3D" parent="Geometry/SM_JN_xiaochuan003/Skeleton3D" unique_id=1790785053]
+mesh = ExtResource("1_w3ohf")
+skin = SubResource("Skin_j3s35")
+skeleton = NodePath("..")
+surface_material_override/0 = ExtResource("2_ke6iq")

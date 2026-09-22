@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/4ce5cf7ed24f166b_T_dashu.png" id="1_ds4od"]
+
+[resource]
+resource_name = "mat_27551525688d5b40"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_ds4od")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

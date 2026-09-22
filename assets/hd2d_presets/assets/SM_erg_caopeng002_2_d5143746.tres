@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_xcdwp"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_jsy1s"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_erg_caopeng002_2_d5143746.tscn" id="3_k1p1g"]
+
+[resource]
+script = ExtResource("1_xcdwp")
+title = "SM_erg_caopeng002_2"
+category = "建筑"
+source = ExtResource("3_k1p1g")
+source_path = "res://assets/hd2d_presets/scenes/SM_erg_caopeng002_2_d5143746.tscn"
+asset_id = &"SM_erg_caopeng002_2_d5143746"
+family_id = &"family_92f0c2d59ef8696f"
+material_slots = {
+"Geometry/SM_erg_caopeng002_2": Array[String](["mat_c4c81404cbfb528e"])
+}
+static_collision = true
+wind = 0.0

@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_YX_Shiban008_1540a4ba_01.res" id="1_g2t5b"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_55b813580a0a8e89_original.tres" id="2_hfdja"]
+
+[node name="Model" type="Node3D" unique_id=1890267420]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1314830431]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.086999394, 1.1920929e-07)
+
+[node name="SM_YX_Shiban008" type="MeshInstance3D" parent="Geometry" unique_id=1165647751]
+mesh = ExtResource("1_g2t5b")
+surface_material_override/0 = ExtResource("2_hfdja")

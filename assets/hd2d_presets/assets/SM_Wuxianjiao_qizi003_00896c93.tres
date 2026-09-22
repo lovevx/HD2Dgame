@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_4gy8d"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_g2kq6"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Wuxianjiao_qizi003_00896c93.tscn" id="3_ct343"]
+
+[resource]
+script = ExtResource("1_4gy8d")
+title = "SM_Wuxianjiao_qizi003"
+category = "建筑"
+source = ExtResource("3_ct343")
+source_path = "res://assets/hd2d_presets/scenes/SM_Wuxianjiao_qizi003_00896c93.tscn"
+asset_id = &"SM_Wuxianjiao_qizi003_00896c93"
+family_id = &"family_6ead0bcd76832f07"
+material_slots = {
+"Geometry/SM_Wuxianjiao_qizi003": Array[String](["mat_50f56a4c4fb81898"])
+}
+static_collision = true
+wind = 0.0

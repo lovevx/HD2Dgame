@@ -3,6 +3,7 @@ extends SceneTree
 ## BOSS 房决战全回复，以及阶段结算对本土装备的清理。
 ## 无头模式跑逻辑；D3D12 实渲染模式额外输出宝箱截图。
 const Campaign := preload("res://data/campaign.gd")
+const TestEnv := preload("res://tools/test_env.gd")
 var failures := 0
 var gs: Node
 var scene: Node
@@ -34,8 +35,9 @@ func capture(label: String) -> void:
 func run() -> void:
 	await process_frame
 	gs = root.get_node("GameState")
-	gs.save_path = "user://world_drops_validation.cfg"
-	gs.reset_progress()
+	# 隔离档 + 固定初始状态。这里要真写盘（下面验宝箱记录/下一轮重置都依赖落盘），
+	# 所以 keep_persistence=true，但写的仍是隔离档，不是玩家的真实存档。
+	TestEnv.isolate(gs, "world_drops", true)
 	gs.complete_contract("掉落验收")
 
 	# ---- 数据层：掉落池与场景宝箱产出表 ----
@@ -130,7 +132,6 @@ func run() -> void:
 	check(gs.begin_next_trial(), "结算后开启下一轮")
 	check(not gs.is_scene_chest_opened("arena_0") and not gs.is_scene_chest_opened("outer"), "下一轮重置宝箱开启记录")
 
-	gs.persistence_enabled = false
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(gs.save_path))
+	TestEnv.cleanup(gs)
 	print("WORLD_DROPS_FAILURES=", failures)
 	quit(1 if failures else 0)

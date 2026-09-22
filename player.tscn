@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://dyd7aiw2psd2q"]
 
 [ext_resource type="Script" uid="uid://b7domrukg22il" path="res://player.gd" id="1_4flbx"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/black_swordsman/player_frames.tres" id="2_frames"]
-[ext_resource type="Script" path="res://scripts/player/player_visual.gd" id="3_visual"]
-[ext_resource type="Script" path="res://scripts/player/dash_fx.gd" id="4_dashfx"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/player_frames_video.tres" id="2_frames"]
+[ext_resource type="Script" uid="uid://dxifolc3vdr0c" path="res://scripts/player/player_visual.gd" id="3_visual"]
+[ext_resource type="Script" uid="uid://cxvv6ohi6xxrc" path="res://scripts/player/dash_fx.gd" id="4_dashfx"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jq8tk"]
 radius = 0.4
@@ -14,20 +14,20 @@ script = ExtResource("1_4flbx")
 
 [node name="pivot" type="Node3D" parent="." unique_id=56383977]
 
-[node name="CharacterSprite" type="AnimatedSprite3D" parent="pivot"]
-pixel_size = 0.016
+[node name="CharacterSprite" type="AnimatedSprite3D" parent="pivot" unique_id=1169213245]
 offset = Vector2(0, 64)
+pixel_size = 0.016
 billboard = 1
 shaded = true
 alpha_cut = 1
 texture_filter = 0
 sprite_frames = ExtResource("2_frames")
-animation = &"idle_up"
+animation = &"attack_down"
 script = ExtResource("3_visual")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1910488917]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.846498, 0)
 shape = SubResource("CapsuleShape3D_jq8tk")
 
-[node name="DashFX" type="Node3D" parent="."]
+[node name="DashFX" type="Node3D" parent="." unique_id=958725957]
 script = ExtResource("4_dashfx")

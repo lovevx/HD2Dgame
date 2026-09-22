@@ -1,31 +1,24 @@
 extends RefCounted
 ## 主城功能分区装配，b 为 build_harbor.gd 的素材与地面构件接口。
+## 2026-09-19：地面摆件与建筑全部清空，本文件只保留五个功能区的位置、光圈与招牌；
+## 重新布景时再往对应分区里加 b.prop(...)。城门已改由 tools/harbor_gate.gd 随城墙砌筑。
 static func build(b) -> void:
-	b.prop("SM_xgg_chengmen001", Vector3(0, 0, -30), 180.0)
-	b.prop("SM_JN_fangzi001", Vector3(-22, 0, -25), 0, 0.9)
-	b.prop("SM_JN_fangzi005", Vector3(20, 0, -25), 0, 0.9)
-	for x in [-7.0, 7.0]:
-		b.prop_with_box("SM_Licheng_shizhuzi001", Vector3(x, 0, -23))
-		b.prop_with_box("SM_NJ_ShiDeng_001", Vector3(x, 0, -19))
-	point(b, "DeparturePortal", Vector3(0, 0, -21), "城门传送 · 科尔波山", Color("79dfff"), "", "res://scenes/world/colpo_forest_outer.tscn")
+	var HarborShop := preload("res://tools/harbor_shop.gd")
+	var HarborForge := preload("res://tools/harbor_forge.gd")
+	var HarborQuest := preload("res://tools/harbor_quest.gd")
+	point(b, "DeparturePortal", Vector3(0, 0, -21), "世界入口 · 阶段试炼", Color("79dfff"), "", "res://scenes/main/campaign.tscn")
 	b.zone_marker("EntranceZone", Vector3(0, 0, -21), "entrance", "传送出入口", Color("79dfff"))
 
-	b.prop("sm_gsc_kezhan001", Vector3(-20, 0, -17), 0, 0.8)
-	b.prop("SM_gsc_tanzi001", Vector3(-11, 0, -13), 0, 0.9)
-	b.prop("SM_NJ_ZhuPengzi001", Vector3(-11, 0, -14.3), 0, 1.1, {"static_collision": false})
-	b.prop_with_box("SM_JN_yaogui001", Vector3(-15, 0, -12), 0, 0.8)
-	b.prop_with_box("SM_Item_NJhuojia003", Vector3(-17, 0, -11), 90, 0.8)
-	b.prop_with_box("SM_Box001Open", Vector3(-14, 0, -10))
-	point(b, "ShopService", Vector3(-10, 0, -9), "商店 · 潮汐杂货", Color("ffe49a"), "港口补给与物资交易处\n\n药剂补给  /  旅行物资  /  装备交易\n\n场景交互入口已开放，商品与交易系统待接入。")
-	b.zone_marker("ShopZone", Vector3(-10, 0, -9), "shop", "商店区", Color("ffe49a"))
+	point(b, "ShopService", HarborShop.SERVICE_AT, "商店 · 轮回商店", Color("8ee8f7"), "左上街角的轮回商店\n\n药剂补给  /  武具防具  /  消耗与材料\n\n商店交易框架已就绪，商品与经济系统待接入。")
+	b.zone_marker("ShopZone", HarborShop.SERVICE_AT, "shop", "商店区", Color("8ee8f7"))
+	# 左上商店区陈设：店面小楼、门面货架招牌、集市角与青色灯带（tools/harbor_shop.gd）。
+	b.map.add_child(HarborShop.make_node())
 
-	b.prop("SM_NJ_ZhuPengzi001", Vector3(13, 0, -15), 0, 1.0, {"static_collision": true, "collision_mode": 1, "collision_size": Vector3(3.6, 2.6, 2.6), "collision_offset": Vector3(0, 1.3, 0)})
-	b.prop_with_box("SM_mjsz_shizhuozi001", Vector3(11, 0, -12))
-	b.prop("SM_Item_damoshuijing001", Vector3(11, 1.05, -12), 0, 0.65, {"static_collision": false})
-	b.prop_with_box("SM_Item_NJhuojia004", Vector3(16, 0, -12), 90, 0.8)
-	for spot in [Vector3(14, 0, -13), Vector3(16, 0, -14), Vector3(14, 0, -11)]:
-		b.prop("SM_Item_Hantiekuang001", spot, 20, 0.65, {"static_collision": false})
-	b.prop("SM_ltem_Shuiche001", Vector3(22, 0, -16), -24, 0.8, {"static_collision": false})
+	point(b, "ForgeService", HarborForge.SERVICE_AT, "装备强化 · 铸潮工坊", Color("ffb780"), "装备强化与材料加工处\n\n强化工作台  /  矿石材料  /  装备整备\n\n场景交互入口已开放，强化数值与消耗系统待接入。")
+	b.zone_marker("ForgeZone", HarborForge.SERVICE_AT, "forge", "装备强化区", Color("ffb780"))
+	# 强化区陈设：强化巷北侧一排锻造铺面、门前熔炉与锻造台、街南侧石料与魔晶（tools/harbor_forge.gd）。
+	b.map.add_child(HarborForge.make_node())
+	# 强化区的暖色灯保留：机能区需要一个照明锚点。
 	var glow := OmniLight3D.new()
 	glow.name = "ForgeCrystalLight"
 	glow.position = Vector3(11, 2, -12)
@@ -33,20 +26,12 @@ static func build(b) -> void:
 	glow.light_energy = 2.0
 	glow.omni_range = 5.0
 	b.map.add_child(glow)
-	point(b, "ForgeService", Vector3(10, 0, -9), "装备强化 · 铸潮工坊", Color("ffb780"), "装备强化与材料加工处\n\n强化工作台  /  矿石材料  /  装备整备\n\n场景交互入口已开放，强化数值与消耗系统待接入。")
-	b.zone_marker("ForgeZone", Vector3(10, 0, -9), "forge", "装备强化区", Color("ffb780"))
 
-	b.prop("SM_NJ_ZhuPengzi001", Vector3(-16, 0, -1), 0, 0.85, {"static_collision": true, "collision_mode": 1, "collision_size": Vector3(3.6, 2.6, 2.6), "collision_offset": Vector3(0, 1.3, 0)})
-	b.prop_with_box("SM_Item_pingfeng001", Vector3(-11, 0, -2.6), 0, 1.0)
-	b.prop_with_box("SM_NJ_ZhuZhuozi001", Vector3(-15, 0, 0), 0, 0.9)
-	b.prop_with_box("SM_Box001Close", Vector3(-18, 0, 1))
-	point(b, "QuestService", Vector3(-10, 0, 0.5), "任务 · 港务委托所", Color("a4efc2"), "灰潮港任务与情报集散处\n\n港务委托  /  区域情报  /  任务交付\n\n北侧城门通往科尔波山，东侧码头通往战斗试炼。\n任务接取、进度与奖励系统待接入。")
-	b.zone_marker("QuestZone", Vector3(-10, 0, 0.5), "quest", "任务功能区", Color("a4efc2"))
+	point(b, "QuestService", HarborQuest.SERVICE_AT, "任务 · 港务委托所", Color("a4efc2"), "灰潮港任务与情报集散处\n\n港务委托  /  区域情报  /  任务交付\n\n北侧城门通往阶段试炼（世界入口），东侧码头通往演武场（新手教学）。\n任务接取、进度与奖励系统待接入。")
+	b.zone_marker("QuestZone", HarborQuest.SERVICE_AT, "quest", "任务功能区", Color("a4efc2"))
+	# 任务区陈设：任务巷北侧的委托所主楼与副楼、门前公告板与柜台、前院、巷南侧坐具与招幌（tools/harbor_quest.gd）。
+	b.map.add_child(HarborQuest.make_node())
 
-	# 演武区移到东南，避免武馆与强化工作台重叠。
-	for x in [14.0, 20.0]:
-		b.prop("SM_gsc_gu001", Vector3(x, 0, -1.5), 0, 0.9, {"static_collision": false})
-		b.prop_with_box("SM_Licheng_shizhuzi001", Vector3(x, 0, -3.5), 0, 0.8)
 	point(b, "TrialPortal", Vector3(17, 0, 1), "试炼传送 · 演武场", Color("f4a8ac"), "", "res://scenes/main/main.tscn")
 	b.zone_marker("TrialZone", Vector3(17, 0, 1), "trial_entrance", "试炼入口", Color("f4a8ac"))
 

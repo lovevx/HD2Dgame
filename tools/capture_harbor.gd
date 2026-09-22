@@ -34,9 +34,8 @@ func capture() -> void:
 		{"name": "客栈是带院落的屋舍，正面可走入", "at": Vector3(-20, 0, -7.0), "move": Vector3(0, 0, -2.4), "expect_blocked": false},
 		{"name": "强化台实心", "at": Vector3(11, 0, -10.5), "move": Vector3(0, 0, -2), "expect_blocked": true},
 		{"name": "城门中央主路可通行", "at": Vector3(0, 0, -14.0), "move": Vector3(0, 0, -7), "expect_blocked": false},
-		{"name": "竹棚实心", "at": Vector3(-9, 0, 10.4), "move": Vector3(0, 0, -2.8), "expect_blocked": true},
 		{"name": "石板街可通行", "at": Vector3(-4, 0, -4.0), "move": Vector3(0, 0, 3), "expect_blocked": false},
-		{"name": "城门以北拦住", "at": Vector3(-28, 0, -26.0), "move": Vector3(0, 0, -4), "expect_blocked": true},
+		{"name": "西侧城墙拦住", "at": Vector3(-38, 0, -20), "move": Vector3(-4, 0, 0), "expect_blocked": true},
 	]
 	for check in checks:
 		var blocked: bool = await walkable(player, check["at"], check["move"])

@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_ltem_Shuiche001_f37e255f_01.res" id="1_skxng"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_afcc548cf40150ff_original.tres" id="2_r5fsf"]
+
+[node name="Model" type="Node3D" unique_id=1589364199]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=49652055]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3113022e-06, 1.4456754, 0)
+
+[node name="SM_ltem_Shuiche001" type="MeshInstance3D" parent="Geometry" unique_id=510591536]
+mesh = ExtResource("1_skxng")
+surface_material_override/0 = ExtResource("2_r5fsf")

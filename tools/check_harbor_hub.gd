@@ -1,4 +1,7 @@
 extends SceneTree
+## 灰潮港主城白盒验收：五个功能点、V 交互、门与传送（走进即传）。
+## 运行：godot --headless --path . --script res://tools/check_harbor_hub.gd
+const TestEnv := preload("res://tools/test_env.gd")
 var failures: Array[String] = []
 
 func _initialize() -> void:
@@ -10,6 +13,9 @@ func check(ok: bool, label: String) -> void:
 		failures.append(label)
 
 func run() -> void:
+	# 商店/锻造/任务服务点都会 save_game()，不隔离就会写进玩家的真实存档。
+	var gs: Node = root.get_node("GameState")
+	TestEnv.isolate(gs, "harbor_hub")
 	change_scene_to_file("res://scenes/world/harbor.tscn")
 	await create_timer(1).timeout
 	var scene = current_scene
@@ -17,7 +23,9 @@ func run() -> void:
 	player.set_physics_process(false)
 	var hud = get_first_node_in_group("hud")
 	check(get_nodes_in_group("harbor_services").size() == 5, "五个功能点")
-	for id in ["ShopService", "ForgeService", "QuestService", "DeparturePortal", "TrialPortal"]:
+	# 服务点（V 交互）：从主街可达、靠近提示、V 打开、Esc 关闭、离开收提示。
+	# 传送门（走进即传，scene_portal.gd）不能把玩家真放进门里——会直接触发传送，单独在后面验证。
+	for id in ["ShopService", "ForgeService", "QuestService"]:
 		var service = scene.get_node(id)
 		var start := Vector3(0, 0, service.position.z)
 		player.position = start
@@ -35,7 +43,16 @@ func run() -> void:
 			await process_frame
 			interact.pressed = false
 			Input.parse_input_event(interact)
-			check(service.opened and hud.overlay.visible, id + " V 打开面板")
+			# 轮回商店与港务委托所都走完整 UI（panel_handler / campaign.show_tasks 接线），
+			# 其余服务仍是默认说明面板。
+			if id == "ShopService":
+				var shop_panel = get_first_node_in_group("shop_panel")
+				check(shop_panel != null and shop_panel.visible, id + " V 打开轮回商店")
+			elif id == "QuestService":
+				var quest_panel = get_first_node_in_group("quest_panel")
+				check(quest_panel != null and quest_panel.visible, id + " V 打开任务档案")
+			else:
+				check(service.opened and hud.overlay.visible, id + " V 打开面板")
 			check(not player.is_physics_processing(), id + " 面板阻止移动")
 			if id == "QuestService" and DisplayServer.get_name() != "headless":
 				await RenderingServer.frame_post_draw
@@ -45,13 +62,25 @@ func run() -> void:
 			esc.pressed = true
 			Input.parse_input_event(esc)
 			await process_frame
-			check(not service.opened and not hud.overlay.visible and player.is_physics_processing(), id + " Esc 关闭并恢复移动")
+			if id == "ShopService":
+				var shop_panel_after = get_first_node_in_group("shop_panel")
+				check(shop_panel_after != null and not shop_panel_after.visible and player.is_physics_processing(),
+					id + " Esc 关闭并恢复移动")
+			elif id == "QuestService":
+				var quest_panel_after = get_first_node_in_group("quest_panel")
+				check(quest_panel_after != null and not quest_panel_after.visible and player.is_physics_processing(),
+					id + " Esc 关闭并恢复移动")
+			else:
+				check(not service.opened and not hud.overlay.visible and player.is_physics_processing(), id + " Esc 关闭并恢复移动")
 			player.set_physics_process(false)
-		else:
-			check(ResourceLoader.exists(service.target_scene), id + " 目标场景存在")
-		player.position = Vector3.ZERO
-		await create_timer(0.2).timeout
-		check(not hud.prompt.visible, id + " 离开隐藏提示")
+			player.position = Vector3.ZERO
+			await create_timer(0.2).timeout
+			check(not hud.prompt.visible, id + " 离开隐藏提示")
+	# 传送门：走进即传（scene_portal.gd），不做提示断言，只验证目标场景存在；
+	# 实际传送与返回主城在下方过场链路里验证。
+	for id in ["DeparturePortal", "TrialPortal"]:
+		var portal = scene.get_node(id)
+		check(ResourceLoader.exists(portal.target_scene), id + " 目标场景存在")
 	if DisplayServer.get_name() != "headless":
 		for shot in [{"at": Vector3(-10, 0, 0.5), "name": "quest"}, {"at": Vector3(10, 0, -9), "name": "forge"}, {"at": Vector3(0, 0, -21), "name": "gate"}]:
 			player.position = shot.at
@@ -68,6 +97,7 @@ func run() -> void:
 		root.get_node("GameState").change_scene("res://scenes/world/harbor.tscn")
 		await create_timer(2).timeout
 		check(current_scene.scene_file_path == "res://scenes/world/harbor.tscn", "返回灰潮港口")
+	TestEnv.cleanup(gs)
 	print("HUB_RESULT: ", "PASS" if failures.is_empty() else failures)
 	current_scene.queue_free()
 	await process_frame

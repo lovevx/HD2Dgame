@@ -1,29 +1,42 @@
 extends AnimatedSprite3D
-## 八方向移动 + 三段独立攻击 + 受击/闪避/死亡动画。
+## 八方向移动 + 单段斩击 + 受击/闪避/死亡动画。
 ## 优先级：死亡 > 攻击 > 受击 > 闪避 > 待机/移动。
-## 八方向画法：每动作只画 up/down/right/up_right/down_right 五张图集，
-## left/up_left/down_left 由 flip_h 水平镜像生成（MIRRORED_DIRS）。
+## 图集：每动作 8 个朝向**全部真实绘制**（新版动作 sheet，见 docs/TURNBASED_COMBAT_PLAN.md 附录 A），
+## 因此不再水平镜像、也不再需要斜向尺寸补偿——打包时已把本体高统一到 104px。
+## 格子尺寸全动作统一（224×192，地面线在格底往上 GROUND_SLACK），offset 由当前帧区域高度推出（见 _sync_offset）。
 
-const CLIP_LEN := 0.8  # 单个动作动画全长（8 帧 @ 10fps）
-const HIT_TIME := 0.22  # 受击动画展示时长
+const CLIP_LEN := 0.8  # 单个动作动画全长（12 帧 @ 15fps）
+## 闪避收尾余量：12 帧动画（0.8s）压缩到「闪避时长 − DODGE_SETTLE」内播完，
+## 提前约 0.05s 停在末帧（直立），避免动画与闪避结束边界竞态重播而"最后一跳"。
+const DODGE_SETTLE := 0.05
+## 受击动画展示时长：12 帧 @15fps 的原始全长是 0.8s，压进 0.22s 相当于 55fps 频闪
+## （一闪就没，看不出受击姿态）；0.35s ≈ 2.3 倍速，既保持受击的急促感又读得清动作。
+const HIT_TIME := 0.35
 const BASE_PIXEL_SIZE := 0.016
 const BASE_OFFSET := Vector2(0, 64)
+## 帧内锚点：地面线在格子底边往上这么多像素（打包脚本同口径）。
+const GROUND_SLACK := 16
+## 常驻移动模式 = 跑步（2026-09-21：walk 图集斜向帧序列有复用问题，直接停用，
+## 移动一律播 run；run 的 8 向图集都是真实绘制，无斜向复用）。
+const LOCOMOTION_CLIP := "run"
+## 连段已取消（2026-09-20）：普攻只有一记斜劈；直踹动作留在图集里备用。
+const COMBO_CLIPS: Array[String] = ["attack"]
 
-## 行走一圈（8 帧 = 2 步）覆盖的地面位移（米）：2 × 约 0.74 米/步。
-## 步长按 walk_right 接触帧两腿中心间距 46px × 0.016 量得。
+## 跑步剪辑（12 帧 @15fps = 0.8s，= **一个**步态周期）覆盖的地面位移（米）。
+## 2026-09-21 最新版 sheet：每周期步幅 = 1.75 × 最大脚距 68px × 0.016 ≈ 1.90m
+## （1.75 系数与旧图集标定互相印证：1.75×53×0.016=1.47、1.75×66×0.016=1.85）。
 ## 用它把步频绑到实际移速，避免位移与步频脱节造成脚底打滑。
-const WALK_STRIDE_PER_CYCLE := 1.47
+const RUN_STRIDE_PER_CYCLE := 1.86
+## 步频衰减系数（2026-09-22）：仅放慢动画、不动移速。当前常驻移速 3.12 m/s 会催出
+## 1.34 倍速（≈201 步/分钟）的"小碎步"，用户反馈过快；×0.82 降到 ≈1.10 倍（≈165 步/分钟），
+## 步伐更沉稳。保留 <1 的轻微脚下滑动感以换取移速不变，不作为后续无脑拉大跨步的借口。
+const RUN_CADENCE_FACTOR := 0.82
 ## 步频倍率上下限：低于下限像定帧，高于上限会糊成一片。
 const WALK_SPEED_SCALE := Vector2(0.6, 3.0)
 
-## 45° 斜向图集的尺寸补偿：这批图在生成时被画大了，按实测身高比缩回正交视角的大小。
-## 缩放 pixel_size 不会让脚离地——格子里的脚底锚点 (96,144) 正好对应节点原点。
-## 键为动作名，值为斜向视角的补偿系数；正交视角恒为 1.0。
-## walk 已于 2026-09-19 重画对齐（实测 1.02x / 0.99x），故不再需要补偿。
-## idle 仍是旧图（斜向 113.3px vs 正交 106.8px），重新出图对齐后删掉本条即可。
-const DIAGONAL_SCALE := {
-	"idle": 0.94,
-}
+## 斜向尺寸补偿：新版图集打包时已统一缩放（本体高 104px），不再需要补偿，
+## 保留结构与 DIAGONAL_DIRS 以便将来某套动作真的画大了再填。
+const DIAGONAL_SCALE := {}
 ## 需要套用尺寸补偿的朝向：左斜两向与右斜共用同一张图集，同样要缩。
 const DIAGONAL_DIRS := {"up_right": true, "down_right": true, "up_left": true, "down_left": true}
 
@@ -32,8 +45,9 @@ const DIR_NAMES: Array[String] = [
 	"down", "down_right", "right", "up_right",
 	"up", "up_left", "left", "down_left",
 ]
-## 这 3 个朝向的图集复用右侧系并水平镜像（所有侧面/斜向图集统一面朝右）。
-const MIRRORED_DIRS := {"left": true, "up_left": true, "down_left": true}
+## 镜像朝向：新版图集 8 个朝向都是真实绘制，**不能再镜像**——
+## 镜像会让左手持刀（素材是面朝左画的），所以这里保持空表。
+const MIRRORED_DIRS := {}
 
 @onready var player: CharacterBody3D = get_parent().get_parent()
 var attack_time_left: float = 0.0
@@ -43,6 +57,7 @@ var display_direction: String = "up"
 
 func _ready() -> void:
 	player.attacked.connect(_on_attacked)
+	player.kicked.connect(_on_kicked)
 	player.received_hit.connect(_on_hit)
 	player.guarded.connect(_on_guarded)
 	_update_locomotion()
@@ -66,87 +81,150 @@ func _process(delta: float) -> void:
 		return
 	if hit_timer > 0.0:
 		_play_action("hit", player.facing, false)
-		speed_scale = CLIP_LEN / HIT_TIME  # 压缩到受击展示时长内播完
+		speed_scale = _clip_seconds(animation) / HIT_TIME  # 压缩到受击展示时长内播完
 		return
 	if player.dodging:
 		# 动画方向跟随实际闪避位移方向，并压缩到闪避时长内播完
 		var dir: Vector3 = player.dodge_dir if player.dodge_dir.length_squared() > 0.001 else player.facing
-		_play_action("dodge", dir, false)
-		speed_scale = CLIP_LEN / maxf(player.dodge_duration, 0.05)
+		var clip := StringName("dodge_" + _to_dir_name(dir))
+		# 非循环 12 帧播完即停帧收尾，不再从头重播
+		# （闪避动画全长恰等于闪避时长，边界抖动时《played 完 + 状态未结束》会闪回起手帧，造成"最后跳一下"）
+		if animation != clip or is_playing():
+			_play_action("dodge", dir, false)
+		# 压到「闪避时长 − DODGE_SETTLE」内播完：提前收尾停在末帧（直立），
+		# 切回待机/移动时姿态连续，杜绝与闪避结束的竞态重播。
+		speed_scale = _clip_seconds(clip) / maxf(player.dodge_duration - DODGE_SETTLE, 0.05)
 		return
 	_update_locomotion()
 
 ## 把面向向量量化到 8 方向之一：atan2(x,z) 每 45° 一档。
+## 入参是世界方向，先经 player.view_dir() 转回"以机位为北"的视角系再量化——
+## 动作跟按键走：W 永远播背面（往画面深处走），不管机位转到世界哪个朝向。
 func _to_dir_name(direction: Vector3) -> String:
-	var index := int(round(atan2(direction.x, direction.z) / (PI / 4.0))) % 8
+	var view: Vector3 = player.view_dir(direction)
+	var index := int(round(atan2(view.x, view.z) / (PI / 4.0))) % 8
 	if index < 0:
 		index += 8
 	return DIR_NAMES[index]
 
-## 该动作 + 该朝向下应使用的 pixel_size：只对 45° 斜向做尺寸补偿，其余保持基准。
+## 该动作 + 该朝向下应使用的 pixel_size：斜向补偿表为空，恒为基准值。
+## 攻击图集已归一化到本体 104px（见 tools/normalize_attack_video_sheets.py），
+## 与移动/待机同尺寸，不再需要额外补偿。
 func _pixel_size_for(action: String, direction: String) -> float:
 	if direction in DIAGONAL_DIRS:
 		return BASE_PIXEL_SIZE * float(DIAGONAL_SCALE.get(action, 1.0))
 	return BASE_PIXEL_SIZE
 
+## 剪辑实际时长：逐帧时长求和 / 帧率。逐帧时长（frame duration）的单位是"1/帧率 的节拍数"
+## （实测确认，默认 1.0 → 均匀剪辑等价于 帧数/帧率）。待机用的是逐帧时长（站立帧停更久），
+## 动作压缩与步频同步都要按实际时长算，否则脚底打滑 / 展示时长不足。
+func _clip_seconds(clip: StringName) -> float:
+	if sprite_frames == null or not sprite_frames.has_animation(clip):
+		return CLIP_LEN
+	var fps := sprite_frames.get_animation_speed(clip)
+	var n := sprite_frames.get_frame_count(clip)
+	if fps <= 0.0 or n <= 0:
+		return CLIP_LEN
+	var ticks := 0.0
+	for i in n:
+		ticks += sprite_frames.get_frame_duration(clip, i)
+	if ticks > 0.0:
+		return ticks / fps
+	return float(n) / fps
+
+## 片段名解析：动作缺失时退回待机，避免 play() 拿到不存在的动画而卡住上一帧。
+## （新版图集没有 guard，傲歌的防御姿态因此退回待机。）
+func _resolve_action(action: String, direction: String) -> String:
+	if sprite_frames != null and sprite_frames.has_animation(action + "_" + direction):
+		return action
+	return "idle"
+
+## offset 由当前帧的区域高度推出：锚点恒在「区域底边往上 GROUND_SLACK」。
+## 攻击帧 208x176、其余 192x160，所以必须逐动画算；192x160 时正好等于 BASE_OFFSET。
+func _sync_offset() -> void:
+	if sprite_frames == null or not sprite_frames.has_animation(animation):
+		offset = BASE_OFFSET
+		return
+	var tex := sprite_frames.get_frame_texture(animation, 0)
+	if tex is AtlasTexture:
+		var h: float = (tex as AtlasTexture).region.size.y
+		offset = Vector2(0, h / 2.0 - GROUND_SLACK)
+	else:
+		offset = BASE_OFFSET
+
 ## 播放某个动作动画；loop 为 true 时若同一片段已在播放则不再重启。
 func _play_action(action: String, direction: Vector3, loop: bool) -> void:
 	display_direction = _to_dir_name(direction)
+	action = _resolve_action(action, display_direction)
 	var clip := StringName(action + "_" + display_direction)
 	pixel_size = _pixel_size_for(action, display_direction)
-	offset = BASE_OFFSET
 	set_flip_for(action, display_direction)
 	speed_scale = 1.0
 	if animation == clip and is_playing():
 		return
 	play(clip)
+	_sync_offset()
 
-## 镜像：所有侧面/斜向图集统一面朝右，左侧三向（left/up_left/down_left）水平镜像。
+## 镜像：新版图集 8 向都是真实绘制，MIRRORED_DIRS 为空表 → 始终不镜像。
 func set_flip_for(_action: String, direction: String) -> void:
 	flip_h = direction in MIRRORED_DIRS
 
 func _update_locomotion() -> void:
-	offset = BASE_OFFSET
 	display_direction = _to_dir_name(player.facing)
 	var moving: bool = player.input_dir.length_squared() > 0.001
-	var action: String = "walk" if moving else "idle"
+	var action: String = LOCOMOTION_CLIP if moving else "idle"
+	action = _resolve_action(action, display_direction)
 	var clip: StringName = StringName(action + "_" + display_direction)
 	pixel_size = _pixel_size_for(action, display_direction)
-	# 侧面/斜向源图统一面朝右，仅左侧三向镜像。
 	flip_h = display_direction in MIRRORED_DIRS
 	# 步频跟随实际移速：一圈耗时 = CLIP_LEN / speed_scale，令其等于"步幅 / 移速"，
 	# 即 speed_scale = 移速 × CLIP_LEN / 步幅。减速（如攻击中）时步频自动放慢。
-	# 待机是呼吸循环，不参与同步。
+	# 待机是呼吸循环，不参与同步。移动一律用 run 自己的步幅，否则脚底打滑。
+	# RUN_CADENCE_FACTOR 只把动画播慢一档，移速与步幅同步本身不动。
 	if moving:
 		var ground_speed := Vector2(player.velocity.x, player.velocity.z).length()
-		speed_scale = clampf(ground_speed * CLIP_LEN / WALK_STRIDE_PER_CYCLE,
+		speed_scale = clampf(ground_speed * _clip_seconds(clip) / RUN_STRIDE_PER_CYCLE * RUN_CADENCE_FACTOR,
 			WALK_SPEED_SCALE.x, WALK_SPEED_SCALE.y)
 	else:
 		speed_scale = 1.0
 	if animation != clip or not is_playing():
 		play(clip)
+	_sync_offset()
 
 func _on_attacked(stage: int) -> void:
 	display_direction = _to_dir_name(player.facing)
 	attack_time_left = player.attack_cd
-	var action: String = ["attack", "stab", "heavy"][clampi(stage, 0, 2)]
+	var action: String = COMBO_CLIPS[clampi(stage, 0, COMBO_CLIPS.size() - 1)]
+	action = _resolve_action(action, display_direction)
 	var clip := StringName(action + "_" + display_direction)
-	# 三段攻击图集均为统一的 192x160 网格，共用一个 offset；45° 斜向另有尺寸补偿。
 	pixel_size = _pixel_size_for(action, display_direction)
-	offset = BASE_OFFSET
-	# 侧面/斜向源图统一面朝右，仅左侧三向镜像。
-	flip_h = display_direction in MIRRORED_DIRS
-	speed_scale = CLIP_LEN / maxf(player.attack_cd, 0.01)
+	set_flip_for(action, display_direction)
+	speed_scale = _clip_seconds(clip) / maxf(player.attack_cd, 0.01)
 	stop()
 	play(clip)
+	_sync_offset()
+
+## 直踢（K 键）：动画时长按 kick 冷却压缩，与攻击同优先级（攻击 > 受击 > …）。
+func _on_kicked() -> void:
+	display_direction = _to_dir_name(player.facing)
+	attack_time_left = maxf(player.attack_cd, 0.35)
+	var action: String = _resolve_action("kick", display_direction)
+	var clip := StringName(action + "_" + display_direction)
+	pixel_size = _pixel_size_for(action, display_direction)
+	set_flip_for(action, display_direction)
+	speed_scale = _clip_seconds(clip) / maxf(player.attack_cd, 0.01)
+	stop()
+	play(clip)
+	_sync_offset()
 
 func _on_hit() -> void:
 	hit_timer = HIT_TIME  # 受击动画展示时长
 
 func _on_guarded() -> void:
 	guard_timer = 0.35
+	# 新版图集未画格挡：_resolve_action 会退回待机；将来补了 guard 图集即自动生效。
 	_play_action("guard", player.facing, false)
-	speed_scale = CLIP_LEN / guard_timer
+	speed_scale = _clip_seconds(animation) / guard_timer
 
 func reset_visual() -> void:
 	attack_time_left = 0.0

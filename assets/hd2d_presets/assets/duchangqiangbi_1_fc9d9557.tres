@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_58r8w"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_6bjia"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/duchangqiangbi_1_fc9d9557.tscn" id="3_ucr0d"]
+
+[resource]
+script = ExtResource("1_58r8w")
+title = "duchangqiangbi_1"
+category = "建筑"
+source = ExtResource("3_ucr0d")
+source_path = "res://assets/hd2d_presets/scenes/duchangqiangbi_1_fc9d9557.tscn"
+asset_id = &"duchangqiangbi_1_fc9d9557"
+family_id = &"family_9b3322f555c633af"
+material_slots = {
+"Geometry/duchangqiangbi_1": Array[String](["mat_d181c9d21706fa7a"])
+}
+static_collision = true
+wind = 0.0

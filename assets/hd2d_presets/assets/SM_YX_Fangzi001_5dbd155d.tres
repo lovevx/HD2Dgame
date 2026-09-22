@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_2veqo"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_2o5us"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_YX_Fangzi001_5dbd155d.tscn" id="3_wvpga"]
+
+[resource]
+script = ExtResource("1_2veqo")
+title = "SM_YX_Fangzi001"
+category = "建筑"
+source = ExtResource("3_wvpga")
+source_path = "res://assets/hd2d_presets/scenes/SM_YX_Fangzi001_5dbd155d.tscn"
+asset_id = &"SM_YX_Fangzi001_5dbd155d"
+family_id = &"family_bfa7feadca39fc42"
+material_slots = {
+"Geometry/SM_YX_Fangzi001": Array[String](["mat_225433b4ec037f24"])
+}
+static_collision = true
+wind = 0.0

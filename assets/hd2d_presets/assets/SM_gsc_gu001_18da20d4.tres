@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_jmuis"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_6ro2y"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_gsc_gu001_18da20d4.tscn" id="3_p1tbp"]
+
+[resource]
+script = ExtResource("1_jmuis")
+title = "SM_gsc_gu001"
+category = "建筑"
+source = ExtResource("3_p1tbp")
+source_path = "res://assets/hd2d_presets/scenes/SM_gsc_gu001_18da20d4.tscn"
+asset_id = &"SM_gsc_gu001_18da20d4"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_gsc_gu001": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

@@ -1,5 +1,9 @@
 extends CharacterBody3D
 signal defeated
+const CombatSkills := preload("res://data/combat_skills.gd")
+## 头顶眩晕条（scripts/battle/stun_gauge.gd）。用显式 preload 而不是全局类名，
+## 这样不依赖编辑器的全局类缓存，命令行跑回归也能解析。
+const StunGaugeScript := preload("res://scripts/battle/stun_gauge.gd")
 ## 敌人：红色预警圈锁定位置，前摇结束后才结算；远程威胁共用范围攻击。
 ## kind 为 CUSTOM 时完全沿用试炼里的导出参数（近战 / 远程占位敌人）；
 ## 其余 kind 走 PROFILES：野狼、野猪为能量型，肉体傀儡为无能量实验体
@@ -76,6 +80,18 @@ var stun_timer: float = 0.0          # 拼刀硬直：被弹开期间不能行�
 var clash_immune_timer: float = 0.0  # 拼刀后短暂免疫再次判定，与玩家冷却配合防双判
 var _arm_weapon: Node3D              # 人形敌人右臂（含武器），前摇举刀/出手挥击靠它
 var _strike_timer := 0.0             # 挥击动作计时：出手后 0.22 秒内完成劈下-回摆
+## 回合战驱动门闩：开时实时 AI 让位给 battle_controller，由 battle_advance() 步进。
+var battle_driven := false
+## 游荡巡逻（练习场演示用）：只绕出生点慢速转圈，永不攻击。
+var patrol_only := false
+var _patrol_home := Vector3.ZERO
+var _patrol_setup := false
+var _patrol_angle := 0.0
+## ---------- 眩晕条（即时战斗的破绽资源，见 docs/COMBAT_DESIGN.md §1.4） ----------
+## 打满 → 停止移动；此时用直踹命中即处决。木桩不吃眩晕。
+var stun := 0.0
+var stun_max := CombatSkills.STUN_MAX
+var _stun_gauge: Node3D = null
 const CLASH_WINDOW := 0.3   # 与 player.gd 拼刀窗口一致：双方命中时刻相差 ≤ 0.3 秒视为重叠
 const CLASH_STUN := 0.8     # 拼刀硬直时长
 const CLASH_REPEL := 8.0    # 拼刀弹开初速度
@@ -375,6 +391,14 @@ func _apply_flash(lit: bool) -> void:
 func is_alive() -> bool:
 	return not dead
 
+## 教程 / 训练用：直接设定血量上限并回满（覆盖 PROFILES 的档位血量）。
+## 教程场需要敌人活到眩晕条打满，否则还没学会攒眩晕就被打死了。
+func set_max_hp(value: float) -> void:
+	max_hp = maxf(1.0, value)
+	hp_ = max_hp
+	dead = false
+	_update_health()
+
 ## 是否为可拼刀目标：近战且在蓄力，剩余命中时刻不超过拼刀窗口（玩家此刻命中它即判定对拼）。
 func is_strike_imminent() -> bool:
 	return not ranged and windup > 0.0 and windup <= CLASH_WINDOW
@@ -408,6 +432,76 @@ func _resolve_strike() -> bool:
 		return true
 	return false
 
+## 游荡巡逻：绕出生点慢速转圈（练习场演示用）。
+func _patrol(delta: float) -> void:
+	var dt := minf(delta, 0.05)
+	if not _patrol_setup:
+		_patrol_home = global_position
+		_patrol_setup = true
+	_patrol_angle += dt * 0.4
+	var target := _patrol_home + Vector3(cos(_patrol_angle) * 1.6, 0, sin(_patrol_angle) * 1.6)
+	global_position = global_position.move_toward(target, move_speed * 0.6 * dt)
+	if body_root != null:
+		body_root.rotation_degrees.y = lerpf(body_root.rotation_degrees.y, 0.0, dt * 4.0)
+
+## 回合战步进（battle_controller 驱动）：决定并执行"接近 / 攻击"，返回意图文本供 AT 栏用。
+func battle_advance(target_world: Vector3) -> String:
+	if kind == Kind.DUMMY or dead:
+		return "待机"
+	var flat := target_world - global_position
+	flat.y = 0.0
+	var dist := flat.length()
+	if dist <= attack_reach * 0.9:
+		return "攻击"
+	var step := move_speed * 1.0
+	var dir: Vector3 = flat.normalized() if dist > 0.01 else Vector3.FORWARD
+	global_position += dir * minf(step, dist - attack_reach * 0.9)
+	if body_root != null:
+		body_root.rotation_degrees.y = lerpf(body_root.rotation_degrees.y, rad_to_deg(atan2(dir.x, -dir.z)), 0.25)
+	return "接近"
+
+## ---------- 眩晕与处决 ----------
+
+## 叠加眩晕。已满值时不再叠加（避免溢出后反复触发）。木桩 / 已死不吃。
+## **眩晕不衰减**（作者 2026-09-22 定）：打满就一直保持，直到被直踹处决。
+func add_stun(amount: float) -> void:
+	if dead or kind == Kind.DUMMY or amount <= 0.0:
+		return
+	if is_stunned():
+		return
+	stun = minf(stun_max, stun + amount)
+	_update_stun_gauge()
+
+func is_stunned() -> bool:
+	return not dead and stun >= stun_max
+
+## 眩晕态即处决窗口（小怪适用；山之主是另一套实现，见 boss_colpo.gd）。
+func executable() -> bool:
+	return is_stunned()
+
+## 处决：直接击杀，走正常的 take_damage 结算（掉落 / 扣耐久口径不变）。
+func apply_execution() -> void:
+	if not executable():
+		return
+	stun = 0.0
+	_update_stun_gauge()
+	take_damage(hp_ + 1.0, Vector3.ZERO, null)
+
+## 眩晕**不衰减**（作者 2026-09-22 定）。早先实现的"每秒衰减 20"会让平A 的 +8
+## 在 0.6 秒冷却里被扣掉 12（净亏 4），眩晕条永远打不满 —— 已废弃，这里不再做时间衰减。
+func _update_stun_gauge() -> void:
+	if stun <= 0.0:
+		if _stun_gauge != null:
+			_stun_gauge.set_ratio(0.0)
+		return
+	if _stun_gauge == null:
+		var gauge: Node3D = StunGaugeScript.new()
+		gauge.name = "StunGauge"
+		add_child(gauge)
+		gauge.setup(stun_max, 2.95)   # 血条标签在 y=2.25，黄条挂它上方避免叠字
+		_stun_gauge = gauge
+	_stun_gauge.set_ratio(_stun_gauge.ratio_of(stun))
+
 func _physics_process(delta: float) -> void:
 	# 纯靶子：不动、不攻击、不预警，只保留受击闪白。
 	if kind == Kind.DUMMY:
@@ -417,7 +511,22 @@ func _physics_process(delta: float) -> void:
 				_apply_flash(false)
 		velocity = Vector3.ZERO
 		return
+	# 眩晕态：原地不动（等待被处决 / 自然回落），不推进 AI。
+	if is_stunned():
+		velocity = Vector3.ZERO
+		move_and_slide()
+		position.y = 0
+		_animate_arm(delta)
+		return
+	if battle_driven:
+		velocity = Vector3.ZERO
+		return
 	if dead or not is_instance_valid(player) or not player.alive:
+		return
+	# 游荡巡逻：白盒遭遇演示用，只绕出生点慢速转圈，不出手。
+	if patrol_only:
+		_patrol(delta)
+		_animate_arm(delta)
 		return
 	attack_cd -= delta
 	clash_immune_timer = maxf(0.0, clash_immune_timer - delta)

@@ -2,7 +2,7 @@ extends SceneTree
 ## 把“始终绕 Y 轴朝向玩家”写进素材的朝向字段：立着的薄片植物与扁平立式道具。
 ## 只改 HD2DAsset.facing，外观、图集、碰撞与场景摆放都不动。
 ## 植物按素材自身的分类筛选（共享库的“植被”，丛林包装的“乔木 / 地被”），不靠文件名硬编码。
-const PRESET_DIR := "res://local_study/preset3d/assets"
+const PRESET_DIR := "res://assets/hd2d_presets/assets"
 const JUNGLE_DIR := "res://assets/environments/jungle/props"
 const JUNGLE_PLANT_CATEGORIES := ["丛林 / 乔木", "丛林 / 地被"]
 ## 扁平立式道具：屏风与渔网。木箱、架子、桌椅这类有体积的道具不在此列。

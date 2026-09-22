@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_Item_Hantiekuang001_68b48a1a_01.res" id="1_gtee1"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_afcc548cf40150ff_original.tres" id="2_fm1hr"]
+
+[node name="Model" type="Node3D" unique_id=191891057]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1122709838]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4.590704e-06)
+
+[node name="SM_Item_Hantiekuang001" type="MeshInstance3D" parent="Geometry" unique_id=899911158]
+mesh = ExtResource("1_gtee1")
+surface_material_override/0 = ExtResource("2_fm1hr")

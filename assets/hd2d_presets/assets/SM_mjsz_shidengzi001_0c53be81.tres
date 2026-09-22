@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_hgdru"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_kn2dk"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_mjsz_shidengzi001_0c53be81.tscn" id="3_f8r43"]
+
+[resource]
+script = ExtResource("1_hgdru")
+title = "SM_mjsz_shidengzi001"
+category = "道具"
+source = ExtResource("3_f8r43")
+source_path = "res://assets/hd2d_presets/scenes/SM_mjsz_shidengzi001_0c53be81.tscn"
+asset_id = &"SM_mjsz_shidengzi001_0c53be81"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_mjsz_shidengzi001": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

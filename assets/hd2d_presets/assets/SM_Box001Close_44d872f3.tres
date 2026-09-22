@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_jkybo"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_rioqa"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Box001Close_44d872f3.tscn" id="3_xojrl"]
+
+[resource]
+script = ExtResource("1_jkybo")
+title = "SM_Box001Close"
+category = "建筑"
+source = ExtResource("3_xojrl")
+source_path = "res://assets/hd2d_presets/scenes/SM_Box001Close_44d872f3.tscn"
+asset_id = &"SM_Box001Close_44d872f3"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_Box001Close": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

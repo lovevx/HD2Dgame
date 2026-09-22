@@ -11,10 +11,10 @@
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan006.tres" id="9_30tfj"]
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan012.tres" id="10_3yq0m"]
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_XYNJiangnan016.tres" id="11_23l31"]
-[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/4ce5cf7ed24f166b_T_dashu.png" id="12_nkysf"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/4ce5cf7ed24f166b_T_dashu.png" id="12_nkysf"]
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_1dashu001_LODs.tres" id="13_v13cn"]
 [ext_resource type="Resource" path="res://assets/environments/jungle/props/SM_1dashu002_LODs.tres" id="14_mkvay"]
-[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/2139dc34d93deacf_T_XuanyaNew001.png" id="15_ch1fg"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/2139dc34d93deacf_T_XuanyaNew001.png" id="15_ch1fg"]
 [ext_resource type="PackedScene" path="res://player.tscn" id="16_v8lsj"]
 [ext_resource type="Script" path="res://player.gd" id="17_8lipv"]
 [ext_resource type="Script" path="res://scripts/world/scene_portal.gd" id="21_qm1f8"]
@@ -833,17 +833,18 @@ volumetric_fog_ambient_inject = 0.25
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_lni6r"]
 dof_blur_far_enabled = true
-dof_blur_far_distance = 47.0
-dof_blur_far_transition = 16.0
+dof_blur_far_distance = 80.496
+dof_blur_far_transition = 29.952
 dof_blur_near_enabled = true
-dof_blur_near_distance = 26.0
-dof_blur_near_transition = 8.0
+dof_blur_near_distance = 41.184
+dof_blur_near_transition = 14.976
 
 [node name="ColpoForestClearing" type="Node3D" unique_id=823962541]
 script = ExtResource("1_esha0")
 header_text = "科尔波山 / 林间决战空地"
 objective_text = "BOSS 决战 · 15 秒准备 · 预埋炼金炸弹"
 camera_focus_bounds = Rect2(-20, -20, 40, 40)
+camera_arena = true
 
 [node name="Bedrock_001" type="MeshInstance3D" parent="." unique_id=1581377168]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
@@ -7545,10 +7546,10 @@ records = Array[Dictionary]([{
 }])
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=694890608]
-transform = Transform3D(0.99026793, -0.056606803, 0.12714095, 0, 0.9135454, 0.40673664, -0.13917309, -0.4027783, 0.90465486, 3.6870878, 11.795362, 26.234991)
+transform = Transform3D(0.9999998, 0, 0, 0, 0.9612617, 0.27563736, 0, -0.27563736, 0.9612617, 0, 12.899828, 44.987045)
 attributes = SubResource("CameraAttributesPractical_lni6r")
 current = true
-fov = 33.0
+fov = 18.0
 size = 18.0
 near = 0.15
 far = 160.0

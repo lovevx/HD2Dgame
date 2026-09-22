@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_Item_jiutanzi04_bad80216_01.res" id="1_ovpoc"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_afcc548cf40150ff_original.tres" id="2_ers3w"]
+
+[node name="Model" type="Node3D" unique_id=1188126708]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=687824799]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5042423, 0.46572936, 2.1494417)
+
+[node name="SM_Item_jiutanzi04" type="MeshInstance3D" parent="Geometry" unique_id=1291246093]
+mesh = ExtResource("1_ovpoc")
+surface_material_override/0 = ExtResource("2_ers3w")

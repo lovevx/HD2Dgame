@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_qedyv"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_nmrwx"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Dataoshu001_aa6a788e.tscn" id="3_5simv"]
+
+[resource]
+script = ExtResource("1_qedyv")
+title = "SM_Dataoshu001"
+category = "植被"
+source = ExtResource("3_5simv")
+source_path = "res://assets/hd2d_presets/scenes/SM_Dataoshu001_aa6a788e.tscn"
+asset_id = &"SM_Dataoshu001_aa6a788e"
+family_id = &"family_9a423c4d69375994"
+material_slots = {
+"Geometry/SM_Dataoshu001": Array[String](["mat_4fe2e9ba5e8aec84"])
+}
+facing = 2
+wind = 0.0

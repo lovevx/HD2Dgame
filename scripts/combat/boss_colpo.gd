@@ -6,6 +6,9 @@ extends CharacterBody3D
 
 signal phase_changed(index: int, text: String)
 signal defeated
+const CombatSkills := preload("res://data/combat_skills.gd")
+## 头顶眩晕条（scripts/battle/stun_gauge.gd）。显式 preload，不依赖编辑器全局类缓存。
+const StunGaugeScript := preload("res://scripts/battle/stun_gauge.gd")
 
 enum Phase { P1, P2, P3 }
 enum State { ROAR, APPROACH, HESITATE, WINDUP, STRIKE, RECOVER, FAKE_DEATH, DEAD }
@@ -62,6 +65,23 @@ var _flash_timer := 0.0
 var tendon_hits := 0
 var tendon_broken := false
 
+## ---------- 眩晕条（即时战斗侧，见 docs/COMBAT_DESIGN.md §1.4） ----------
+## 打满 → 玩家再次攻击命中即进入回合制；回合内不再积累，退战后清零。
+var stun := 0.0
+var stun_max := CombatSkills.STUN_MAX
+var _stun_gauge: Node3D = null
+
+## ---------- 回合制战斗接口（见 docs/COMBAT_DESIGN.md 第二部） ----------
+## battle_driven：回合战期间由 controller 驱动移动/攻击，本体的实时 AI 让位。
+var battle_driven := false
+## 回合内最近一次选定招式的伤害，供 controller 结算（实时伤害仍走 ATTACKS 前摇流程）。
+var battle_damage := 0.0
+## 回合内接近到该距离即出手（实时招式的 reach 差异太大，回合内统一）。
+var battle_reach := 7.0
+## 教程 / 训练模式：站着面向玩家，不主动接近、不出手；回合内出手也不结算伤害。
+## 血量照常会被打、眩晕照常会积 —— 只有威胁被摘掉。
+@export var passive := false
+
 func _ready() -> void:
 	add_to_group("enemies")
 	hp = max_hp
@@ -88,6 +108,12 @@ func hit_radius() -> float:
 func is_alive() -> bool:
 	return state != State.DEAD
 
+## 教程 / 训练用：直接设定血量上限并回满（覆盖导出的默认值）。
+func set_max_hp(value: float) -> void:
+	max_hp = maxf(1.0, value)
+	hp = max_hp
+	_update_label()
+
 func phase_text() -> String:
 	return PHASE_TEXT[phase]
 
@@ -99,11 +125,87 @@ func is_faking_death() -> bool:
 func current_attack() -> String:
 	return _current
 
+## ---------- 眩晕与回合制接口 ----------
+
+## 叠加眩晕；满值后玩家再攻击命中即触发回合制（由训练场 / 关卡脚本接管）。
+## **不衰减**（作者 2026-09-22 定，与 enemy.gd 同口径）。
+func add_stun(amount: float) -> void:
+	if not is_alive() or amount <= 0.0 or is_stunned():
+		return
+	stun = minf(stun_max, stun + amount)
+	_update_stun_gauge()
+
+func is_stunned() -> bool:
+	return is_alive() and stun >= stun_max
+
+## 进入回合制时调用：清掉眩晕，让山之主能正常参与回合（这不是衰减，是状态重置）。
+func clear_stun() -> void:
+	stun = 0.0
+	_update_stun_gauge()
+
+func _update_stun_gauge() -> void:
+	if stun <= 0.0:
+		if _stun_gauge != null:
+			_stun_gauge.set_ratio(0.0)
+		return
+	if _stun_gauge == null:
+		var gauge: Node3D = StunGaugeScript.new()
+		gauge.name = "StunGauge"
+		add_child(gauge)
+		gauge.setup(stun_max, 5.2, 2.8)   # 肩高 4.2，黄条挂在模型之上并按体型加宽
+		_stun_gauge = gauge
+	_stun_gauge.set_ratio(_stun_gauge.ratio_of(stun))
+
+## 回合制行动：接近或攻击，返回意图文本供 AT 栏显示；伤害按阶段取招式表。
+func battle_advance(target_world: Vector3) -> String:
+	if not is_alive() or is_faking_death():
+		return "待机"
+	var flat := target_world - global_position
+	flat.y = 0.0
+	var dist := flat.length()
+	if dist <= battle_reach + hit_radius():
+		# 训练模式下照样"出手"（让回合结构与意图可见），但不结算伤害。
+		battle_damage = 0.0 if passive else float(_turn_attack()["damage"])
+		return "攻击"
+	var dir: Vector3 = flat.normalized() if dist > 0.01 else Vector3.FORWARD
+	global_position += dir * minf(walk_speed, maxf(0.0, dist - battle_reach))
+	if is_instance_valid(player):
+		_face_player(1.0)
+	return "接近"
+
+## 回合内招式：按阶段取一档（P1 爪击 / P2 踏击 / P3 扑击）。
+func _turn_attack() -> Dictionary:
+	match phase:
+		Phase.P2:
+			return ATTACKS["stomp"]
+		Phase.P3:
+			return ATTACKS["pounce"]
+		_:
+			return ATTACKS["claw"]
+
 func _physics_process(delta: float) -> void:
 	if state == State.DEAD:
 		return
+	# 回合制期间：实时 AI 完全让位给 battle_controller。
+	if battle_driven:
+		velocity = Vector3.ZERO
+		move_and_slide()
+		return
+	# 眩晕态：停止行动（等待玩家补刀进回合 / 自然回落）。
+	if is_stunned():
+		velocity = Vector3.ZERO
+		marker.visible = false
+		move_and_slide()
+		return
 	if player == null or not player.alive:
 		velocity = Vector3.ZERO
+		move_and_slide()
+		return
+	# 教程 / 训练模式：站着面向玩家，不接近也不出手（被击打、积眩晕照常）。
+	if passive:
+		velocity = Vector3.ZERO
+		marker.visible = false
+		_face_player(delta)
 		move_and_slide()
 		return
 	_timer -= delta

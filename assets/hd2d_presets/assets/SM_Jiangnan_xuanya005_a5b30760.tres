@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_6h1tg"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_35klw"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Jiangnan_xuanya005_a5b30760.tscn" id="3_3q31t"]
+
+[resource]
+script = ExtResource("1_6h1tg")
+title = "SM_Jiangnan_xuanya005"
+category = "山石"
+source = ExtResource("3_3q31t")
+source_path = "res://assets/hd2d_presets/scenes/SM_Jiangnan_xuanya005_a5b30760.tscn"
+asset_id = &"SM_Jiangnan_xuanya005_a5b30760"
+family_id = &"family_5ba1dd07b44b2414"
+material_slots = {
+"Geometry/SM_Jiangnan_xuanya005": Array[String](["mat_1660dc1202df7ce4"])
+}
+static_collision = true
+wind = 0.0

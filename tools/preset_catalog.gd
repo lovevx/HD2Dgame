@@ -1,10 +1,10 @@
 class_name HD2DPresetCatalog
 extends RefCounted
 ## 查询已导入本工程的 HD-2D 共享库预设。
-## 导入后的素材路径规则：res://local_study/preset3d/{assets,scenes}/<标题>_<8位哈希>.<ext>
+## 导入后的素材路径规则：res://assets/hd2d_presets/{assets,scenes}/<标题>_<8位哈希>.<ext>
 
-const ASSET_DIR := "res://local_study/preset3d/assets"
-const SCENE_DIR := "res://local_study/preset3d/scenes"
+const ASSET_DIR := "res://assets/hd2d_presets/assets"
+const SCENE_DIR := "res://assets/hd2d_presets/scenes"
 
 static var _index: Dictionary = {}
 

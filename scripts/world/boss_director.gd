@@ -17,7 +17,9 @@ var prep_left := 0.0
 var spawn_point := Vector3(0, 0, -7.0)
 
 func _ready() -> void:
-	if campaign_managed:
+	# 编辑器直接打开地图时由 campaign 控制器接管（get_parent() 即地图根节点），
+	# BOSS 流程门控与正式游玩一致：等 V 开始遭遇才放开。
+	if campaign_managed or get_tree().current_scene == get_parent():
 		set_process(false)
 		return
 	# 等父节点（关卡脚本）把 HUD 挂好再取引用

@@ -18,6 +18,7 @@ const LEVELS := [
 
 ## 其他已建场景（调试入口）：从任意场景按 Esc 都能回到这里。
 const OTHER_SCENES := [
+	{"title": "新手教程 · 战斗训练场（小怪 + 科尔波山之主，都不还手）", "path": "res://scenes/main/battle_lab.tscn"},
 	{"title": "灰潮港口（主城）", "path": "res://scenes/world/harbor.tscn"},
 	{"title": "灰潮 · 战斗试炼（P0）", "path": "res://scenes/main/main.tscn"},
 ]
@@ -34,7 +35,7 @@ func _ready() -> void:
 	column.custom_minimum_size.x = 860
 	column.add_theme_constant_override("separation", 14)
 	center.add_child(column)
-	_text(column, "科尔波山 · 白盒关卡", 42, Color("a5dfff"))
+	_text(column, "科尔波山 · 白盒关卡", 42, Color("4da6ff"))
 	_text(column, "当前为纯空间白盒：只验证空间、掩体与流程标记，尚未接入敌人、波次与陷阱逻辑", 20, Color("8fa6ad"))
 	for level in LEVELS:
 		_button(column, level["title"], level["path"], 26, Vector2(860, 62))

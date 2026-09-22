@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_intuq"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_mxt0y"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Wjiangnan_fancheng001_6039436b.tscn" id="3_jgyyt"]
+
+[resource]
+script = ExtResource("1_intuq")
+title = "SM_Wjiangnan_fancheng001"
+category = "建筑"
+source = ExtResource("3_jgyyt")
+source_path = "res://assets/hd2d_presets/scenes/SM_Wjiangnan_fancheng001_6039436b.tscn"
+asset_id = &"SM_Wjiangnan_fancheng001_6039436b"
+family_id = &"family_6b495509d3fdfd4d"
+material_slots = {
+"Geometry/SM_Wjiangnan_fancheng001": Array[String](["mat_51d65da04caac9ca"])
+}
+static_collision = true
+wind = 0.0

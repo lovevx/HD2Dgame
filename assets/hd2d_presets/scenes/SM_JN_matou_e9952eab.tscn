@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_JN_matou_e9952eab_01.res" id="1_1xflu"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_d181c9d21706fa7a_original.tres" id="2_8ck6q"]
+
+[node name="Model" type="Node3D" unique_id=2017986276]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=987655658]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08259392, 0.3298654, -4.7683716e-07)
+
+[node name="SM_JN_matou" type="MeshInstance3D" parent="Geometry" unique_id=490705038]
+mesh = ExtResource("1_1xflu")
+surface_material_override/0 = ExtResource("2_8ck6q")

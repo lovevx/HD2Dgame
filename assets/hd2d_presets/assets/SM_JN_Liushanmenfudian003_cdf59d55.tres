@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_pgux4"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_6y3yi"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_JN_Liushanmenfudian003_cdf59d55.tscn" id="3_123lw"]
+
+[resource]
+script = ExtResource("1_pgux4")
+title = "SM_JN_Liushanmenfudian003"
+category = "建筑"
+source = ExtResource("3_123lw")
+source_path = "res://assets/hd2d_presets/scenes/SM_JN_Liushanmenfudian003_cdf59d55.tscn"
+asset_id = &"SM_JN_Liushanmenfudian003_cdf59d55"
+family_id = &"family_740deea26ecfb4ed"
+material_slots = {
+"Geometry/SM_JN_Liushanmenfudian003": Array[String](["mat_6541b22ad40ba3fa"])
+}
+static_collision = true
+wind = 0.0

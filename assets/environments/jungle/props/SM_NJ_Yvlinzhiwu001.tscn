@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
-[ext_resource type="ArrayMesh" path="res://local_study/preset3d/meshes/SM_NJ_Yvlinzhiwu001_77b64161_01.res" id="1_4chpt"]
-[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/22a1f03ffb358818_T_NJ_Yvlingzhiwu003.png" id="2_1hmgy"]
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_NJ_Yvlinzhiwu001_77b64161_01.res" id="1_4chpt"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/22a1f03ffb358818_T_NJ_Yvlingzhiwu003.png" id="2_1hmgy"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qmqq4"]
 resource_name = "mat_8bcd7b93f63b6cb0"

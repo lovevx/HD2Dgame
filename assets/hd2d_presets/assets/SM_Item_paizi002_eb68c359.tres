@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_ig3mr"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_b58k7"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Item_paizi002_eb68c359.tscn" id="3_k4gap"]
+
+[resource]
+script = ExtResource("1_ig3mr")
+title = "SM_Item_paizi002"
+category = "道具"
+source = ExtResource("3_k4gap")
+source_path = "res://assets/hd2d_presets/scenes/SM_Item_paizi002_eb68c359.tscn"
+asset_id = &"SM_Item_paizi002_eb68c359"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_Item_paizi002": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_ofuao"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_g4mx4"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_zhuzi008_2_801bc14d.tscn" id="3_owaa5"]
+
+[resource]
+script = ExtResource("1_ofuao")
+title = "SM_zhuzi008_2"
+category = "植被"
+source = ExtResource("3_owaa5")
+source_path = "res://assets/hd2d_presets/scenes/SM_zhuzi008_2_801bc14d.tscn"
+asset_id = &"SM_zhuzi008_2_801bc14d"
+family_id = &"family_fe2234bf319407f9"
+material_slots = {
+"Geometry/SM_zhuzi008_2": Array[String](["mat_4ee5ca968b357dbc"])
+}
+facing = 2
+wind = 0.0

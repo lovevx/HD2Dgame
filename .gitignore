@@ -1,7 +1,9 @@
 # Godot 4+ specific ignores
+# *.import 不忽略：Godot 4 把每个资源的导入设置与 uid 存在侧车里，不入库的话
+# 新克隆会按导入器默认值重新生成（例如 black_swordsman/idle.png 显式设了
+# mipmaps/generate=true），画面与帧切分会和本机不一致。
 .godot/
 /android/
-*.import
 
 # Local credentials
 .env
@@ -9,12 +11,19 @@
 # 缓存/预览/临时（不推送）
 .local-backups/
 .tmp_preview/
+# Godot 导入中断时留下的 <资源>.import<pid>.tmp 残片
+*.tmp
 
 # 第三方工具链（本地安装，不随仓库分发）
 .tools/
 
 # AI 工具目录与本地配置
 .agents/
+.zcode/
+.codebuddy/
+.workbuddy/
+.trae/
+.mcp.json
 
 # 第三方素材工具链副本（本地安装，不随仓库分发）
 tools/meowa-skills-update-20260919-v2/
@@ -31,9 +40,17 @@ background/
 
 # docs 预览截图与生成任务中间产物
 docs/**/*.png
+docs/**/*.import
 docs/**/*.log
 docs/meowa_design_20260916/
+docs/camera_sword/
 
-# 学习/研究素材与日志（非游戏资源）
-local_study/
+# 原始大图（合计约 560M，离线单独存放，不入库）。
+# 已由它们派生出的帧序列（black_swordsman_video/）与逐向图集（black_swordsman_new/）
+# 都已入库，所以少了这些源图仍可运行；但也就无法再从源码重新切片。
+assets/characters/black_swordsman/新版动作/
+assets/characters/black_swordsman/最新版动作/
+
+# 校验脚本的临时输出
+probe_out.txt
 *.log

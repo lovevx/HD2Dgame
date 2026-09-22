@@ -1,8 +1,8 @@
 extends SceneTree
-## 灰潮港口（主城）重建脚本：地面/海面仍由程序化几何承担，建筑、码头、船只、道具、植被全部改用
-## HD-2D 共享素材库预设（res://local_study/preset3d，由 tools/import_presets.gd 入库）。
+## 灰潮港口（主城）重建脚本：地面/海面仍由程序化几何承担，建筑、码头、船只、道具、围墙全部改用
+## HD-2D 共享素材库预设（res://assets/hd2d_presets，由 tools/import_presets.gd 入库）。
 ## 生成：scenes/world/harbor.tscn
-## 布局（北 → 南）：出入口 → 商店区(西) / 装备强化区(东) → 试炼场景入口 → 港务作业区 → 双码头/海面。
+## 布局（北 → 南）：围墙/城门 → 商店区(西) / 装备强化区(东) → 试炼场景入口 → 港务作业区 → 双码头/海面。
 ## 五个功能区：传送广场、商店、装备强化、港务任务、试炼入口。
 ## 传送接入 scene_portal，商店、强化和任务区提供可交互的服务入口。
 ## 分区用 zone_marker 登记（Label3D+地面光圈+Marker3D，默认隐藏，show_layout_markers 显示）。
@@ -15,13 +15,13 @@ const PLAYER_PATH := "res://player.tscn"
 const LEVEL_SCRIPT := "res://scripts/world/harbor.gd"
 
 const QUAY := Rect2(-42, -32, 84, 44)          # 港口陆地基座（x,z 平面）
-const WALK := Rect2(-32, -28, 64, 40)          # 可活动范围；外侧用不可见屏障拦住
+const WALK := Rect2(-41, -31, 82, 43)          # 活动范围与地面基座对齐，只内收一个墙厚；屏障围在城墙内侧
 const SHORE_Z := 12.0                          # 水岸线：陆地向海一侧的边界
-## 港口机位：24° 俯角、正面视角、38 米距离与 26° FOV，压缩透视形成微缩舞台感。
-const CAM_PITCH := 24.0
+## 港口机位：16° 俯角、正面视角、48 米距离与 18° FOV，长焦压缩透视形成平铺舞台感。
+const CAM_PITCH := 16.0
 const CAM_YAW := 0.0
-const CAM_DISTANCE := 38.0
-const CAM_FOV := 26.0
+const CAM_DISTANCE := 48.1
+const CAM_FOV := 18.0
 ## 木码头是 L 形平台：甲板面在模型原点上方 3.10 米，下沉后甲板与石板街齐平。
 ## 实测平面以模型原点为界：北半幅是 16.29x6.5 的主段（贴岸），南半幅是 6.3x6.5 的支段（伸海，东侧留缺口）。
 const PIER_SPAN := Vector2(16.29, 6.5)
@@ -206,7 +206,7 @@ func build() -> void:
 	build_piers()
 	build_zones()
 	build_street()
-	build_scenery()
+	build_walls()
 	build_water()
 	build_actors()
 	preload("res://tools/harbor_lighting.gd").build(self)
@@ -223,15 +223,7 @@ func build_ground() -> void:
 	slab("Sea", Vector3(QUAY.get_center().x, -0.72, 10), Vector3(280, 0.15, 280), sea_mat)
 	# 陆地基座：南沿齐水，其余方向延伸出去做远处的山石与城门地基。
 	slab("QuayFoundation", Vector3(QUAY.get_center().x, -0.34, QUAY.get_center().y), Vector3(QUAY.size.x, 0.68, QUAY.size.y), stone, true)
-	# 石板街：基座负责平整的石板路面，共享库石块只做稀疏点缀（铺满会变成碎石地）。
-	var detail := HD2DFoliage.new()
-	detail.name = "PavingDetail"
-	detail.chunk_size = 16.0
-	map.add_child(detail)
-	# 碎石集中在城边，主街保留连续、低对比的铺装。
-	for edge in [Rect2(-31, -27, 10, 37), Rect2(23, -27, 8, 37)]:
-		scatter(detail, "SM_YX_Shiban001", edge, 18, Vector2(0.4, 0.65))
-		scatter(detail, "SM_YX_Shiban002", edge, 12, Vector2(0.4, 0.65))
+	# 地面碎石点缀已清空，只留程序化石板街。
 	var road := stone.duplicate() as ShaderMaterial
 	road.set_shader_parameter("stone_color", Color("56656c"))
 	road.set_shader_parameter("tile_scale", 0.85)
@@ -284,62 +276,18 @@ func build_zones() -> void:
 	preload("res://tools/harbor_zones.gd").build(self)
 
 func build_street() -> void:
-	# 码头入口的货箱与竹棚
-	prop_with_box("SM_NJ_ZhuPengzi001", Vector3(-9.0, 0, 6.5), 12.0)
-	prop_with_box("SM_NJ_ZhuPengzi001", Vector3(11.0, 0, 5.0), -18.0)
-	for spot in [Vector3(-10.6, 0, 8.4), Vector3(-9.2, 0, 7.2), Vector3(9.8, 0, 8.6), Vector3(11.2, 0, 7.2), Vector3(30.6, 0, 9.6), Vector3(29.4, 0, 8.2)]:
-		prop_with_box("SM_Box001Close" if rng.randf() < 0.5 else "SM_Box001Open", spot, rng.randf_range(-40, 40))
-	# 渔网、系船柱与石灯沿水岸排开
-	prop_with_box("SM_jiangnan_yuwang001", Vector3(-13.6, 0, 9.6), 24.0, 1.0, Vector3(1.8, 2.4, 1.2))
-	prop_with_box("SM_jiangnan_yuwang002", Vector3(-12.0, 0, 9.0), -18.0)
-	prop_with_box("SM_jiangnan_yuwang001", Vector3(31.4, 0, 9.4), -32.0)
-	prop_with_box("SM_jiangnan_yuwang002", Vector3(29.8, 0, 8.6), 16.0)
-	for x in [-30.0, -22.0, -14.0, -4.0, 10.2, 31.6]:
-		prop_with_box("SM_Licheng_shizhuzi001", Vector3(x, 0, 11.2))
-	for x in [-28.0, -18.0, -8.0, 8.0, 18.0, 28.0]:
-		prop_with_box("SM_NJ_ShiDeng_001", Vector3(x, 0, 9.6))
-	# 街中段的零星陈设：把主街切开，免得一屏全是空街面
-	for spot in [Vector3(-9.0, 0, -1.0), Vector3(9.4, 0, -2.5)]:
-		prop_with_box("SM_NJ_ShiDeng_001", spot)
-	for spot in [Vector3(-23.0, 0, -5.0), Vector3(25.0, 0, -5.0)]:
-		prop("SM_taoshu001", spot, rng.randf_range(0, 360), 0.85)
-	# 成组树池和座椅收住街道边缘，避开东西向服务通道。
-	for x in [-5.8, 5.8]:
-		for z in [-16.0, -4.5]:
-			slab("TreeBed", Vector3(x, 0.12, z), Vector3(2.3, 0.24, 2.3), material(Color("8a8d7e")), true)
-			slab("TreeSoil", Vector3(x, 0.247, z), Vector3(1.95, 0.02, 1.95), material(Color("515c4c")))
-			prop("SM_taoshu001", Vector3(x, 0.24, z), 20, 0.48, {"static_collision": false})
-			prop_with_box("SM_mjsz_shidengzi001", Vector3(x, 0, z + 1.7), 0, 0.8)
+	# 地面摆件已清空（2026-09-19）：货箱、竹棚、渔网、系船柱、石灯与石灯笼全部移除，场地留空待重新布景。
+	# 沿水岸的渔网、系船柱与石灯已清空。
+	pass
 
-func build_scenery() -> void:
-	# 街树与山石：山石压在活动边界外，兼作天然围墙。
-	prop("SM_taoshu001", Vector3(-27.4, 0, -4.0), 40.0)
-	prop("SM_taoshu001", Vector3(27.6, 0, -10.0), -30.0)
-	prop("SM_taoshu001", Vector3(-6.0, 0, -28.0), 12.0)
-	prop("SM_taoshu001", Vector3(13.0, 0, -28.4), -22.0)
-	prop("SM_1dashu001_LODs", Vector3(-24.0, 0, -20.0), 15.0)
-	prop("SM_1dashu001_LODs", Vector3(25.0, 0, -19.0), -35.0)
-	prop("SM_1dashu001_LODs", Vector3(-28.0, 0, -23.4), 60.0)
-	prop("SM_1songbaiA01_LODs", Vector3(-29.0, 0, -14.0), 12.0)
-	prop("SM_1songbaiA02_LODs", Vector3(29.0, 0, -23.0), -20.0)
-	prop("SM_Jiangnan_xuanya002", Vector3(-37.0, 0, -12.0), 24.0, 0.5)
-	prop("SM_Jiangnan_xuanya003", Vector3(37.4, 0, -14.0), -18.0, 0.5)
-	prop("SM_Jiangnan_xuanya001", Vector3(-36.0, 0, -28.0), 8.0, 0.45)
-	prop("SM_Jiangnan_xuanya005", Vector3(36.0, 0, -28.0), -8.0, 0.45)
-	prop("SM_Jiangnan_xuanya004", Vector3(-20.0, 0, -36.0), 30.0, 0.4)
-	prop("SM_Jiangnan_xuanya007", Vector3(18.0, 0, -36.0), -25.0, 0.4)
-	var grass := HD2DFoliage.new()
-	grass.name = "ShoreGrass"
-	grass.chunk_size = 14.0
-	map.add_child(grass)
-	# 草与灌木只铺陆地（z < 水岸线），否则会长到码头甲板上；中央街面留空。
-	var land := Rect2(QUAY.position.x, QUAY.position.y, QUAY.size.x, SHORE_Z - QUAY.position.y)
-	scatter(grass, "SM_changzacao001", land, 420, Vector2(0.9, 1.6), 0.04, Rect2(-20, -25, 40, 35))
-	scatter(grass, "SM_aicao001", land, 320, Vector2(0.9, 1.5), 0.04, Rect2(-20, -25, 40, 35))
-	scatter(grass, "SM_NJ_Yvlinzhiwu001", Rect2(-42, -32, 10, SHORE_Z + 32), 60, Vector2(0.8, 1.3), 0.04)
-	scatter(grass, "SM_NJ_Yvlinzhiwu001", Rect2(32, -32, 10, SHORE_Z + 32), 60, Vector2(0.8, 1.3), 0.04)
-	scatter(grass, "SM_HD_Guanmu005", Rect2(-42, -32, 10, SHORE_Z + 32), 22, Vector2(0.9, 1.3), 0.04)
-	scatter(grass, "SM_HD_Guanmu007", Rect2(32, -32, 10, SHORE_Z + 32), 22, Vector2(0.9, 1.3), 0.04)
+func build_walls() -> void:
+	# 一圈围墙收住场地边界，布局见 tools/harbor_walls.gd：内陆三面 6 米中墙、
+	# 临水岸墙 3.26 米矮墙，北墙在城门处断开，南墙在两座码头贴岸段断开。
+	# 墙体不生成碰撞，边界仍由 build_actors() 的隐形屏障负责。
+	# 原压在边界外的山石已移除，围墙统一收口。
+	# 2026-09-19：街道树、大树、松柏、树池与岸线草丛灌木全部移除，港口暂不设植被；
+	# 重新植绿时补回，并同步更新 docs/HARBOR_MAP.md。
+	map.add_child(preload("res://tools/harbor_walls.gd").make_node())
 
 func build_water() -> void:
 	# 波纹与闪光统一在海面 shader 内生成，避免 D3D12 实例闪光异常。
@@ -373,12 +321,12 @@ func build_actors() -> void:
 	camera.current = true
 	var lens := CameraAttributesPractical.new()
 	lens.dof_blur_far_enabled = true
-	lens.dof_blur_far_distance = 47.0
-	lens.dof_blur_far_transition = 16.0
+	lens.dof_blur_far_distance = 68.5
+	lens.dof_blur_far_transition = 23.3
 	lens.dof_blur_amount = 0.10
 	lens.dof_blur_near_enabled = true
-	lens.dof_blur_near_distance = 26.0
-	lens.dof_blur_near_transition = 8.0
+	lens.dof_blur_near_distance = 37.9
+	lens.dof_blur_near_transition = 11.7
 	camera.attributes = lens
 	map.add_child(camera)
 	var sun := DirectionalLight3D.new()

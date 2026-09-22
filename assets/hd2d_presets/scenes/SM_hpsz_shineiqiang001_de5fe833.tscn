@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_hpsz_shineiqiang001_de5fe833_01.res" id="1_oddfc"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_6a0eb02224633daf_original.tres" id="2_xvmmg"]
+
+[node name="Model" type="Node3D" unique_id=752443312]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=2135021530]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.1218748, 1.2533333, 0)
+
+[node name="SM_hpsz_shineiqiang001" type="MeshInstance3D" parent="Geometry" unique_id=1456213142]
+mesh = ExtResource("1_oddfc")
+surface_material_override/0 = ExtResource("2_xvmmg")

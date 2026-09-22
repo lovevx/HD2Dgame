@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_f34gj"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_jbtiu"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Item_taidenglong001_44e97171.tscn" id="3_r3bto"]
+
+[resource]
+script = ExtResource("1_f34gj")
+title = "SM_Item_taidenglong001"
+category = "道具"
+source = ExtResource("3_r3bto")
+source_path = "res://assets/hd2d_presets/scenes/SM_Item_taidenglong001_44e97171.tscn"
+asset_id = &"SM_Item_taidenglong001_44e97171"
+family_id = &"family_2f12d63717e1a52e"
+material_slots = {
+"Geometry/SM_Item_taidenglong001": Array[String](["mat_e3a9ee58fc9cdae3"])
+}
+static_collision = true
+wind = 0.0

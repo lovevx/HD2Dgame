@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/24a51db4e549a67e_T_XuanyaNew002.png" id="1_vwwak"]
+
+[resource]
+resource_name = "mat_f4d0b7f1dc6e2bdf"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_vwwak")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

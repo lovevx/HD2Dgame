@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_Box001Close_44d872f3_01.res" id="1_bee13"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_afcc548cf40150ff_original.tres" id="2_tco1f"]
+
+[node name="Model" type="Node3D" unique_id=530621923]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1005027491]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9802322e-08, 2.380371e-06, 0.00020119548)
+
+[node name="SM_Box001Close" type="MeshInstance3D" parent="Geometry" unique_id=1190276580]
+mesh = ExtResource("1_bee13")
+surface_material_override/0 = ExtResource("2_tco1f")

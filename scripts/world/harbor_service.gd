@@ -5,6 +5,9 @@ extends Area3D
 var visitor: Node3D
 var opened := false
 var campaign_action: Callable
+## 自定义打开方式（如轮回商店的完整 UI）：V 触发时优先于默认说明面板与 campaign_action。
+## 打开/关闭（含冻结玩家、Esc 关闭）由接线的面板自己负责。
+var panel_handler: Callable
 
 func _ready() -> void:
 	body_entered.connect(func(body: Node3D):
@@ -32,7 +35,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	if hud == null or hud.is_modal_open():
 		return
 	if event.is_action_pressed("interact"):
+		# 战役模式的服务面板（campaign_action）最具体，优先；其次轮回商店等自定义 UI；
+		# 都没有才走默认的说明面板。
 		if campaign_action.is_valid():
+			campaign_action.call()
+			get_viewport().set_input_as_handled()
+			return
+		if panel_handler.is_valid():
+			hud.hide_prompt()
+			panel_handler.call()
+			get_viewport().set_input_as_handled()
+			return
 			campaign_action.call()
 			get_viewport().set_input_as_handled()
 			return

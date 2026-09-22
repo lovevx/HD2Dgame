@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/4c16bf9e5492d697_T_Liushanmen001.png" id="1_ijg70"]
+
+[resource]
+resource_name = "mat_6541b22ad40ba3fa"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_ijg70")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

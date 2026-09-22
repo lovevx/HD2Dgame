@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_glcue"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_ruckb"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/Cobweb_WebCorner3_9075174c.tscn" id="3_jc08c"]
+
+[resource]
+script = ExtResource("1_glcue")
+title = "Cobweb_WebCorner3"
+category = "建筑"
+source = ExtResource("3_jc08c")
+source_path = "res://assets/hd2d_presets/scenes/Cobweb_WebCorner3_9075174c.tscn"
+asset_id = &"Cobweb_WebCorner3_9075174c"
+family_id = &"family_4701b6fc7c09e4e4"
+material_slots = {
+"Geometry/Cobweb_WebCorner3": Array[String](["mat_5cfce9c46b32f47e"])
+}
+static_collision = true
+wind = 0.0

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_kkevk"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_qn3bu"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Shore_6dc6f33a.tscn" id="3_7mq01"]
+
+[resource]
+script = ExtResource("1_kkevk")
+title = "SM_Shore"
+category = "建筑"
+source = ExtResource("3_7mq01")
+source_path = "res://assets/hd2d_presets/scenes/SM_Shore_6dc6f33a.tscn"
+asset_id = &"SM_Shore_6dc6f33a"
+family_id = &"family_4da3c73362c6ea5d"
+material_slots = {
+"Geometry/SM_Shore": Array[String](["mat_8b8bcf0a960927eb"])
+}
+static_collision = true
+wind = 0.0

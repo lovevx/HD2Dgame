@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_HD_Guanmu001_aa77e42b_01.res" id="1_12odu"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_f95d722c67e0b519_original.tres" id="2_vs2ag"]
+
+[node name="Model" type="Node3D" unique_id=266211938]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=249885679]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.2207031e-06, -4.732021e-06)
+
+[node name="SM_HD_Guanmu001" type="MeshInstance3D" parent="Geometry" unique_id=405312708]
+mesh = ExtResource("1_12odu")
+surface_material_override/0 = ExtResource("2_vs2ag")

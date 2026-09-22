@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_mjsz_muban002_a57da58a_01.res" id="1_5f7um"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_f21b693baf73a269_original.tres" id="2_coxml"]
+
+[node name="Model" type="Node3D" unique_id=229856677]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1342679814]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00042200089, 2.6250002, 0)
+
+[node name="SM_mjsz_muban002" type="MeshInstance3D" parent="Geometry" unique_id=338176163]
+mesh = ExtResource("1_5f7um")
+surface_material_override/0 = ExtResource("2_coxml")

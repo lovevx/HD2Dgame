@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_NJ_ShiDeng_001_75fea3a9_01.res" id="1_73coa"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_a58f0f2103ae84d3_original.tres" id="2_p88wm"]
+
+[node name="Model" type="Node3D" unique_id=1912546610]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1699205909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.0005526733, 0)
+
+[node name="SM_NJ_ShiDeng_001" type="MeshInstance3D" parent="Geometry" unique_id=1329859569]
+mesh = ExtResource("1_73coa")
+surface_material_override/0 = ExtResource("2_p88wm")

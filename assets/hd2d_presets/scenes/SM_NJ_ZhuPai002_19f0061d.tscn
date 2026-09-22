@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_NJ_ZhuPai002_19f0061d_01.res" id="1_uo0bc"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_447e4bf91b5c70f3_original.tres" id="2_3u8n3"]
+
+[node name="Model" type="Node3D" unique_id=733858712]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1641397275]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5921676, 6.3433115e-18, -0.075091295)
+
+[node name="SM_NJ_ZhuPai002" type="MeshInstance3D" parent="Geometry" unique_id=475976971]
+mesh = ExtResource("1_uo0bc")
+surface_material_override/0 = ExtResource("2_3u8n3")

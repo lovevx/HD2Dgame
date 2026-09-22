@@ -1,8 +1,10 @@
 # 轮回乐园 HD-2D · 项目开发时间线总览
 
-> 整理日期：2026-09-18。
-> 数据来源：① 当前代码逐文件盘查；② docs/ 内既有规划文档；③ Codex 会话记录（`C:\Users\31992\.codex\sessions\2026\*`，11 个会话的文件级改动）；④ Trae 会话记忆。
-> 配套文档：[GDD.md](GDD.md) · [P1_SCOPE_BASELINE.md](P1_SCOPE_BASELINE.md) · [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) · [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) · [CORE_LOOP_PLAYTEST.md](CORE_LOOP_PLAYTEST.md) · [DEMO_STATUS.md](DEMO_STATUS.md)
+> 整理日期：**2026-09-22**（上一版 09-18）；**§4 / §5 / §6 于 2026-09-23 逐行对照代码复核**，已推翻的断言就地标 ✅（见 [DOCS_INDEX.md](DOCS_INDEX.md) §5）。
+> 数据来源：① 当前代码逐文件盘查（09-22 逐项对照）；② docs/ 内既有规划文档；③ Codex 会话记录（`C:\Users\31992\.codex\sessions\2026\*`，11 个会话的文件级改动）；④ Trae 会话记忆。
+> 配套文档：[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)（结构与索引）· [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md)（战斗现状）· [GDD.md](GDD.md) · [P1_SCOPE_BASELINE.md](P1_SCOPE_BASELINE.md) · [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) · [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) · [COMBAT_REWORK_PLAN.md](COMBAT_REWORK_PLAN.md)（双形态改版分期）· [HARBOR_MAP.md](HARBOR_MAP.md)（港口逐轮施工日志）
+>
+> **本轮（09-22）更新范围**：补 09-19 ~ 09-22 四天的日志与里程碑；**§3 / §4 / §5 / §6 已按当日代码重核**（原 §5 中 #1/#2/#3/#6 四项已被 09-19 loot 提交与技能提交修掉，见下表删除线标注）。
 
 ---
 
@@ -18,6 +20,10 @@
 | 09-17 白天 | 场景期 | 丛林地图 HD-2D 化（镜头/美术两轮验收）+ 港口光影完善 | Codex |
 | 09-17 晚 | 核心循环期 | 五地区试炼 + 巨虎 Boss + 港口服务正式串线 | Codex |
 | 09-18 | 系统深化期 | 六维属性落地、装备系统 v0.2 策划逐条拍板并实施、核心循环二次打磨 | Trae |
+| **09-19** | **提交日 + 港口扩写** | 5 个提交：技能数值表与刀芒/影刺、动作图集四方向化、关卡入口提示与 HUD、前期本土装备掉落与场景宝箱、忽略规则整理。同时未提交推进：南岸客货码头、围墙、前景遮挡淡出、轨道镜头（取代"鼠标让出"）、商街、商店 UI 框架 | Codex |
+| **09-20** | **港口分区期** | 铸潮工坊（东）、港务委托所（西）、港口装饰景观层（5 子区）、北墙外科尔波山远景层；确认"单段斜劈"为普攻最终形态 | Codex |
+| **09-21** | **战斗改版日 + 开场第二幕** | 白天：开场第二幕坐船过场（cinematic + opening_boat）、前景遮挡淡出落地；晚：面板设计语言 `system_ui.gd`、商店面板；**深夜：双形态战斗 P1（`scripts/battle/` 5 文件 + `validate_battle.gd`）定案并实装**；同日合并战斗文档为 `COMBAT_SYSTEM.md`、产出 `COMBAT_REWORK_PLAN.md` | Codex |
+| **09-22** | **任务面板 + 文档校准** | 任务档案面板（J）落地（`quest_log.gd` + `quest_panel.gd` + 回归）；文档同步（QUEST_PANEL / PROJECT_OVERVIEW / HARBOR_MAP）；本项目审计文档重核 | Codex |
 
 ---
 
@@ -103,28 +109,77 @@
 
 ### 2.9 变更前备份
 
-`.local-backups/`：`camera-20260917` / `core-loop-20260917` / `jungle-20260917` / `reuse-existing-20260917` —— 各关键改动前的快照，可回滚。
+`.local-backups/`：`camera-20260917` / `core-loop-20260917` / `jungle-20260917` / `reuse-existing-20260917` / **`camera-orbit-20260919`** / **`camera-rig-20260919`** —— 各关键改动前的快照，可回滚。
+
+### 2.10 09-19 · 提交日 + 港口大扩写
+
+**当日 5 个提交（全部已入库）**
+
+| 提交 | 内容 |
+|---|---|
+| `9e0d649 feat(combat)` | 技能数值表 `data/combat_skills.gd` + 刀芒/影刺等战斗技能实现 |
+| `01e7150 feat(art)` | 黑衣剑士动作图集四方向化与帧锚点统一 |
+| `f8e28a5 feat(level)` | 关卡入口提示、HUD 边缘锚点与流程优化 |
+| `c192dfa chore` | 整理仓库忽略规则并同步数据与设计文档 |
+| `c71b3e9 feat(loot)` | 前期本土装备掉落、场景宝箱与决战全回复 |
+
+**同日未提交的港口/镜头推进**（逐条见 [HARBOR_MAP.md](HARBOR_MAP.md)）
+
+- 南岸客货码头建成，并修复两处碰撞缺陷；植被清空；港口围墙（`harbor_wall.gdshader` + `harbor_walls.gd` / `apply_harbor_walls.gd`）
+- **前景遮挡淡出**：新增 `scripts/world/camera_occlusion_fade.gd`（648 行）+ `occlusion_fade_preset.gdshader` / `occlusion_fade_harbor_wall.gdshader` + `tools/check_occlusion_fade.gd`；修掉一处"淡出单元平行数组错位导致收尾越界"
+- **镜头改为轨道式**：`scripts/world/camera_orbit_controls.gd` **取代并删除** `camera_mouse_lead.gd`；移动方向改为"按机位算"（W 恒朝画面深处），八方向取图改为"以机位为北"；俯角上限收到 45°
+- 左上「轮回商店」区（一间店面）→ 商店 UI 框架 `scripts/ui/shop_panel.gd`；任务 UI 框架起步
+- 新增工具：`harbor_{gate,pier,port_layout,shop,walls}.gd`、`apply_harbor_{clear,shop,south_port,walls}.gd`、`capture_south_port.gd`、`check_harbor_port.gd`、`probe_save.gd`、`compare_sword_cameras.gd` + `scenes/world/_probe_save_test.tscn`
+
+### 2.11 09-20 · 港口分区期
+
+- 东侧「铸潮工坊」ForgeDistrict、西侧「港务委托所」QuestDistrict：`tools/harbor_forge.gd` / `harbor_quest.gd` / `apply_harbor_hub_districts.gd`
+- 港口装饰景观层（5 个子区）：`tools/harbor_dressing.gd` + `apply_harbor_dressing.gd`
+- 北墙外「科尔波山」远景层：`tools/harbor_mountain.gd` + `apply_harbor_mountain.gd`
+- **普攻口径落定：单段斜劈**（原三段连击取消）
+- 商街从一间店面扩成一条街；各轮素材结论与布置约束记入 `HARBOR_MAP.md`
+
+### 2.12 09-21 · 战斗改版日 + 开场第二幕
+
+- **开场第二幕**：`scripts/main/cinematic.gd`（程序化 2D 电影镜头）+ `scripts/main/opening_boat.gd`（3D 坐船过场）+ `shaders/boat_sky.gdshader` / `cinematic_overlay.gdshader` + `scenes/main/opening_boat.tscn`；`opening.gd` 取名后切第二幕，坐船结束再进 `campaign`
+- **面板设计语言**：`scripts/ui/system_ui.gd` 统一"深蓝灰底 + 电光青边 + 四角铆钉"，商店面板改走它
+- **双形态战斗定案并实装 P1**（当日 22:57 ~ 23:06 落文件）：
+  - 文档：`TURNBASED_COMBAT_PLAN.md`（提案 + D1~D5 决策）→ `COMBAT_REWORK_PLAN.md`（分期实施计划）；`COMBAT_SYSTEM.md` 合并三份旧战斗文档（`COMBAT_SPEC_SUXIAO` / `SKILL_NUMERICS_SUXIAO` / `COMBAT_SYSTEM_HANDOFF` 同日删除）
+  - 代码：`scripts/battle/{battle_unit,battle_controller,order_bar,battle_menu,encounter_zone}.gd`、`tools/validate_battle.gd`；`player.gd` 加 `battle_mode` 门闩 + 回合执行入口 + K 直踢；`enemy.gd` 加 `battle_driven` 与 `battle_advance`
+  - **实装量超过计划中的 P1 最低线**：五条指令（攻击 / 战技 / 防御 / 道具 / 逃跑）、侧/背击加成、防御减伤 75% 与 30% 弹反**全部落地**；入口在 `main.gd`（练习场白盒）
+- 角色动作重制：`assets/characters/black_swordsman_new/`（129 文件）、`black_swordsman_video/`（257 文件，视频抽帧）、`player_frames_video.tres` —— **`player.tscn` 已改指新帧表**（这批未提交）
+
+### 2.13 09-22 · 任务面板 + 文档校准
+
+- **任务档案面板（J）**：`data/quest_log.gd`（四章任务表，存档进度的只读映射）+ `scripts/ui/quest_panel.gd` + `tools/validate_quest_panel.gd` + `tools/capture_quest.gd`；三个入口（<kbd>J</kbd> / Esc 菜单 / 港务委托所 <kbd>V</kbd>），委托所接取动作由 `campaign._accept_first_quest` 提供
+- 文档：`docs/QUEST_PANEL.md`、`docs/PROJECT_OVERVIEW.md`、`docs/HARBOR_MAP.md`
+- **回归实测**（本机 Godot 4.7.2 + `--headless`，全部通过）：`validate_battle` / `validate_combo_skills` / `validate_combat_skills` / `validate_core_loop` / `validate_onboarding_flow` / `validate_player_visual` / `validate_camera_orbit` / `validate_quest_panel`
 
 ---
 
-## §3 截至 09-18 晚的当前状态
+## §3 截至 09-22 晚的当前状态
 
 ### 3.1 可玩闭环（一句话）
 
-主菜单 → 开场剧情 → 契约者姓名 → 五阶段试炼 → 巨虎 Boss → 结算 → 灰潮港主城（商店/工坊/委托/演武场）→ 再次出发；装备、六维、强化、耐久、成长吞噬数值层已接线。
+主菜单 → 开场剧情（取名）→ **船上 3D 过场** → 五阶段试炼 → 巨虎 Boss → 结算 → 灰潮港主城（商店/工坊/委托/演武场）→ 再次出发；装备、六维、强化、耐久、成长吞噬数值层已接线。
+另有一条**并行支线**：练习/试炼场内可与游荡野狼触发**回合指令战**（双形态改版 P1），战役主线尚未接它。
 
 ### 3.2 已实现系统速查
 
 | 系统 | 状态 | 关键位置 |
 |---|---|---|
-| 主流程 + 单槽存档（检查点/迁移/兜底） | ✔ | [main.gd](../scripts/main/main.gd) · [game_state.gd](../autoload/game_state.gd) |
-| 战斗：三连击/缓冲/剃/拼刀/燧发枪右键/炸弹/药剂 | ✔ | [player.gd](../player.gd) |
+| 主流程 + 出击结算事务 + 版本化存档（原子写/备份/迁移/兜底） | ✔（09-23 补事务与存档可靠性） | [main.gd](../scripts/main/main.gd) · [game_state.gd](../autoload/game_state.gd) · [validate_save_transaction.gd](../tools/validate_save_transaction.gd) |
+| 开场两幕（2D 剧情 + 3D 坐船过场） | ✔ | [opening.gd](../scripts/main/opening.gd) · [opening_boat.gd](../scripts/main/opening_boat.gd) · [cinematic.gd](../scripts/main/cinematic.gd) |
+| 战斗（**即时野战**）：单段斜劈/缓冲/剃/拼刀/直踢/燧发枪右键/炸弹/药剂 | ✔ | [player.gd](../player.gd) |
+| **回合指令战（双形态 P1）** | ✔ **仅练习/试炼场白盒**；战役未接 | [scripts/battle/](../scripts/battle) · [main.gd](../scripts/main/main.gd) |
 | 伤害链路：区间双 roll/力量倍率/护甲减免/肉体修正/扣耐 | ✔ | [player.gd](../player.gd) · [equip_tables.gd](../data/equip_tables.gd) |
-| 装备：11 槽/64 背包/5 品质/需求/耐久/强化/修复/出售/分解/成长吞噬 | ✔（内容缺件见 §5） | [game_state.gd](../autoload/game_state.gd) · [campaign.gd](../data/campaign.gd) |
+| 装备：11 槽/64 背包/5 品质/需求/耐久/强化/修复/出售/分解/成长吞噬 | ✔（前期本土防具/刀类已补，09-19） | [game_state.gd](../autoload/game_state.gd) · [campaign.gd](../data/campaign.gd) |
 | 六维属性 + 属性点 + 词条聚合 | ✔ | [attributes.gd](../data/attributes.gd) |
+| 面板体系：角色面板（C）· 商店 · **任务档案（J）** · 统一设计语言 | ✔ | [system_ui.gd](../scripts/ui/system_ui.gd) · [shop_panel.gd](../scripts/ui/shop_panel.gd) · [quest_panel.gd](../scripts/ui/quest_panel.gd) · [quest_log.gd](../data/quest_log.gd) |
+| 镜头：轨道操控（中键转视角/滚轮推拉/俯角 ≤45°）+ 前景遮挡淡出 | ✔ | [camera_orbit_controls.gd](../scripts/world/camera_orbit_controls.gd) · [camera_occlusion_fade.gd](../scripts/world/camera_occlusion_fade.gd) |
 | 灰潮港服务（杂货/工坊/委托/演武场/世界入口） | ✔ | [harbor_service.gd](../scripts/world/harbor_service.gd) |
 | 波次系统 + 巨虎三阶段 Boss + 检查点 | ✔ | [wave_spawner.gd](../scripts/world/wave_spawner.gd) · [boss_colpo.gd](../scripts/combat/boss_colpo.gd) |
-| 验证脚本（demo/visual/six_attrs/core_loop/jungle*） | ✔ 通过 | `tools/validate_*.gd` |
+| 验证脚本（18 个；09-23 实跑 8 个旧脚本 + 1 个新脚本全通过） | ✔ 通过 | `tools/validate_*.gd` |
 
 ---
 
@@ -132,13 +187,15 @@
 
 | 项 | 说明 | 状态 |
 |---|---|---|
-| R 刀芒 / F 环断 / T 影刺 | 近战技能三件套 | PLANNED（F1 键位表标注"规划中"） |
-| Q 青钢影・猎魔 / E 傲歌 | 开关真伤 / 护盾 | PLANNED；敌人 `has_energy` 字段与噬灵者回蓝无实际玩法 |
-| MP 生态 | 无技能消耗出口，再生 3/3600/s，护盾球为死代码 | 待技能实装时重算 |
-| 逃脱币 / 救援 / 永久死亡 | 现死亡=免费重试本地区 | 与 P1 基线/原著"等价交换"冲突，需拍板 |
+| ~~R 刀芒 / F 环断 / T 影刺~~ | 近战技能三件套 | **✔ 已实装**（09-19 `9e0d649`，数值入 `combat_skills.gd`） |
+| ~~Q 青钢影・猎魔 / E 傲歌~~ | 开关真伤 / 护盾 | **✔ 已实装**（护盾球已有显隐逻辑，非死代码） |
+| MP 生态 | 回蓝口径已改（命中 1% + 被动 0.2%/秒，09-19）；但**仍无技能消耗出口设计** | 部分解决，待技能体系收口 |
+| **双形态战斗 P2 / P3** | ~~眩晕条与处决、眩晕切回合、首轮先手权、山之主接入~~ **✅ 09-22 已实装**；**仍缺**：影刺/傲歌/青钢影回合化、猎魔被动化、意图预告、战斗运镜、炸弹延迟引爆、战役接入、Boss 回合化、单方向战斗演出 | **P1 ✅（仅练习场 + 教学场） · P2 🟡 部分 · P3 ⬜ 未开始**，逐条见 [COMBAT_REWORK_PLAN.md](COMBAT_REWORK_PLAN.md) |
+| ~~防具 / 戒指类装备内容~~ | 11 槽中多槽无物品可填 | **部分已补**（09-19 loot 提交加了 6 件前期本土防具 + 铜戒指）；**乐园公证（`export=true`）防具/首饰仍缺**，多槽无高阶物可填 |
+| 逃脱币 / 救援 / 永久死亡 | 现死亡=免费重试本地区；**结算事务入口已就绪**（`GameState.settle_sortie(outcome)` 四路径共用，09-23） | 与 P1 基线/原著"等价交换"冲突，仅剩数值与角色销毁规则需拍板 |
 | 35 分钟世界时限 / 情报 / 直感 / 三分类任务 | 现仅阶段主线 + 虎齿文字钩子 | 未做 |
-| 防具 / 戒指类装备内容 | 11 槽中 7 槽无物品可填 | 见 §5 #2 |
-| Tab 使徒之眼 / 中键吞噬之核 | — | 明确后置（DEFERRED） |
+| 成长吞噬供给 | 掉落池已含刀类（缺口铁刀 / 精铁刀，均 `1h_sword`，09-19 入库） | **✔ 链路已通**，仅数量偏少 |
+| Tab 使徒之眼 / 吞噬之核 | — | 明确后置（DEFERRED）；中键已改作镜头控制，键位待重指 |
 
 ---
 
@@ -146,22 +203,34 @@
 
 | # | 问题 | 证据 | 影响 |
 |---|---|---|---|
-| 1 | **HUD 文案写 "F 燧发枪"，实际绑定是右键副手**（campaign 底部提示与 F1 键位表都写 F） | [hud.gd](../scripts/ui/hud.gd#L110-L216) vs [key_bindings.gd](../scripts/ui/key_bindings.gd#L11) | 玩家按 F 无反应 → **建议立即修正** |
-| 2 | **防具内容缺失**：ITEMS 无 head/body/arm/boots/cloak/ring 装备 | [campaign.gd](../data/campaign.gd#L24-L65) | `armor_reduction()`、护甲扣耐从未触发；防御链路是死代码 |
-| 3 | **成长吞噬无供给**：噬刀仅认 dagger/1h_sword，掉落表无刀类武器 | [campaign.gd](../data/campaign.gd#L79) | 斩龙闪品质晋升不可达 |
-| 4 | **强化经济断链**：斩龙闪单次 1500 币 vs 一局收入≈1000~1760 | [equip_tables.gd](../data/equip_tables.gd) | 强化/分解/出售难进入玩家决策 |
-| 5 | **伤害公式双轨**：campaign 走区间链，独立试炼/面板仍用"武器7+力量" | [attributes.gd](../data/attributes.gd#L53-L55) | 口径两套，易遗漏 |
-| 6 | **护盾视觉死代码**：红球 Mesh 创建后永久隐藏 | [player.gd](../player.gd#L60-L73) | 待 E 傲歌接入 |
-| 7 | **文档过期**（✅ 2026-09-19 已修）：CORE_LOOP_PLAYTEST 原写"8槽装备"（hud 已 11 槽） | [CORE_LOOP_PLAYTEST.md](CORE_LOOP_PLAYTEST.md) | 已改为 11 槽 |
+| 1 | ~~**HUD 文案写 "F 燧发枪"，实际绑定是右键副手**~~ **✅ 09-19 已修** | [hud.gd](../scripts/ui/hud.gd) 现为"右键 燧发枪（需装备）" · [key_bindings.gd](../scripts/ui/key_bindings.gd) 为"鼠标右键" | 已一致 |
+| 2 | ~~**防具内容缺失**：ITEMS 无 head/body/arm/boots/cloak/ring 装备~~ **✅ 09-19 已补** | [campaign.gd](../data/campaign.gd)：`leather_cap` / `hunter_hat` / `ragged_vest` / `leather_bracer` / `worn_boots` / `tattered_cloak` / `copper_ring` | 防御链路与护甲扣耐已可触发；**`export=true` 的高阶防具仍缺** |
+| 3 | ~~**成长吞噬无供给**：掉落表无刀类武器~~ **✅ 09-19 已补** | `RANDOM_EQUIP_POOL` 现含 `worn_blade` / `iron_sword`（均 `1h_sword`） | 斩龙闪晋升链路可达 |
+| 4 | **强化经济断链**：斩龙闪单次 1500 币 vs 一局收入≈1000~1760 | [equip_tables.gd](../data/equip_tables.gd) | 强化/分解/出售难进入玩家决策（仍待调参） |
+| 5 | **伤害公式双轨**：campaign 走区间链，独立试炼/面板仍用"武器7+力量" | [attributes.gd](../data/attributes.gd) | 口径两套，易遗漏（仍待收口） |
+| 6 | ~~**护盾视觉死代码**：红球 Mesh 创建后永久隐藏~~ **✅ 已非死代码** | [player.gd](../player.gd) 已有 `shield_visual.visible = true/false` 分支 | 傲歌护盾表现生效 |
+| 7 | ~~文档过期：CORE_LOOP_PLAYTEST 原写"8 槽装备"~~ | **✅ 2026-09-19 已修** | 已改为 11 槽 |
+| 8 | **K 直踢未进键位表** | [key_bindings.gd](../scripts/ui/key_bindings.gd) 的 `HINT` / `GROUPS` 均无 K，而 [player.gd](../player.gd) 已实装 | 玩家从 F1 面板与底部提示**看不到这个技能** |
+| 9 | ~~**角色帧表依赖未提交资源**~~ **✅ 09-23 已修** | [player.tscn](../player.tscn) → `player_frames_video.tres` → `black_swordsman_video/`（**均已入库**，后者 256 文件） | 已无"指向空资源"风险 |
+| 10 | ~~**回合战眩晕链是空调用**~~ **✅ 09-22 已修（P2）** | [enemy.gd](../scripts/combat/enemy.gd) L467 与 [boss_colpo.gd](../scripts/combat/boss_colpo.gd) L132 均已实现 `add_stun` / `is_stunned`，[stun_gauge.gd](../scripts/battle/stun_gauge.gd) 已建 | K 直踢的 25 点眩晕**现已生效** |
+| 11 | ~~**`BattleUnit.sync_from_player()` 定义了但从未被调用**~~ **✅ 09-23 已修** | 调用点在 [battle_controller.gd](../scripts/battle/battle_controller.gd) L84 | 玩家单位 hp/mp 已随回合同步 |
+| 12 | **`encounter_zone.gd` 未挂进任何场景** | 只有 `tools/validate_battle.gd` 引用它；开战走 `main.gd::_try_trigger_battle()` | ⚠️ **已非待办**：[COMBAT_DESIGN.md](COMBAT_DESIGN.md) v0.2 取消了"圈内入战 + 禁出结界"，该文件按设计**不再挂入**；残留文件可随 P2 清理 |
+| 13 | **拼刀两套语义并存** | D3 决定删拼刀（机制由回合「防御」承担，已实装），但 `CLASH_*` 与实时侧触发仍在跑 | 同一场战斗可能两套判定叠用，需 P2 明确口径 |
+| 14 | **未提交规模偏大** | 截至 09-23：源码/文档/脚本改动 **172** 项（112 `.gd` · 23 `.py` · 19 `.md` · 10 `.tscn` · 5 `gdshader`）+ 128 张预览 png；另有 `art/`·`assets/` 素材整理 **1432** 项（09-23 素材迁移所致）。横跨 09-19~09-23 **五个多主题工作日** | 改动难回溯、协作易冲突；建议按主题分批提交 |
 
 ---
 
-## §6 建议后续（沿用时间线）
+## §6 建议后续（2026-09-22 重排，09-23 复核）
 
-1. **立即（下一单）**：修正 HUD/F1 "F 燧发枪"→"右键 副手武器"两处文案；同步 CORE_LOOP_PLAYTEST "8 槽"措辞
-2. **短程（激活现有能力）**：补 4~6 件低品质防具 + 1 件可掉落/可购刀类武器 → 激活防御链路、护甲扣耐、成长吞噬、11 槽面板
-3. **短程**：拍板逃脱币/救援/永久死亡是否纳入本版
-4. **中程**：Q/E/R/F/T 五技能 + 敌人能量生态 + MP/噬灵者经济统一重算
-5. **中程**：强化经济校准（提高单局收入或降低门槛）
+> **09-23 复核结论**：下列第 2 条②、第 3 条前半**已完成**；第 1 条未动且规模变大（见 §5 #14）；第 3 条"`encounter_zone` 挂进场景"**已按设计变更作废**（[COMBAT_DESIGN.md](COMBAT_DESIGN.md) v0.2 取消"圈内入战"）。
 
-> 注：本文件为纯审计/时间线文档，未改动任何游戏代码。
+1. **立即（清理风险）**：把横跨 09-19 ~ 09-22 的未提交改动**按主题分批提交**，建议拆五批：① 港口扩写（南岸码头/围墙/商街/工坊/委托所/山景）② 镜头 + 遮挡淡出 ③ 开场第二幕 + 面板体系 ④ 双形态战斗 P1 ⑤ 角色动作重制。**第 ⑤ 批必须带上 `player_frames_video.tres` 与 `black_swordsman_video/`**，否则 `player.tscn` 指向空资源。
+2. **立即（小修，成本极低）**：① K 直踢补进 `key_bindings.gd` 的 `HINT` / `GROUPS`（**仍待办**）；~~② `BattleUnit.sync_from_player()` 接上调用或直接删除~~ **✅ 09-23 已接上调用**；③ 明确"实时拼刀是否保留"（D3 已决定删，代码仍留着）。
+3. **短程（双形态 P2）**：~~野战眩晕条 `stun_gauge.gd` + `enemy.add_stun()` / 处决 → 打开 K 直踢的眩晕效果；眩晕切回合~~ **✅ 09-22 已完成**；**仍待办**：影刺 / 傲歌 / 青钢影回合化、猎魔被动化、意图预告、战斗运镜、炸弹延迟引爆。~~`encounter_zone` 挂进场景并补禁出限制~~ **作废（设计变更取消圈内入战）**。
+4. **短程（拍板）**：逃脱币 / 救援 / 永久死亡是否纳入本版。
+5. **中程（双形态 P3）**：战役关卡接入（`wave_spawner` 遭遇化）、Boss 回合化、战斗演出单方向化、数值平衡回填。
+6. **中程（老缺口）**：强化经济校准；伤害公式双轨收口；乐园公证（`export=true`）防具/首饰内容补齐；MP 生态的技能消耗出口设计。
+
+> 注：本文件为纯审计/时间线文档。**2026-09-22 本轮更新只改文档，未改动任何游戏代码**；§3 / §4 / §5 / §6 已按当日代码逐项重核。
+>
+> **2026-09-23 追加（有代码改动）**：修正死亡「回滚」名不副实的问题 —— `equipment_drop._collect()` 与 `game_state.damage_item_dura()` 原先即时 `save_game()`，等于阵亡重试保留战利品却不还原耐久，还留下了「反复阵亡刷掉落」的口子。现改为「出击快照 → 本局临时状态 → 一次性提交」：`SORTIE_KEYS = ["bag","item_dura"]` 只改内存，任何显式 `save_game()` 即提交点，`settle_sortie(outcome)` 为四条结束路径的唯一入口。存档同批加固：`version` 字段、写临时档 + rename 原子替换、`.bak` 备份档与坏档回退（此前单文件直接覆盖，写坏即整档报废；且只剩段头的空壳档会被当成有效进度，静默清空姓名与乐园币）。回归 `tools/validate_save_transaction.gd`（67 项断言，`SAVE_TRANSACTION_FAILURES=0`），受影响的 8 个旧脚本全部复跑通过。

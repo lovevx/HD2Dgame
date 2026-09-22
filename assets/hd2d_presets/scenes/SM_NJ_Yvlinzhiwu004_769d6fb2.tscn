@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_NJ_Yvlinzhiwu004_769d6fb2_01.res" id="1_dc7jb"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_019196eccbd5430c_original.tres" id="2_qhtv1"]
+
+[node name="Model" type="Node3D" unique_id=95198061]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=40198774]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.033189714, -1.8310546e-06, -5.2230284e-06)
+
+[node name="SM_NJ_Yvlinzhiwu004" type="MeshInstance3D" parent="Geometry" unique_id=1912859943]
+mesh = ExtResource("1_dc7jb")
+surface_material_override/0 = ExtResource("2_qhtv1")

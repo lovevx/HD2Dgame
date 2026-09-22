@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
-[ext_resource type="ArrayMesh" path="res://local_study/preset3d/meshes/SM_kushuicun_pofangzi002_68064722_01.res" id="1_15skn"]
-[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/c83ac26186018a3e_T_damoshuzhong001.png" id="2_ame7q"]
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_kushuicun_pofangzi002_68064722_01.res" id="1_15skn"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/c83ac26186018a3e_T_damoshuzhong001.png" id="2_ame7q"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p8idh"]
 resource_name = "mat_56b20a540e823385"

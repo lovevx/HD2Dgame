@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_i2t78"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_y00vv"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_kushuicun_pofangzi002_68064722.tscn" id="3_k38d7"]
+
+[resource]
+script = ExtResource("1_i2t78")
+title = "SM_kushuicun_pofangzi002"
+category = "建筑"
+source = ExtResource("3_k38d7")
+source_path = "res://assets/hd2d_presets/scenes/SM_kushuicun_pofangzi002_68064722.tscn"
+asset_id = &"SM_kushuicun_pofangzi002_68064722"
+family_id = &"family_deea98b3baad28d1"
+material_slots = {
+"Geometry/SM_kushuicun_pofangzi002": Array[String](["mat_56b20a540e823385"])
+}
+static_collision = true
+wind = 0.0

@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_JN_yuchuan004_adffc1d3_01.res" id="1_fo8n7"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_afcc548cf40150ff_original.tres" id="2_vvj2d"]
+
+[sub_resource type="Skin" id="Skin_0j38n"]
+resource_name = "Skin"
+bind_count = 3
+bind/0/name = &"Dummy001"
+bind/0/bone = -1
+bind/0/pose = Transform3D(0.9998477, -0.017452406, 0, 0.017452406, 0.9998477, 0, 0, 0, 1, 0, 0, -8.304576e-09)
+bind/1/name = &"Dummy003"
+bind/1/bone = -1
+bind/1/pose = Transform3D(0.76768774, -0.59682065, -0.23336828, 0.63966227, 0.73559654, 0.22300231, 0.03857251, -0.32047302, 0.946472, 0.6030094, -2.0926905, 3.3622062)
+bind/2/name = &"Dummy002"
+bind/2/bone = -1
+bind/2/pose = Transform3D(0.7737333, -0.5882455, 0.23516807, 0.63167703, 0.74459714, -0.215776, -0.048176214, 0.31550333, 0.94770074, 0.57818747, -2.1133535, -3.353188)
+
+[node name="Model" type="Node3D" unique_id=2124749275]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1330925243]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36674595, 1.7812772, 0)
+
+[node name="SM_JN_yuchuan004" type="Node3D" parent="Geometry" unique_id=1221935858]
+
+[node name="Skeleton3D" type="Skeleton3D" parent="Geometry/SM_JN_yuchuan004" unique_id=894817519]
+bones/0/name = "Dummy001"
+bones/0/parent = -1
+bones/0/rest = Transform3D(0.9998477, 0.017452415, 0, -0.017452415, 0.9998477, 0, 0, 0, 1, 0, 0, 8.30458e-09)
+bones/0/enabled = true
+bones/0/position = Vector3(0, 0, 8.30458e-09)
+bones/0/rotation = Quaternion(0, 0, -0.00872654, 0.9999619)
+bones/0/scale = Vector3(1, 1, 1)
+bones/1/name = "Dummy003"
+bones/1/parent = 0
+bones/1/rest = Transform3D(0.7779865, 0.62672716, 0.04415983, -0.5833321, 0.7466481, -0.3197504, -0.2333681, 0.22300164, 0.94647217, 0.693938, 2.98933, -2.57484)
+bones/1/enabled = true
+bones/1/position = Vector3(0.693938, 2.98933, -2.57484)
+bones/1/rotation = Quaternion(0.14565906, 0.074480526, -0.32474518, 0.9315453)
+bones/1/scale = Vector3(1, 1, 1)
+bones/2/name = "Dummy002"
+bones/2/parent = 0
+bones/2/rest = Transform3D(0.78388196, 0.6185855, -0.05367527, -0.57465214, 0.75550824, 0.31461444, 0.23516807, -0.215776, 0.94770074, 0.674077, 2.98387, 2.58584)
+bones/2/enabled = true
+bones/2/position = Vector3(0.674077, 2.98387, 2.58584)
+bones/2/rotation = Quaternion(-0.14201497, -0.07733939, -0.31949592, 0.93368775)
+bones/2/scale = Vector3(1, 1, 0.99999994)
+
+[node name="SM_JN_yuchuan004" type="MeshInstance3D" parent="Geometry/SM_JN_yuchuan004/Skeleton3D" unique_id=848550776]
+mesh = ExtResource("1_fo8n7")
+skin = SubResource("Skin_0j38n")
+skeleton = NodePath("..")
+surface_material_override/0 = ExtResource("2_vvj2d")

@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_gsc_tanzi001_f4810288_01.res" id="1_x3pxw"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_afcc548cf40150ff_original.tres" id="2_ofy0g"]
+
+[node name="Model" type="Node3D" unique_id=689398432]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1778396446]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.6293944e-08, 0)
+
+[node name="SM_gsc_tanzi001" type="MeshInstance3D" parent="Geometry" unique_id=1505299163]
+mesh = ExtResource("1_x3pxw")
+surface_material_override/0 = ExtResource("2_ofy0g")

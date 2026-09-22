@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_1yuanbai02_LODs_f1d7718c_01.res" id="1_e41to"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_b3015e3fbf9f5b94_original.tres" id="2_xbfr2"]
+
+[node name="Model" type="Node3D" unique_id=1569948044]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1107197326]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.03125, -3.9995907e-06, -0.19480638)
+
+[node name="SM_1yuanbai02_LODs" type="MeshInstance3D" parent="Geometry" unique_id=1254866004]
+mesh = ExtResource("1_e41to")
+surface_material_override/0 = ExtResource("2_xbfr2")

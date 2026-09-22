@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/hd2d_scene_tools/shaders/preset_normal.gdshader" id="1_08hm7"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/92983b81eb9790cc_T_TFK_Fangliang001_BaseColor.png" id="2_8gv08"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/969efc922d4f9680_T_TFK_Fangliang001Normal.png" id="3_oplg6"]
+
+[resource]
+resource_name = "mat_70f9ebf5bd51fe72"
+render_priority = 0
+shader = ExtResource("1_08hm7")
+shader_parameter/art = ExtResource("2_8gv08")
+shader_parameter/normal_art = ExtResource("3_oplg6")
+shader_parameter/cutoff = 0.3333

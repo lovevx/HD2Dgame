@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_sz_fuhuocao001LLL_f5be0906_01.res" id="1_pnyl7"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_442031a0ede09d98_original.tres" id="2_r3ol4"]
+
+[node name="Model" type="Node3D" unique_id=245601573]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1220890628]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4.7148887e-06)
+
+[node name="SM_sz_fuhuocao001LLL" type="MeshInstance3D" parent="Geometry" unique_id=1461097936]
+mesh = ExtResource("1_pnyl7")
+surface_material_override/0 = ExtResource("2_r3ol4")

@@ -1,0 +1,83 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_NJ_Jiaozi_001_1d97f3c4_01.res" id="1_7qnd7"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_a58f0f2103ae84d3_original.tres" id="2_6mh01"]
+
+[sub_resource type="Skin" id="Skin_nh5e7"]
+resource_name = "Skin"
+bind_count = 6
+bind/0/name = &"Dummy009"
+bind/0/bone = -1
+bind/0/pose = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+bind/1/name = &"Dummy005"
+bind/1/bone = -1
+bind/1/pose = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+bind/2/name = &"Dummy007"
+bind/2/bone = -1
+bind/2/pose = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.751565, -1.1825913, -1.1620463)
+bind/3/name = &"Dummy008"
+bind/3/bone = -1
+bind/3/pose = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.751565, -1.1825914, 1.1620462)
+bind/4/name = &"Dummy004"
+bind/4/bone = -1
+bind/4/pose = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7516108, -1.1825913, -1.1620463)
+bind/5/name = &"Dummy006"
+bind/5/bone = -1
+bind/5/pose = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7516108, -1.1825914, 1.1620462)
+
+[node name="Model" type="Node3D" unique_id=482087408]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1836130037]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.3126602e-05, 4.196167e-06, 0)
+
+[node name="SM_NJ_Jiaozi_001" type="Node3D" parent="Geometry" unique_id=286461610]
+
+[node name="Skeleton3D" type="Skeleton3D" parent="Geometry/SM_NJ_Jiaozi_001" unique_id=209369853]
+bones/0/name = "Dummy009"
+bones/0/parent = -1
+bones/0/rest = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+bones/0/enabled = true
+bones/0/position = Vector3(0, 0, 0)
+bones/0/rotation = Quaternion(0, 0, 0, 1)
+bones/0/scale = Vector3(1, 1, 1)
+bones/1/name = "Dummy005"
+bones/1/parent = 0
+bones/1/rest = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+bones/1/enabled = true
+bones/1/position = Vector3(0, 0, 0)
+bones/1/rotation = Quaternion(0, 0, 0, 1)
+bones/1/scale = Vector3(1, 1, 1)
+bones/2/name = "Dummy007"
+bones/2/parent = 0
+bones/2/rest = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.75156, 1.18259, 1.16205)
+bones/2/enabled = true
+bones/2/position = Vector3(2.75156, 1.18259, 1.16205)
+bones/2/rotation = Quaternion(0, 0, 0, 1)
+bones/2/scale = Vector3(1, 1, 1)
+bones/3/name = "Dummy008"
+bones/3/parent = 0
+bones/3/rest = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.75156, 1.18259, -1.16205)
+bones/3/enabled = true
+bones/3/position = Vector3(2.75156, 1.18259, -1.16205)
+bones/3/rotation = Quaternion(0, 0, 0, 1)
+bones/3/scale = Vector3(1, 1, 1)
+bones/4/name = "Dummy004"
+bones/4/parent = 0
+bones/4/rest = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75161, 1.18259, 1.16205)
+bones/4/enabled = true
+bones/4/position = Vector3(-2.75161, 1.18259, 1.16205)
+bones/4/rotation = Quaternion(0, 0, 0, 1)
+bones/4/scale = Vector3(1, 1, 1)
+bones/5/name = "Dummy006"
+bones/5/parent = 0
+bones/5/rest = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75161, 1.18259, -1.16205)
+bones/5/enabled = true
+bones/5/position = Vector3(-2.75161, 1.18259, -1.16205)
+bones/5/rotation = Quaternion(0, 0, 0, 1)
+bones/5/scale = Vector3(1, 1, 1)
+
+[node name="SM_NJ_Jiaozi_001" type="MeshInstance3D" parent="Geometry/SM_NJ_Jiaozi_001/Skeleton3D" unique_id=1299433620]
+mesh = ExtResource("1_7qnd7")
+skin = SubResource("Skin_nh5e7")
+skeleton = NodePath("..")
+surface_material_override/0 = ExtResource("2_6mh01")

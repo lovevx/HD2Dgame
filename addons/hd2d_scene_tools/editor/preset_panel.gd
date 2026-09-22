@@ -1,6 +1,6 @@
 @tool
 extends AcceptDialog
-const CATALOG := "res://local_study/preset3d/catalog.json"
+const CATALOG := "res://assets/hd2d_presets/catalog.json"
 const PAGE_SIZE := 48
 var controller
 var actions

@@ -55,3 +55,18 @@ $godotExe = 'E:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.too
 & $godotExe --headless --path E:/godotproject/hd-2d --script tools/validate_jungle_camera.gd
 & $godotExe --path E:/godotproject/hd-2d --resolution 1280x720 --script tools/capture_jungle.gd -- --out=res://docs/camera_after
 ```
+
+## 镜头操控改版 · 2026-09-19
+
+相机参数没变（16° 俯角 / 正北 / 外围与空地各自的默认距离 / FOV 18°），变的是**操控方式**：
+
+| 项目 | 调整前 | 调整后 |
+|---|---|---|
+| 光标 | 鼠标离屏幕中心越远，取景往那一侧让出 | 光标移到哪都不带动镜头（「鼠标让出」组件删除） |
+| 视角 | 固定 16° 俯角、正北朝向 | 按住**鼠标中键拖动**绕角色转：左右改偏航、上下改俯角（俯角同时决定机位高度），限位 6°~45° |
+| 远近 | 固定距离（外围 42.3 / 空地 46.8 米） | **滚轮**按比例推拉，限位 12~96 米 |
+| 景深 | 按固定距离设一次 | 跟着距离等比缩放（拉近后角色不会掉进近景模糊区） |
+| 跟随 | 统一 5.5/s 指数跟随 | 平滑只加在**锚点**（玩家那一侧）上；构图偏移与轨道偏移挂在机位朝向上、转动即时生效（原先按住中键期间提到 14 的加速已删——转动不过平滑，不需要） |
+| 移动 | WASD 写死世界方向（W＝世界北） | WASD 按**机位朝向**算，W 永远朝画面深处走；转视角不会把前进方向反过来 |
+
+改动落在 `scripts/world/camera_orbit_controls.gd`（新组件）+ `colpo_level.gd` / `scripts/main/main.gd` / `harbor.gd` 三处接入；地图文件未改。`tools/validate_jungle_camera.gd` 里原先那段「鼠标让出」断言已替换为机位控制断言（`JUNGLE_CAMERA: PASS`，86 项），另新增 `tools/validate_camera_orbit.gd` 覆盖四张图共 249 项（含「拖动转视角不甩镜头」「走路不抖」「W 跟着视角走」）。完整说明见 [灰潮港口主城·镜头操控](HARBOR_MAP.md#镜头操控2026-09-19) 与 [转视角甩镜头与走动方向](HARBOR_MAP.md#转视角甩镜头与走动方向2026-09-19-晚玩家实测反馈)。改造前脚本备份在 `.local-backups/camera-orbit-20260919/` 与 `.local-backups/camera-rig-20260919/`。

@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_kushuicun_pofangzi002_68064722_01.res" id="1_qhsfe"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_56b20a540e823385_original.tres" id="2_xhbdp"]
+
+[node name="Model" type="Node3D" unique_id=1083236705]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=2057883661]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.014057083, 0)
+
+[node name="SM_kushuicun_pofangzi002" type="MeshInstance3D" parent="Geometry" unique_id=843048936]
+mesh = ExtResource("1_qhsfe")
+surface_material_override/0 = ExtResource("2_xhbdp")

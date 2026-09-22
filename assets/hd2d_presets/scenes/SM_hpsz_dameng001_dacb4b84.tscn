@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_hpsz_dameng001_dacb4b84_01.res" id="1_mraj1"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_6a0eb02224633daf_original.tres" id="2_nbbut"]
+
+[node name="Model" type="Node3D" unique_id=388857530]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1067926319]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.861023e-06, 5.340576e-07, -1.1920929e-06)
+
+[node name="SM_hpsz_dameng001" type="MeshInstance3D" parent="Geometry" unique_id=133943239]
+mesh = ExtResource("1_mraj1")
+surface_material_override/0 = ExtResource("2_nbbut")

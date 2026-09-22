@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_qw3k4"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_l00kr"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_hpsz_taijie004_f83cde5e.tscn" id="3_sxqcq"]
+
+[resource]
+script = ExtResource("1_qw3k4")
+title = "SM_hpsz_taijie004"
+category = "建筑"
+source = ExtResource("3_sxqcq")
+source_path = "res://assets/hd2d_presets/scenes/SM_hpsz_taijie004_f83cde5e.tscn"
+asset_id = &"SM_hpsz_taijie004_f83cde5e"
+family_id = &"family_9773018c1f4e1393"
+material_slots = {
+"Geometry/SM_hpsz_taijie004": Array[String](["mat_6a0eb02224633daf"])
+}
+static_collision = true
+wind = 0.0

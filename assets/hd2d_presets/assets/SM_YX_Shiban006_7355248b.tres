@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_4hc8o"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_purcg"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_YX_Shiban006_7355248b.tscn" id="3_3slq7"]
+
+[resource]
+script = ExtResource("1_4hc8o")
+title = "SM_YX_Shiban006"
+category = "建筑"
+source = ExtResource("3_3slq7")
+source_path = "res://assets/hd2d_presets/scenes/SM_YX_Shiban006_7355248b.tscn"
+asset_id = &"SM_YX_Shiban006_7355248b"
+family_id = &"family_6bd3d3e44f3d7c18"
+material_slots = {
+"Geometry/SM_YX_Shiban006": Array[String](["mat_55b813580a0a8e89"])
+}
+static_collision = true
+wind = 0.0

@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/hd2d_scene_tools/shaders/preset_normal.gdshader" id="1_cp45o"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/bb78521bf1e20760_T_HD_Dafanchuan002_BaseColor.png" id="2_lqc1h"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/685bb9f641fe24bf_T_HD_Dafanchuan002_Normal.png" id="3_atn52"]
+
+[resource]
+resource_name = "mat_7be639f169f5cea2"
+render_priority = 0
+shader = ExtResource("1_cp45o")
+shader_parameter/art = ExtResource("2_lqc1h")
+shader_parameter/normal_art = ExtResource("3_atn52")
+shader_parameter/cutoff = 0.3333

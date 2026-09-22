@@ -1,8 +1,9 @@
 extends Control
 ## 游戏主菜单：有存档时显示「继续游戏」（恢复阶段试炼检查点），否则「开始新游戏」
 ## 走「开场剧情 + 登记姓名」（会覆盖旧档）。「关卡调试」保留给白盒阶段开发用。
-## 配色沿用游戏色彩语言：蓝色系统 / 金色高价值。
+## 配色沿用系统面板风：深蓝灰底 + 电光青系统色（蓝=系统），金色仅保留高价值（标题/悬停）。
 
+const SystemUI := preload("res://scripts/ui/system_ui.gd")
 const OPENING_SCENE := "res://scenes/main/opening.tscn"
 const LEVEL_SELECT_SCENE := "res://scenes/main/level_select.tscn"
 const HARBOR_SCENE := "res://scenes/world/harbor.tscn"
@@ -34,7 +35,15 @@ func _build_background() -> void:
 	gold_line.color = Color("ebd6a2")
 	gold_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(gold_line)
-	var version := _label(self, VERSION_HINT, 17, Color("5f7a8a"))
+	# 两侧青色系统导轨（蓝 = 系统）
+	for side in [-1.0, 1.0]:
+		var rail := ColorRect.new()
+		rail.position = Vector2(320 if side < 0 else 1596, 268)
+		rail.size = Vector2(3, 232)
+		rail.color = Color(SystemUI.ACCENT_DIM, 0.5)
+		rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(rail)
+	var version := _label(self, VERSION_HINT, 17, SystemUI.TEXT_DIM)
 	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	version.position = Vector2(26, 1036)
 	version.size = Vector2(900, 30)
@@ -51,7 +60,7 @@ func _build_center() -> Button:
 	center.add_child(column)
 	var title := _label(column, "轮回乐园", 76, Color("ebd6a2"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var subtitle := _label(column, "海贼王 · 阶段试炼　　截止科尔波山猎虎", 26, Color("a5dfff"))
+	var subtitle := _label(column, "海贼王 · 阶段试炼　　截止科尔波山猎虎", 26, SystemUI.ACCENT)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var spacer := Control.new()
 	spacer.custom_minimum_size.y = 48
@@ -76,25 +85,19 @@ func _button(parent: Control, text: String, action: Callable, width: int, height
 	button.text = text
 	button.custom_minimum_size = Vector2(width, height)
 	button.add_theme_font_size_override("font_size", font_size)
-	button.add_theme_color_override("font_color", Color("dbe7ee"))
+	button.add_theme_color_override("font_color", SystemUI.TEXT)
 	button.add_theme_color_override("font_hover_color", Color("ebd6a2"))
 	button.add_theme_color_override("font_focus_color", Color("ebd6a2"))
-	button.add_theme_stylebox_override("normal", _button_style(Color("0a1722"), Color(0.45, 0.55, 0.62, 0.4)))
-	button.add_theme_stylebox_override("hover", _button_style(Color("0f2232"), Color("ebd6a2")))
-	button.add_theme_stylebox_override("pressed", _button_style(Color("0a1620"), Color("ebd6a2")))
-	button.add_theme_stylebox_override("focus", _button_style(Color("0f2232"), Color("ebd6a2")))
+	button.add_theme_stylebox_override("normal", _button_style(Color("0d1526"), Color(SystemUI.BORDER, 0.6)))
+	button.add_theme_stylebox_override("hover", _button_style(Color("14233c"), SystemUI.ACCENT))
+	button.add_theme_stylebox_override("pressed", _button_style(Color("0a1120"), SystemUI.ACCENT))
+	button.add_theme_stylebox_override("focus", _button_style(Color("14233c"), SystemUI.ACCENT))
 	button.pressed.connect(action)
 	parent.add_child(button)
 	return button
 
 func _button_style(bg: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = bg
-	style.border_color = border
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(4)
-	style.set_content_margin_all(14)
-	return style
+	return SystemUI.flat(bg, border, 2, SystemUI.RADIUS, 14)
 
 func _label(parent: Control, text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()

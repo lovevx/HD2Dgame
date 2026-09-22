@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_g15m8"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_uoc5i"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_NJ_Fangzi011_3d06ddc7.tscn" id="3_erq5y"]
+
+[resource]
+script = ExtResource("1_g15m8")
+title = "SM_NJ_Fangzi011"
+category = "建筑"
+source = ExtResource("3_erq5y")
+source_path = "res://assets/hd2d_presets/scenes/SM_NJ_Fangzi011_3d06ddc7.tscn"
+asset_id = &"SM_NJ_Fangzi011_3d06ddc7"
+family_id = &"family_84094a921e499243"
+material_slots = {
+"Geometry/SM_NJ_Fangzi011": Array[String](["mat_447e4bf91b5c70f3"])
+}
+static_collision = true
+wind = 0.0

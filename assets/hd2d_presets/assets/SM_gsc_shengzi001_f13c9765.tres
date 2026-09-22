@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_g08oc"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_coc2l"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_gsc_shengzi001_f13c9765.tscn" id="3_mg1my"]
+
+[resource]
+script = ExtResource("1_g08oc")
+title = "SM_gsc_shengzi001"
+category = "建筑"
+source = ExtResource("3_mg1my")
+source_path = "res://assets/hd2d_presets/scenes/SM_gsc_shengzi001_f13c9765.tscn"
+asset_id = &"SM_gsc_shengzi001_f13c9765"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_gsc_shengzi001": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

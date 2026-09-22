@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_lhkp8"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_xong6"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Bjb2_c7efbb62.tscn" id="3_dngrw"]
+
+[resource]
+script = ExtResource("1_lhkp8")
+title = "SM_Bjb2"
+category = "环境"
+source = ExtResource("3_dngrw")
+source_path = "res://assets/hd2d_presets/scenes/SM_Bjb2_c7efbb62.tscn"
+asset_id = &"SM_Bjb2_c7efbb62"
+family_id = &"family_c9eb629cb77d65f2"
+material_slots = {
+"Geometry/SM_Bjb2": Array[String](["mat_2aef439cd920c0f6"])
+}
+wind = 0.0

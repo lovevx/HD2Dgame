@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_nux75"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_rd6fg"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_mjsz_moxiegepaizi001_6f79df9f.tscn" id="3_n5lbr"]
+
+[resource]
+script = ExtResource("1_nux75")
+title = "SM_mjsz_moxiegepaizi001"
+category = "建筑"
+source = ExtResource("3_n5lbr")
+source_path = "res://assets/hd2d_presets/scenes/SM_mjsz_moxiegepaizi001_6f79df9f.tscn"
+asset_id = &"SM_mjsz_moxiegepaizi001_6f79df9f"
+family_id = &"family_e20460e5b2a8f9d1"
+material_slots = {
+"Geometry/SM_mjsz_moxiegepaizi001": Array[String](["mat_f21b693baf73a269"])
+}
+static_collision = true
+wind = 0.0

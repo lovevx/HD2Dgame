@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_erg_caopeng002_2_d5143746_01.res" id="1_r3duk"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_c4c81404cbfb528e_original.tres" id="2_jyln3"]
+
+[node name="Model" type="Node3D" unique_id=25746782]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=598398613]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.7683715e-09, 0)
+
+[node name="SM_erg_caopeng002_2" type="MeshInstance3D" parent="Geometry" unique_id=947193990]
+mesh = ExtResource("1_r3duk")
+surface_material_override/0 = ExtResource("2_jyln3")

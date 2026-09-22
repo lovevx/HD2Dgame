@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_sqsi0"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_xhkjj"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_NJ_Gongqiao001_61f5024e.tscn" id="3_73p5h"]
+
+[resource]
+script = ExtResource("1_sqsi0")
+title = "SM_NJ_Gongqiao001"
+category = "建筑"
+source = ExtResource("3_73p5h")
+source_path = "res://assets/hd2d_presets/scenes/SM_NJ_Gongqiao001_61f5024e.tscn"
+asset_id = &"SM_NJ_Gongqiao001_61f5024e"
+family_id = &"family_84094a921e499243"
+material_slots = {
+"Geometry/SM_NJ_Gongqiao001": Array[String](["mat_447e4bf91b5c70f3"])
+}
+static_collision = true
+wind = 0.0

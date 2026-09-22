@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_3b5ek"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_odxhu"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_YX_Shitou001_88ecc431.tscn" id="3_g4y2s"]
+
+[resource]
+script = ExtResource("1_3b5ek")
+title = "SM_YX_Shitou001"
+category = "建筑"
+source = ExtResource("3_g4y2s")
+source_path = "res://assets/hd2d_presets/scenes/SM_YX_Shitou001_88ecc431.tscn"
+asset_id = &"SM_YX_Shitou001_88ecc431"
+family_id = &"family_ebd9378dd08d0cb9"
+material_slots = {
+"Geometry/SM_YX_Shitou001": Array[String](["mat_7a0e62bbcde27f3d"])
+}
+static_collision = true
+wind = 0.0

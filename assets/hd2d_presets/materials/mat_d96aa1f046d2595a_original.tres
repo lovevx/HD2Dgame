@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/d212335069c9e3de_T_songbaiC001.png" id="1_c1u8n"]
+
+[resource]
+resource_name = "mat_d96aa1f046d2595a"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_c1u8n")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

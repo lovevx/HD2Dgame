@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/hd2d_scene_tools/shaders/preset_normal.gdshader" id="1_dto32"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/9e4d38a307ffbc7a_T_Wujian_BaseColor.png" id="2_c5fs5"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/2503ba2cc63703d6_T_Wujian_Normal.png" id="3_w8y6l"]
+
+[resource]
+resource_name = "mat_a58f0f2103ae84d3"
+render_priority = 0
+shader = ExtResource("1_dto32")
+shader_parameter/art = ExtResource("2_c5fs5")
+shader_parameter/normal_art = ExtResource("3_w8y6l")
+shader_parameter/cutoff = 0.0

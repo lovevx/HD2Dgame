@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/sm_merged_indoor_a23833c1_01.res" id="1_k2u4j"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_d181c9d21706fa7a_original.tres" id="2_o4ebn"]
+
+[node name="Model" type="Node3D" unique_id=357956269]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1776133160]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.4783397, 0.04, 1.75)
+
+[node name="sm_merged_indoor" type="MeshInstance3D" parent="Geometry" unique_id=1622663200]
+mesh = ExtResource("1_k2u4j")
+surface_material_override/0 = ExtResource("2_o4ebn")

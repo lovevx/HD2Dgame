@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/Cobweb_WebCorner3_9075174c_01.res" id="1_80qqx"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_5cfce9c46b32f47e_original.tres" id="2_bonmt"]
+
+[node name="Model" type="Node3D" unique_id=324110591]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1827601854]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.11020024, -0.46050662)
+
+[node name="Cobweb_WebCorner3" type="MeshInstance3D" parent="Geometry" unique_id=100218414]
+mesh = ExtResource("1_80qqx")
+surface_material_override/0 = ExtResource("2_bonmt")

@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/f21a0cc245e40b22_T_NJ_Yvlingzhiwu001.png" id="1_rp3ck"]
+
+[resource]
+resource_name = "mat_019196eccbd5430c"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_rp3ck")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

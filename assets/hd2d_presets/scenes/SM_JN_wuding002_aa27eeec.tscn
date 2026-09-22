@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_JN_wuding002_aa27eeec_01.res" id="1_8cyse"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_d181c9d21706fa7a_original.tres" id="2_geect"]
+
+[node name="Model" type="Node3D" unique_id=1799652040]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1436019974]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9604645e-08, -2.4414062e-06, 0)
+
+[node name="SM_JN_wuding002" type="MeshInstance3D" parent="Geometry" unique_id=334161065]
+mesh = ExtResource("1_8cyse")
+surface_material_override/0 = ExtResource("2_geect")

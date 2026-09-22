@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_2epd0"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_gofmg"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Item_yjdashu005_2a1e1f2b.tscn" id="3_u8g6u"]
+
+[resource]
+script = ExtResource("1_2epd0")
+title = "SM_Item_yjdashu005"
+category = "道具"
+source = ExtResource("3_u8g6u")
+source_path = "res://assets/hd2d_presets/scenes/SM_Item_yjdashu005_2a1e1f2b.tscn"
+asset_id = &"SM_Item_yjdashu005_2a1e1f2b"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_Item_yjdashu005": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

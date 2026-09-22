@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_qb27r"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_l6qal"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_hpsz_gongmen001_42fe1f92.tscn" id="3_nuygc"]
+
+[resource]
+script = ExtResource("1_qb27r")
+title = "SM_hpsz_gongmen001"
+category = "建筑"
+source = ExtResource("3_nuygc")
+source_path = "res://assets/hd2d_presets/scenes/SM_hpsz_gongmen001_42fe1f92.tscn"
+asset_id = &"SM_hpsz_gongmen001_42fe1f92"
+family_id = &"family_9773018c1f4e1393"
+material_slots = {
+"Geometry/SM_hpsz_gongmen001": Array[String](["mat_6a0eb02224633daf"])
+}
+static_collision = true
+wind = 0.0

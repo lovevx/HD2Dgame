@@ -28,6 +28,15 @@ func capture(label: String) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("res://.tmp_preview/reuse-%s.png" % label)
 
+## 面板子树里所有 Label / Button 文字拼起来（断言面板确实把内容渲染出来了）。
+func _panel_text(node) -> String:
+	var out := ""
+	for child in node.get_children():
+		if child is Label or child is Button:
+			out += child.text + "\n"
+		out += _panel_text(child)
+	return out
+
 func use_inventory(id: String) -> void:
 	scene.hud._refresh_char_panel()
 	for cell in scene.hud.bag_cells:
@@ -195,9 +204,12 @@ func run() -> void:
 	scene.world.get_node("ReturnPortal").enter()
 	check(gs.campaign.hub and gs.campaign.settled, "原返回门触发阶段结算")
 	await create_timer(0.85).timeout
+	# 过场已把场景换成新的一份，这里必须跟上引用 —— 否则下面 mount() 会再挂一份，
+	# 树里同时留两套 Campaign/港口/HUD，服务点查到的是另一套的 HUD（历史遗留的重复场景坑）。
+	scene = current_scene
 	var coins: int = gs.coins
 	check(not gs.settle_trial() and gs.coins == coins, "结算幂等")
-	check(gs.attr_points == 4 and gs.campaign.level == 2, "首轮噩梦双倍，等级仅权限")
+	check(gs.attr_points == 2 and gs.campaign.level == 2, "世界之源8.9%→0点·保底1点·首轮双倍")
 	check(gs.item_count("flintlock") == 0 and gs.item_count("dragon") == 1, "世界限定清理与规则装备保留")
 	check(gs.open_chest("tiger_chest"), "返乐园仍可打开保留宝箱")
 	check(gs.spend_attr_point("str") and gs.attributes.str == 7, "属性强化")
@@ -215,11 +227,20 @@ func run() -> void:
 	interact.action = "interact"
 	interact.pressed = true
 	shop._unhandled_input(interact)
-	check(scene.hud.overlay.visible and scene.hud.panel_title.text.contains("杂货"), "原商店V交互打开真实购买服务")
+	var shop_panel = scene.world.get_node_or_null("ShopPanel")
+	check(shop_panel != null and shop_panel.visible, "轮回商店V交互打开完整商店UI")
+	check(not scene.player.is_physics_processing(), "商店打开冻结玩家")
 	var before: int = gs.coins
-	scene.hud._choice_buttons[0].pressed.emit()
-	check(gs.coins == before - 100 and not scene.player.is_physics_processing(), "商店按钮扣币并暂停玩家")
-	scene.hud.hide_panel()
+	var potions_before: int = gs.item_count("potion")
+	shop_panel.set("_selected_id", "potion")
+	shop_panel.call("_purchase")
+	check(gs.coins == before - 150 and gs.item_count("potion") == potions_before + 1, "商店购买扣币入包")
+	before = gs.coins
+	var pendants_before: int = gs.item_count("pendant")
+	shop_panel.set("_selected_id", "pendant")
+	shop_panel.call("_purchase")
+	check(gs.coins == before and gs.item_count("pendant") == pendants_before, "不售卖商品拒绝购买")
+	shop_panel.call("close")
 	check(scene.player.is_physics_processing(), "关闭商店恢复港口移动")
 	scene.world.get_node("ForgeService").campaign_action.call()
 	var attr_btn: Button = null
@@ -233,9 +254,13 @@ func run() -> void:
 	check(gs.attributes.str == before + 1, "原工坊按钮真实属性强化")
 	await capture("forge")
 	scene.hud.hide_panel()
+	var quest_panel = scene.hud.quest_panel
 	scene.world.get_node("QuestService").campaign_action.call()
-	check(scene.hud.panel_body.text.contains("虎齿已获取"), "原委托所读取真实任务与结算")
-	scene.hud.hide_panel()
+	check(quest_panel != null and quest_panel.visible, "原委托所 V 打开任务档案")
+	quest_panel.call("_select", "side_tiger")
+	check(_panel_text(quest_panel).contains("取得虎齿") and _panel_text(quest_panel).contains("■"),
+		"任务档案读到真实任务进度（虎齿已取得）")
+	quest_panel.call("close")
 	var saved: Dictionary = gs.campaign.duplicate(true)
 	scene.world.get_node("TrialPortal").enter()
 	await create_timer(0.85).timeout

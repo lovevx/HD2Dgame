@@ -1,7 +1,9 @@
 extends CanvasLayer
+const SystemUI := preload("res://scripts/ui/system_ui.gd")
 const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
+const QuestPanelScript := preload("res://scripts/ui/quest_panel.gd")
 const Attributes := preload("res://data/attributes.gd")
-const PlayerFrames := preload("res://assets/characters/black_swordsman/player_frames.tres")
+const PlayerFrames := preload("res://assets/characters/player_frames_video.tres")
 const CursorTexture := preload("res://assets/ui/cursor.png")
 ## 光标图里剑尖所在的像素位置：贴图按这个点对准鼠标，指针才不会跑偏。
 const CURSOR_TIP := Vector2(8, 8)
@@ -9,6 +11,7 @@ var player: Node
 var header: Label
 var hp_bar: ProgressBar
 var mp_bar: ProgressBar
+var stamina_bar: ProgressBar
 var stats: Label
 var objective: Label
 var message: Label
@@ -28,6 +31,7 @@ var boss_bar: ProgressBar
 var boss_title := ""
 var cursor: TextureRect
 var char_panel: Control                 # C 键角色面板：左形象+装备环，右属性
+var quest_panel: CanvasLayer            # J 键任务面板：左任务列表，右任务详情（脚本自建，见 quest_panel.gd）
 var char_portrait: TextureRect
 var char_attr_labels: Dictionary = {}   # 六维键 → 数值 Label（面板右侧）
 var char_derived_label: Label
@@ -60,9 +64,10 @@ func _ready() -> void:
 	box.custom_minimum_size.x = 320
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(box)
-	header = _label(box, "契约者 / 独立试炼", 24, Color("a5dfff"))
+	header = _label(box, "契约者 / 独立试炼", 24, SystemUI.ACCENT)
 	hp_bar = _bar(box, Color("e07770"))
 	mp_bar = _bar(box, Color("55bfe6"))
+	stamina_bar = _bar(box, Color("a8d977"))   # 体力：闪避与直踹共用
 	stats = _label(box, "", 18)
 	objective = _label(root, "战斗试炼 / 等待开始", 22, Color("ebd6a2"))
 	objective.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
@@ -72,19 +77,15 @@ func _ready() -> void:
 	objective.offset_bottom = 130
 	objective.custom_minimum_size.x = 420
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var objective_style := StyleBoxFlat.new()
-	objective_style.bg_color = Color(0.025, 0.05, 0.08, 0.76)
-	objective_style.border_color = Color(0.35, 0.55, 0.68, 0.55)
-	objective_style.set_border_width_all(1)
-	objective_style.set_content_margin_all(12)
+	var objective_style := SystemUI.flat(SystemUI.BG_BLOCK, SystemUI.BORDER, 1, SystemUI.RADIUS, 12)
 	objective.add_theme_stylebox_override("normal", objective_style)
-	var hint := _label(root, KeyBindings.HINT, 18, Color("b2c5d5"))
+	var hint := _label(root, KeyBindings.HINT, 18, SystemUI.TEXT_DIM)
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	hint.offset_left = 32
 	hint.offset_right = -32
 	hint.offset_top = -45
 	hint.offset_bottom = -12
-	message = _label(root, "", 24, Color("7cd9ff"))
+	message = _label(root, "", 24, SystemUI.ACCENT)
 	message.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	message.offset_left = 260
 	message.offset_right = -260
@@ -112,18 +113,20 @@ func _ready() -> void:
 	panel.custom_minimum_size = Vector2(850, 0)
 	panel.add_theme_constant_override("separation", 30)
 	center.add_child(panel)
-	panel_title = _label(panel, "", 46, Color("a5dfff"))
+	panel_title = _label(panel, "", 46, SystemUI.ACCENT)
 	panel_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	panel_body = _label(panel, "", 24)
 	panel_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	action_button = Button.new()
 	action_button.custom_minimum_size.y = 64
 	action_button.add_theme_font_size_override("font_size", 26)
+	SystemUI.style_button(action_button)
 	panel.add_child(action_button)
 	overlay.hide()  # 默认收起，由 show_panel 打开；港口等无面板场景直接复用 HUD
 	_build_key_guide(root)
 	_build_menu(root)
 	_build_char_panel(root)
+	_build_quest_panel()
 	_build_boss_bar(root)
 	_build_cursor(root)
 	if campaign_controller:
@@ -134,11 +137,13 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	hp_bar.value = player.hp
 	mp_bar.value = player.mp
+	stamina_bar.value = player.stamina
 	hp_bar.max_value = player.max_hp
 	mp_bar.max_value = player.max_mp
-	stats.text = "HP %d / %d    MP %d / %d\n药剂 %d    炸弹 %d    剃 %s    连段 %d" % [player.hp, player.max_hp, player.mp, player.max_mp, player.potions, player.bombs, _cd_text(player.dodge_cd), maxi(0, player.combo_stage + 1)]
+	stamina_bar.max_value = player.max_stamina
+	stats.text = "HP %d / %d    MP %d / %d    体力 %d / %d\n药剂 %d    炸弹 %d    剃 %s" % [player.hp, player.max_hp, player.mp, player.max_mp, player.stamina, player.max_stamina, player.potions, player.bombs, _cd_text(player.dodge_cd)]
 	if campaign_controller:
-		stats.text = "生命 %.0f%%    MP %.0f / %.0f\n药剂 %d · 陷阱 %d · 弹药 %d · 闪避 %s\n猎魔 %s · 傲歌 %s\n刀芒 %s · 环断 %s · 影刺 %s\n世界之源 %.1f%% · 噬灵者 %d/100 · 乐园币 %d" % [player.hp / player.max_hp * 100, player.mp, player.max_mp, player.potions, player.bombs, player.bullets, _cd_text(player.dodge_cd), "开启" if player.hunter_active else "关闭", "护盾 %.0f" % player.shield_hp if player.shield_hp > 0 else _cd_text(player.shield_cd), _cd_text(player.wave_cd), _cd_text(player.ring_cd), "就绪" if player.pierce_timer > 0 and player.shadow_cd <= 0 else ("待前刺" if player.shadow_cd <= 0 else _cd_text(player.shadow_cd)), GameState.campaign.source, GameState.campaign.world_mana, GameState.coins]
+		stats.text = "生命 %.0f%%    MP %.0f / %.0f    体力 %.0f / %.0f\n药剂 %d · 陷阱 %d · 弹药 %d · 闪避 %s\n猎魔 %s · 傲歌 %s\n刀芒 %s · 环断 %s · 影刺 %s\n世界之源 %.1f%% · 噬灵者 %d/100 · 乐园币 %d" % [player.hp / player.max_hp * 100, player.mp, player.max_mp, player.stamina, player.max_stamina, player.potions, player.bombs, player.bullets, _cd_text(player.dodge_cd), "开启" if player.hunter_active else "关闭", "护盾 %.0f" % player.shield_hp if player.shield_hp > 0 else _cd_text(player.shield_cd), _cd_text(player.wave_cd), _cd_text(player.ring_cd), "就绪" if player.pierce_timer > 0 and player.shadow_cd <= 0 else ("待前刺" if player.shadow_cd <= 0 else _cd_text(player.shadow_cd)), GameState.campaign.source, GameState.campaign.world_mana, GameState.coins]
 	# 按下操作键就自动收起说明与剧情条，避免长时间挡住视野
 	if key_guide.visible and _player_action_pressed():
 		key_guide.hide()
@@ -146,9 +151,9 @@ func _process(_delta: float) -> void:
 		story_banner.hide()
 	_sync_mouse_mode()
 
-## 战斗中用游戏内光标，隐藏系统光标；结算面板 / Esc 菜单 / C 角色面板打开时交还系统光标。
+## 战斗中用游戏内光标，隐藏系统光标；结算面板 / Esc 菜单 / C 角色面板 / 商店 / 任务面板打开时交还系统光标。
 func _sync_mouse_mode() -> void:
-	var wanted := Input.MOUSE_MODE_VISIBLE if (overlay.visible or menu.visible or char_panel.visible) else Input.MOUSE_MODE_HIDDEN
+	var wanted := Input.MOUSE_MODE_VISIBLE if (overlay.visible or menu.visible or char_panel.visible or _shop_open() or quest_panel.visible) else Input.MOUSE_MODE_HIDDEN
 	if Input.get_mouse_mode() != wanted:
 		Input.set_mouse_mode(wanted)
 	_update_cursor()
@@ -173,7 +178,7 @@ func _exit_tree() -> void:
 	# 离开关卡（回选关面板等）时恢复系统光标，别把它留在隐藏状态
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-## F1 开关按键说明面板，Esc 开关菜单，C 开关角色面板。
+## F1 开关按键说明面板，Esc 开关菜单，C 开关角色面板，J 开关任务面板。
 func _unhandled_input(event: InputEvent) -> void:
 	if campaign_controller and event.is_action_pressed("open_menu") and (overlay.visible or char_panel.visible or key_guide.visible):
 		hide_panel()
@@ -182,6 +187,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if campaign_controller and overlay.visible:
+		return
+	# 任务面板的开关与退出都收在这一处：面板自己不消费输入，避免和下面的 elif 链抢同一个按键。
+	# 轮回商店有自己的 Esc/V 关法与玩家冻结，它开着时不叠面板（否则两个模态抢同一只鼠标）。
+	if event.is_action_pressed("quest_log"):
+		if not _shop_open():
+			toggle_quest_log()
+		get_viewport().set_input_as_handled()
+		return
+	if quest_panel.visible and event.is_action_pressed("open_menu"):
+		close_quest_log()
+		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("key_guide"):
 		key_guide.visible = not key_guide.visible
@@ -215,16 +231,11 @@ func _build_story_banner(root: Control) -> void:
 	story_banner.offset_left = 32
 	story_banner.offset_right = -32
 	story_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(0.03, 0.06, 0.1, 0.62)
-	st.border_color = Color(0.35, 0.55, 0.68, 0.35)
-	st.set_border_width_all(1)
-	st.set_corner_radius_all(10)
-	st.set_content_margin_all(16)
+	var st := SystemUI.flat(Color(SystemUI.BG_BLOCK, 0.8), Color(SystemUI.BORDER, 0.4), 1, SystemUI.RADIUS, 16)
 	story_banner.add_theme_stylebox_override("panel", st)
 	story_banner.hide()
 	root.add_child(story_banner)
-	story_body = _label(story_banner, "", 17, Color("dbe7ee"))
+	story_body = _label(story_banner, "", 17, SystemUI.TEXT)
 	story_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	story_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	story_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -256,11 +267,12 @@ func _build_key_guide(root: Control) -> void:
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_STOP  # 点面板本身不触发攻击，面板外仍可正常操作
 	card.add_theme_stylebox_override("panel", _card_style())
+	SystemUI.decor(card)
 	center.add_child(card)
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 6)
 	card.add_child(page)
-	_label(page, "按键映射 / 苏晓", 30, Color("a5dfff"))
+	_label(page, "按键映射 / 苏晓", 30, SystemUI.ACCENT)
 	if campaign_controller:
 		_label(page, "WASD 移动 · 鼠标取景 · 左键三连击 · Shift 闪避", 23)
 		_label(page, "右键 燧发枪（需装备） · 1 火药陷阱 · 2 饮用药剂", 23)
@@ -270,7 +282,7 @@ func _build_key_guide(root: Control) -> void:
 		_label(page, "F1 关闭说明。科尔波山保留原外围三波和决战15秒准备。", 20)
 		key_guide.hide()
 		return
-	_label(page, "键位按 COMBAT_SPEC_SUXIAO v1.1 排布；标「%s」的按键功能尚未接入，底部提示条只列战斗操作" % KeyBindings.status_text(KeyBindings.PLANNED), 17, Color("8fa6ad"))
+	_label(page, "键位按 COMBAT_SPEC_SUXIAO v1.1 排布；标「%s」的按键功能尚未接入，底部提示条只列战斗操作" % KeyBindings.status_text(KeyBindings.PLANNED), 17, SystemUI.TEXT_DIM)
 	var halves := HBoxContainer.new()
 	halves.add_theme_constant_override("separation", 52)
 	page.add_child(halves)
@@ -282,7 +294,7 @@ func _build_key_guide(root: Control) -> void:
 	var split := int(ceil(KeyBindings.GROUPS.size() / 2.0))
 	for i in KeyBindings.GROUPS.size():
 		_guide_group(left if i < split else right, KeyBindings.GROUPS[i])
-	_label(page, "F1 开关本说明 · 按下移动或攻击会自动收起", 17, Color("7f949b"))
+	_label(page, "F1 开关本说明 · 按下移动或攻击会自动收起", 17, SystemUI.TEXT_DIM)
 	key_guide.hide()
 
 func _guide_group(column: Node, group: Dictionary) -> void:
@@ -325,29 +337,31 @@ func _build_menu(root: Control) -> void:
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.add_theme_stylebox_override("panel", _card_style())
+	SystemUI.decor(card)
 	center.add_child(card)
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 12)
 	card.add_child(page)
-	_label(page, "[轮回乐园] · 行动菜单", 30, Color("a5dfff"))
+	_label(page, "[轮回乐园] · 行动菜单", 30, SystemUI.ACCENT)
 	var back := Button.new()
 	back.text = "保存检查点并返回主菜单" if campaign_controller else "返回选关"
 	back.custom_minimum_size = Vector2(420, 58)
 	back.add_theme_font_size_override("font_size", 24)
+	SystemUI.style_button(back)
 	back.pressed.connect(_back_to_select)
 	page.add_child(back)
 	if campaign_controller:
 		var tasks := Button.new()
-		tasks.text = "任务 / 阶段进度"
+		tasks.text = "任务档案 · 阶段进度"
 		tasks.custom_minimum_size.y = 50
-		tasks.pressed.connect(func():
-			menu.hide()
-			campaign_controller.show_tasks())
+		SystemUI.style_button(tasks)
+		tasks.pressed.connect(open_quest_log)
 		page.add_child(tasks)
 		if campaign_controller.state == "practice":
 			var back_hub := Button.new()
 			back_hub.text = "结束练习 · 返回灰潮港"
 			back_hub.custom_minimum_size.y = 50
+			SystemUI.style_button(back_hub)
 			back_hub.pressed.connect(campaign_controller.return_from_practice)
 			page.add_child(back_hub)
 	elif get_tree().current_scene == null or get_tree().current_scene.scene_file_path != "res://scenes/world/harbor.tscn":
@@ -355,9 +369,10 @@ func _build_menu(root: Control) -> void:
 		harbor_button.text = "返回灰潮港口"
 		harbor_button.custom_minimum_size = Vector2(420, 58)
 		harbor_button.add_theme_font_size_override("font_size", 24)
+		SystemUI.style_button(harbor_button)
 		harbor_button.pressed.connect(func(): GameState.change_scene("res://scenes/world/harbor.tscn"))
 		page.add_child(harbor_button)
-	_label(page, "Esc 关闭菜单 · 检查点自动保存", 17, Color("7f949b"))
+	_label(page, "Esc 关闭菜单 · 检查点自动保存", 17, SystemUI.TEXT_DIM)
 	menu.hide()
 
 ## C 键角色面板：左右两大块 —— 左侧为 DNF 参考图排版（穿戴栏 + 8×8 背包，
@@ -376,6 +391,7 @@ func _build_char_panel(root: Control) -> void:
 	card.custom_minimum_size = Vector2(1010, 900)
 	card.mouse_filter = Control.MOUSE_FILTER_STOP  # 点面板本身不触发攻击
 	card.add_theme_stylebox_override("panel", _card_style())
+	SystemUI.decor(card)
 	center.add_child(card)
 	var halves := HBoxContainer.new()
 	halves.add_theme_constant_override("separation", 44)
@@ -433,9 +449,9 @@ func _build_char_panel(root: Control) -> void:
 	right.alignment = BoxContainer.ALIGNMENT_CENTER
 	right.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right_panel.add_child(right)
-	var aname := _label(right, "契约者 · %s" % GameState.player_name, 17, Color("cfe6f2"))
+	var aname := _label(right, "契约者 · %s" % GameState.player_name, 17, SystemUI.TEXT)
 	aname.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var atitle := _label(right, "角色属性 / 六维", 24, Color("a5dfff"))
+	var atitle := _label(right, "角色属性 / 六维", 24, SystemUI.ACCENT)
 	atitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var rule := HSeparator.new()
 	rule.custom_minimum_size = Vector2(240, 2)
@@ -444,7 +460,7 @@ func _build_char_panel(root: Control) -> void:
 		var line := _label(right, "", 21)
 		line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		char_attr_labels[key] = line
-	char_derived_label = _label(right, "", 15, Color("b2c5d5"))
+	char_derived_label = _label(right, "", 15, SystemUI.TEXT_DIM)
 	char_derived_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	char_derived_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var spacer := Control.new()
@@ -452,7 +468,7 @@ func _build_char_panel(root: Control) -> void:
 	right.add_child(spacer)
 	char_points_label = _label(right, "", 22, Color("ffe58a"))
 	char_points_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var note := _label(right, "属性加点需前往主城 · 加点装置", 13, Color("7f949b"))
+	var note := _label(right, "属性加点需前往主城 · 加点装置", 13, SystemUI.TEXT_DIM)
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if campaign_controller:
 		note.text = "强化请前往灰潮港 · 铸潮工坊\nC / Esc 关闭角色面板"
@@ -462,6 +478,7 @@ func _build_char_panel(root: Control) -> void:
 		item_action = Button.new()
 		item_action.text = "选择物品"
 		item_action.custom_minimum_size.y = 48
+		SystemUI.style_button(item_action)
 		item_action.pressed.connect(func():
 			if _selected_slot != "":
 				GameState.unequip_item(_selected_slot)
@@ -505,7 +522,7 @@ func _make_slot(parent: Node, slot_name: String, size := 92.0) -> PanelContainer
 	slot_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	slot_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	slot_label.add_theme_font_size_override("font_size", int(minf(14, size * 0.3)))
-	slot_label.add_theme_color_override("font_color", Color("7f949b"))
+	slot_label.add_theme_color_override("font_color", SystemUI.TEXT_DIM)
 	slot.add_child(slot_label)
 	slot.gui_input.connect(_slot_input.bind(slot))
 	parent.add_child(slot)
@@ -528,7 +545,7 @@ const BAG_HOVER := Color("e8c87a")
 const BAG_SELECTED := Color("ffd76e")
 
 func _build_bag_section(parent: Node) -> void:
-	var title := _label(parent, "物品栏 · 装备", 18, Color("a5dfff"))
+	var title := _label(parent, "物品栏 · 装备", 18, SystemUI.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var grid := GridContainer.new()
 	grid.columns = 8
@@ -540,7 +557,7 @@ func _build_bag_section(parent: Node) -> void:
 		var cell := PanelContainer.new()
 		cell.custom_minimum_size = Vector2(55, 55)  # 物品栏为主体（2/3 占比），背包装备大格
 		var st := _slot_style()
-		st.set_corner_radius_all(5)
+		st.set_corner_radius_all(SystemUI.RADIUS)
 		st.set_content_margin_all(0)
 		st.set_border_width_all(1)
 		cell.add_theme_stylebox_override("panel", st)
@@ -583,23 +600,11 @@ func _set_bag_border(cell: PanelContainer, color: Color) -> void:
 
 ## 分块底衬样式：左右两大块的深色面板区，制造面板的板块感。
 func _panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.02, 0.04, 0.07, 0.5)
-	style.border_color = Color(0.25, 0.4, 0.52, 0.35)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(10)
-	style.set_content_margin_all(18)
-	return style
+	return SystemUI.sub()
 
 ## 装备槽样式：深底 + 细描边 + 圆角，空槽只显示部位名。
 func _slot_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.03, 0.06, 0.09, 0.9)
-	style.border_color = Color(0.30, 0.45, 0.55, 0.45)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(10)
-	style.set_content_margin_all(4)
-	return style
+	return SystemUI.slot()
 
 func _back_to_select() -> void:
 	if campaign_controller:
@@ -623,12 +628,9 @@ func _build_boss_bar(root: Control) -> void:
 	boss_bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	boss_bar.show_percentage = false
 	boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var back := StyleBoxFlat.new()
-	back.bg_color = Color(0.05, 0.08, 0.11, 0.85)
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = Color("c04b36")
+	var back := SystemUI.track()
 	boss_bar.add_theme_stylebox_override("background", back)
-	boss_bar.add_theme_stylebox_override("fill", fill)
+	boss_bar.add_theme_stylebox_override("fill", SystemUI.fill(Color("c04b36")))
 	boss_box.add_child(boss_bar)
 	boss_box.hide()
 
@@ -647,15 +649,9 @@ func hide_boss() -> void:
 	boss_box.hide()
 
 func _card_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.031, 0.058, 0.086, 0.88)
-	style.border_color = Color(0.35, 0.55, 0.68, 0.5)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(6)
-	style.set_content_margin_all(26)
-	return style
+	return SystemUI.card()
 
-func _label(parent: Node, text: String, font_size: int, color := Color("dbe7ee")) -> Label:
+func _label(parent: Node, text: String, font_size: int, color := SystemUI.TEXT) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -672,9 +668,8 @@ func _bar(parent: Node, color: Color) -> ProgressBar:
 	bar.custom_minimum_size = Vector2(320, 22)
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.show_percentage = false
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	bar.add_theme_stylebox_override("fill", style)
+	bar.add_theme_stylebox_override("background", SystemUI.track())
+	bar.add_theme_stylebox_override("fill", SystemUI.fill(color))
 	parent.add_child(bar)
 	return bar
 
@@ -706,8 +701,13 @@ func hide_panel() -> void:
 	action_button.release_focus()
 	overlay.hide()
 
+## 轮回商店面板打开中（面板自己管理显隐与输入）。
+func _shop_open() -> bool:
+	var panel: Node = get_tree().get_first_node_in_group("shop_panel")
+	return panel != null and panel.visible
+
 func is_modal_open() -> bool:
-	return overlay.visible or menu.visible or char_panel.visible or key_guide.visible
+	return overlay.visible or menu.visible or char_panel.visible or key_guide.visible or _shop_open() or quest_panel.visible
 
 func show_character() -> void:
 	menu.hide()
@@ -715,11 +715,38 @@ func show_character() -> void:
 	_refresh_char_panel()
 	char_panel.show()
 
+## J 键任务面板：数据只读（data/quest_log.gd），这里只管开关与「开它之前先收起别的面板」。
+func _build_quest_panel() -> void:
+	quest_panel = QuestPanelScript.new()
+	quest_panel.name = "QuestPanel"
+	add_child(quest_panel)
+
+func open_quest_log() -> void:
+	open_quest_log_with("", Callable())
+
+## 带底栏动作的版本：灰潮港「港务委托所」这类入口用它 —— 打开档案的同时还能把任务接下来。
+func open_quest_log_with(action_text: String, action: Callable) -> void:
+	menu.hide()
+	char_panel.hide()
+	key_guide.hide()
+	hide_panel()
+	quest_panel.open(action_text, action)
+
+func close_quest_log() -> void:
+	quest_panel.close()
+
+func toggle_quest_log() -> void:
+	if quest_panel.visible:
+		close_quest_log()
+	else:
+		open_quest_log()
+
 func add_choice(text: String, action: Callable) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.custom_minimum_size.y = 48
 	button.add_theme_font_size_override("font_size", 22)
+	SystemUI.style_button(button)
 	button.pressed.connect(action)
 	var column := action_button.get_parent()
 	column.add_child(button)
@@ -766,7 +793,7 @@ func _refresh_inventory() -> void:
 		var label: Label = slot.get_child(0)
 		if id == "":
 			label.text = title
-			label.add_theme_color_override("font_color", Color("7f949b"))
+			label.add_theme_color_override("font_color", SystemUI.TEXT_DIM)
 			slot.tooltip_text = title
 			_set_slot_quality(slot, Color(0.30, 0.45, 0.55, 0.45))
 		else:

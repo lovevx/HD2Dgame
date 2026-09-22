@@ -3,6 +3,9 @@ extends SceneTree
 ## 路径规则与插件 editor/shared_library.gd 的 prepare_files 保持一致：
 ##   源文件 = <库根>/<preset.payload>/<file.path>，目标 = res://<file.path>
 ##   .import 侧车优先写入索引里保存的 import_config 原文，让 Godot 重新生成缓存。
+## 索引里的 file.path 一律以 local_study/preset3d/ 开头（那是共享库自己的目录约定），
+## 而本工程把预设存放在 assets/hd2d_presets/，两者由 PATH_PREFIX_REWRITES 对齐：
+## 改写只作用于目标路径，源文件仍按索引原文在库内查找。
 ## 用法（工程根目录）：
 ##   godot --headless --script tools/import_presets.gd -- --list=<正则>
 ##   godot --headless --script tools/import_presets.gd -- --titles=A,B,C [--dry-run]
@@ -11,6 +14,10 @@ extends SceneTree
 
 const DEFAULT_LIBRARY := "D:/BaiduNetdiskDownload/HD2D_Shared_Asset_Library/HD2D_Shared_Asset_Library"
 const ENV_LIBRARY := "HD2D_SHARED_LIBRARY"
+## 共享库索引前缀 → 本工程目录前缀。索引换个目录约定时改这里，不要改库里的文件。
+const PATH_PREFIX_REWRITES := {
+	"local_study/preset3d/": "assets/hd2d_presets/",
+}
 
 var library := ""
 var copied := 0
@@ -111,11 +118,12 @@ func import_entry(entry: Dictionary, dry_run: bool) -> void:
 		var relative := str(file.get("path", ""))
 		if relative.is_empty() or relative.is_absolute_path() or relative.contains(".."):
 			problems.append("无效路径：" + relative); missing += 1; continue
-		var destination := ProjectSettings.globalize_path("res://" + relative)
+		var out_relative := rewrite_prefix(relative)
+		var destination := ProjectSettings.globalize_path("res://" + out_relative)
 		var checksum := str(file.get("sha256", ""))
 		if FileAccess.file_exists(destination):
 			if not checksum.is_empty() and FileAccess.get_sha256(destination) != checksum:
-				problems.append("工程内已有不同内容，未覆盖：" + relative); conflicts += 1
+				problems.append("工程内已有不同内容，未覆盖：" + out_relative); conflicts += 1
 			else:
 				skipped += 1
 			continue
@@ -126,7 +134,7 @@ func import_entry(entry: Dictionary, dry_run: bool) -> void:
 		if not config_text.is_empty():
 			var output := FileAccess.open(destination, FileAccess.WRITE)
 			if output == null or not write_text(output, config_text) or FileAccess.get_sha256(destination) != checksum:
-				problems.append("导入配置写入校验失败：" + relative); missing += 1; continue
+				problems.append("导入配置写入校验失败：" + out_relative); missing += 1; continue
 		else:
 			var source := payload.path_join(relative)
 			if not FileAccess.file_exists(source):
@@ -140,6 +148,13 @@ func import_entry(entry: Dictionary, dry_run: bool) -> void:
 		if written:
 			copied_bytes += written.get_length()
 			written.close()
+
+## 把共享库索引里的路径前缀换成本工程的目录前缀；没有匹配的前缀原样返回。
+func rewrite_prefix(relative: String) -> String:
+	for from in PATH_PREFIX_REWRITES:
+		if relative.begins_with(from):
+			return str(PATH_PREFIX_REWRITES[from]) + relative.trim_prefix(from)
+	return relative
 
 func write_text(output: FileAccess, text: String) -> bool:
 	output.store_string(text)

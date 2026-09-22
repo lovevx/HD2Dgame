@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_yjfw4"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_55o57"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_linchang_kezhan008_b53f11e0.tscn" id="3_5ve8b"]
+
+[resource]
+script = ExtResource("1_yjfw4")
+title = "SM_linchang_kezhan008"
+category = "建筑"
+source = ExtResource("3_5ve8b")
+source_path = "res://assets/hd2d_presets/scenes/SM_linchang_kezhan008_b53f11e0.tscn"
+asset_id = &"SM_linchang_kezhan008_b53f11e0"
+family_id = &"family_deea98b3baad28d1"
+material_slots = {
+"Geometry/SM_linchang_kezhan008": Array[String](["mat_56b20a540e823385"])
+}
+static_collision = true
+wind = 0.0

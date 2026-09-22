@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_NJ_Fudiaodiban_002_d82bc482_01.res" id="1_07g12"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_a58f0f2103ae84d3_original.tres" id="2_xesyh"]
+
+[node name="Model" type="Node3D" unique_id=1930210460]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1212617359]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.1035155e-07, 0)
+
+[node name="SM_NJ_Fudiaodiban_002" type="MeshInstance3D" parent="Geometry" unique_id=1785244103]
+mesh = ExtResource("1_07g12")
+surface_material_override/0 = ExtResource("2_xesyh")

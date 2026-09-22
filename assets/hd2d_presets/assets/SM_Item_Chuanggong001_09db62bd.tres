@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_ha1bc"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_vh8h7"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Item_Chuanggong001_09db62bd.tscn" id="3_33yre"]
+
+[resource]
+script = ExtResource("1_ha1bc")
+title = "SM_Item_Chuanggong001"
+category = "道具"
+source = ExtResource("3_33yre")
+source_path = "res://assets/hd2d_presets/scenes/SM_Item_Chuanggong001_09db62bd.tscn"
+asset_id = &"SM_Item_Chuanggong001_09db62bd"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_Item_Chuanggong001": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

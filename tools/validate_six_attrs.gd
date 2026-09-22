@@ -1,7 +1,9 @@
 extends SceneTree
 ## 六维属性无头校验：派生公式 + GameState 属性点接口 + 试炼场实例集成。
-## 用法：godot --headless --script tools/validate_six_attrs.gd
-## 会临时备份并还原 user://save.cfg，不污染真实存档。
+## 用法：godot --headless --path . --script res://tools/validate_six_attrs.gd
+## 存档走 tools/test_env.gd 的隔离档（旧版是"备份 user://save.cfg → 改 → 还原"，
+## 中途崩掉就会把真实存档留成默认六维，且临时 GameState 实例默认写的就是真实档）。
+const TestEnv := preload("res://tools/test_env.gd")
 
 var _failures := 0
 
@@ -19,6 +21,14 @@ func _run() -> void:
 	# 等 autoload（GameState 等）就绪，其全局名才会对解析器可见
 	await process_frame
 	await process_frame
+	# 全局状态先换成隔离档：第 3 段会直接改 autoload 的 attributes，
+	# 第 2 段的临时 GameState 实例默认写盘目标也是真实档。
+	var live: Node = root.get_node_or_null("GameState")
+	if live == null:
+		push_error("FAIL  autoload GameState 未就位")
+		quit(1)
+		return
+	TestEnv.isolate(live, "six_attrs")
 
 	# 0) 改动脚本全部可解析
 	load("res://data/attributes.gd")
@@ -45,13 +55,12 @@ func _run() -> void:
 	assert_eq(attr.merged({"str": 9, "junk": 1}), {"str": 9, "agi": 5, "con": 5, "int": 5, "cha": 5, "luk": 5}, "旧档合并兜底")
 	assert_eq(attr.CN_NAMES.size(), 6, "六维中文名齐全")
 
-	# 2) GameState 属性点接口（备份/还原真实存档）
-	var save_path := ProjectSettings.globalize_path("user://save.cfg")
-	var bak_path := save_path + ".attr_bak"
-	var had_save := FileAccess.file_exists(save_path)
-	if had_save:
-		DirAccess.copy_absolute(save_path, bak_path)
+	# 2) GameState 属性点接口
+	# 临时实例不在场景树里、_ready 不会跑，所以 save_path 仍是默认的真实档 ——
+	# 必须显式指向隔离档并断写盘，否则 spend_attr_point 的 save_game() 会盖掉真实存档。
 	var gs: Node = (load("res://autoload/game_state.gd") as GDScript).new()
+	gs.save_path = TestEnv.path_for("six_attrs")
+	gs.persistence_enabled = false
 	gs.attributes = attr.defaults()
 	gs.attr_points = 5
 	assert_eq(gs.spend_attr_point("luk"), false, "幸运分配被拒")
@@ -61,19 +70,10 @@ func _run() -> void:
 	assert_eq(gs.get_attr_points(), 4, "属性点 5→4")
 	assert_eq(gs.spend_attr_point("int", 9), false, "点数不足被拒")
 	assert_eq(gs.get_attribute("agi"), 5, "未投维度不变")
-	if had_save:
-		DirAccess.remove_absolute(save_path)
-		DirAccess.copy_absolute(bak_path, save_path)
-		DirAccess.remove_absolute(bak_path)
-	else:
-		DirAccess.remove_absolute(save_path)
+	gs.free()
 
 	# 3) 试炼场集成：默认六维下玩家派生值与 HUD 就位
-	var live: Node = root.get_node_or_null("GameState")
-	if live == null:
-		_failures += 1
-		push_error("FAIL  autoload GameState 未就位")
-	else:
+	if live != null:
 		live.attributes = attr.defaults()
 		live.attr_points = 0
 		var scene = load("res://scenes/main/main.tscn").instantiate()
@@ -107,6 +107,7 @@ func _run() -> void:
 			assert_eq(hud.char_attr_labels["str"].text.contains("力量"), true, "力量行刷新")
 
 	print("----------------------------------------")
+	TestEnv.cleanup(live)
 	if _failures == 0:
 		print("六维属性校验：全部 PASS")
 		quit(0)

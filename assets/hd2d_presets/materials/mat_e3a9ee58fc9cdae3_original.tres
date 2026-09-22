@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/99120791fc0b4b13_T_Item_ALL001.png" id="1_6hkqb"]
+
+[resource]
+resource_name = "mat_e3a9ee58fc9cdae3"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_6hkqb")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

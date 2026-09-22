@@ -132,7 +132,9 @@ static func fresh() -> Dictionary:
 		"opened_chests": [],
 		# 装备动态状态（按物品 id 存放；强化/耐久/成长值），旧档缺省由 load 兜底
 		"item_dura": {}, "item_enhance": {}, "item_fury": {},
-		"hp_ratio": 1.0, "mp_ratio": 1.0, "bullets": 6, "settled": false, "training": 0, "report": "", "colpo_outer_cleared": false}
+		"hp_ratio": 1.0, "mp_ratio": 1.0, "bullets": 6, "settled": false, "training": 0, "report": "", "colpo_outer_cleared": false,
+		# 新手流程阶段：ship=船到港引导 / training=试炼场教学 / equipped=已发装备待接任务 / quested=已接任务 / ""=正式循环
+		"flow": "", "training_done": false}
 
 ## 该物品是否为可穿戴装备（有 slot）
 static func is_equippable(id: String) -> bool:

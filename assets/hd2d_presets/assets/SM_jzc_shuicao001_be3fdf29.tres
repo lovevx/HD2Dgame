@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_x5vxq"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_d8gdv"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_jzc_shuicao001_be3fdf29.tscn" id="3_5jx66"]
+
+[resource]
+script = ExtResource("1_x5vxq")
+title = "SM_jzc_shuicao001"
+category = "建筑"
+source = ExtResource("3_5jx66")
+source_path = "res://assets/hd2d_presets/scenes/SM_jzc_shuicao001_be3fdf29.tscn"
+asset_id = &"SM_jzc_shuicao001_be3fdf29"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_jzc_shuicao001": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

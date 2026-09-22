@@ -29,7 +29,9 @@ func _ready() -> void:
 	_timer = first_delay
 	if _planned == 0:
 		_finished = true
-	if campaign_managed:
+	# 编辑器直接打开地图时由 campaign 控制器接管（get_parent() 即地图根节点），
+	# 波次门控与正式游玩一致：等 V 开始遭遇才放开。
+	if campaign_managed or get_tree().current_scene == get_parent():
 		set_process(false)
 
 ## 传送门只看这个：波次没打完（含波与波之间的空隙）就不算清场。

@@ -55,7 +55,7 @@ func run() -> void:
 		root.add_child(scene)
 		await process_frame
 		var camera: Camera3D = scene.get_node("Camera3D")
-		check(camera.rotation_degrees.x >= -29 and camera.rotation_degrees.x <= -19 and camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "Low-angle HD2D camera/card contract changed")
+		check(camera.rotation_degrees.x >= -21 and camera.rotation_degrees.x <= -11 and camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "Low-angle HD2D camera/card contract changed")
 		var cards_face_camera := true
 		var turning_faces_camera := true
 		var plants_face_camera := 0

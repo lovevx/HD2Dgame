@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_mjsz_muzhuzi001_f0624161_01.res" id="1_2hegl"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_f21b693baf73a269_original.tres" id="2_22gyd"]
+
+[node name="Model" type="Node3D" unique_id=621643275]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1471228254]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9604645e-08, 6.1035155e-07, 2.9802322e-08)
+
+[node name="SM_mjsz_muzhuzi001" type="MeshInstance3D" parent="Geometry" unique_id=910874223]
+mesh = ExtResource("1_2hegl")
+surface_material_override/0 = ExtResource("2_22gyd")

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_asbpq"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_vsbk2"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_YX_Dachuan004_97741783.tscn" id="3_2i4y5"]
+
+[resource]
+script = ExtResource("1_asbpq")
+title = "SM_YX_Dachuan004"
+category = "建筑"
+source = ExtResource("3_2i4y5")
+source_path = "res://assets/hd2d_presets/scenes/SM_YX_Dachuan004_97741783.tscn"
+asset_id = &"SM_YX_Dachuan004_97741783"
+family_id = &"family_c85fcb085f3806cf"
+material_slots = {
+"Geometry/SM_YX_Dachuan004": Array[String](["mat_7be639f169f5cea2"])
+}
+static_collision = true
+wind = 0.0

@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/sm_merged_jiuguan001_22d3046d_01.res" id="1_4fruy"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_d181c9d21706fa7a_original.tres" id="2_0t73j"]
+
+[node name="Model" type="Node3D" unique_id=898263892]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1830143522]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7030993, -0.037820663, -5.96)
+
+[node name="sm_merged_jiuguan001" type="MeshInstance3D" parent="Geometry" unique_id=637287232]
+mesh = ExtResource("1_4fruy")
+surface_material_override/0 = ExtResource("2_0t73j")

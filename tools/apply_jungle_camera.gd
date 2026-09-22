@@ -8,6 +8,7 @@ func _initialize() -> void:
 		var scene: Node3D = load(path).instantiate()
 		Style.configure(scene.get_node("Camera3D"), level == "clearing")
 		scene.set("camera_focus_bounds", Style.focus_bounds(level == "clearing"))
+		scene.set("camera_arena", level == "clearing")
 		var packed := PackedScene.new()
 		var error := packed.pack(scene)
 		if error == OK:

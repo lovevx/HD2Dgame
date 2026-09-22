@@ -1,0 +1,12 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/a1961438c9885bd8_T_Water_D.png" id="1_nyb1o"]
+
+[resource]
+resource_name = "mat_ffa2b567ec72e1a7"
+transparency = 4
+cull_mode = 2
+albedo_texture = ExtResource("1_nyb1o")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

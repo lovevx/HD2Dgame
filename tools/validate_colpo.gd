@@ -8,6 +8,7 @@ const OUTER := "res://scenes/world/colpo_forest_outer.tscn"
 const CLEARING := "res://scenes/world/colpo_forest_clearing.tscn"
 const EnemyScene := preload("res://scripts/combat/enemy.tscn")
 const EnemyScript := preload("res://scripts/combat/enemy.gd")
+const TestEnv := preload("res://tools/test_env.gd")
 ## 场景按白盒布局放大到 SCALE 倍，断言坐标跟着换算（与 tools/build_colpo.gd 的 SCALE 一致）。
 const SCALE := 2.0
 
@@ -22,6 +23,9 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func run() -> void:
+	# 隔离存档 + 固定初始状态：本文件会走阵亡面板、波次与传送门过场，都会碰全局状态；
+	# 不隔离就会写进玩家真实存档（旧版直接落盘 user://save.cfg）。
+	TestEnv.isolate(root.get_node("GameState"), "colpo")
 	var capture := OS.get_cmdline_user_args().has("--capture")
 	expect(InputMap.has_action("key_guide"), "按键说明缺少 key_guide 输入动作（应为 F1）")
 	expect(action_keycodes("interact") == [KEY_V], "交互键应为 V，实际 %s" % [action_keycodes("interact")])
@@ -51,6 +55,7 @@ func run() -> void:
 		await shoot_boss()
 		await shoot_mobs()
 	await check_portal_transition()
+	TestEnv.cleanup(root.get_node("GameState"))
 	if failures.is_empty():
 		print("COLPO_WHITEBOX: PASS（%d 项检查）" % checks)
 		quit(0)
@@ -307,9 +312,12 @@ func validate_clearing(scene: Node3D) -> void:
 
 # ---------------------------------------------------------------- 选关面板
 
-## 选关面板是 Demo 入口：所有已建场景都要能从它进，且启动场景指向它。
+## 启动入口是**主菜单**（开场 → 港口引导 → 各关）；选关面板降级成调试用的跳关清单。
+## 旧断言把启动场景钉在选关面板上 —— 2026-09 改成主菜单后那条一直是假红，
+## 但选关面板本身还要能用（跳关调试靠它），所以面板结构与入口清单继续验。
 func validate_select() -> void:
-	expect(str(ProjectSettings.get_setting("application/run/main_scene")) == GameState.LEVEL_SELECT_SCENE, "启动场景未指向选关面板")
+	var main_scene := str(ProjectSettings.get_setting("application/run/main_scene"))
+	expect(main_scene == GameState.MAIN_MENU_SCENE, "启动场景未指向主菜单，实际 %s" % main_scene)
 	var scene: Control = load(GameState.LEVEL_SELECT_SCENE).instantiate()
 	root.add_child(scene)
 	current_scene = scene
@@ -616,7 +624,9 @@ func check_death_panel(scene: Node3D) -> void:
 	if button != null:
 		expect(button.pressed.get_connections().size() > 0, "阵亡面板的返回选关按钮没有接回调")
 
-## 站进外围传送门 → 出现贴底提示 → 按 V → 真的切到林间决战空地。
+## 走进外围传送门即切场景（2026-09 起改成进圈自动传送，不再按 V 交互）。
+## 旧断言要求「出现贴底提示 + 文本含 V + 按 V 才过场」—— 改成自动后这三条全成假红，
+## 而真正要守住的不变量只有一个：**一次按键都不发，走进圈子就过场**。
 func check_portal_transition() -> void:
 	var scene: Node3D = await open(OUTER)
 	var player := grab_player(scene)
@@ -624,17 +634,16 @@ func check_portal_transition() -> void:
 	expect(player != null and portal != null, "过场测试缺少玩家或传送门")
 	if player == null or portal == null:
 		return
+	# 站进触发盒后一次按键都不发。Area3D 的 body_entered 要物理帧才触发，所以轮询等待，
+	# 别用单个 process 帧判死。若是"按 V 才过场"的旧流程，这里必然停在原场景。
 	player.global_position = portal.global_position
-	await create_timer(0.3).timeout
-	var hud := find_hud(scene)
-	var prompt: Label = hud.get("prompt") if hud != null else null
-	expect(prompt != null and prompt.visible, "站进传送门后没有出现贴底交互提示")
-	if prompt != null and prompt.visible:
-		expect(prompt.text.contains("V"), "交互提示应写明按 V，实际「%s」" % prompt.text)
-	await press_key(KEY_V)
-	await create_timer(1.0).timeout
-	var arrived: bool = current_scene != null and current_scene.name == "ColpoForestClearing"
-	expect(arrived, "按 V 后没有切到林间决战空地（当前：%s）" % ("空" if current_scene == null else current_scene.name))
+	var arrived := false
+	for i in 40:
+		await create_timer(0.05).timeout
+		if current_scene != null and current_scene.name == "ColpoForestClearing":
+			arrived = true
+			break
+	expect(arrived, "走进传送门后没有自动过场（未发任何按键；当前：%s）" % ("空" if current_scene == null else current_scene.name))
 
 # ---------------------------------------------------------------- 渲染预览
 

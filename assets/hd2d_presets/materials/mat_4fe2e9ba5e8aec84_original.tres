@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/acab36c8c5844018_T_Dataoshu001.png" id="1_og1eb"]
+
+[resource]
+resource_name = "mat_4fe2e9ba5e8aec84"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_og1eb")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

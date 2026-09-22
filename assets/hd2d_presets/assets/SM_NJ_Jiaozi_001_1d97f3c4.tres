@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_gyum5"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_1bxbx"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_NJ_Jiaozi_001_1d97f3c4.tscn" id="3_il2wk"]
+
+[resource]
+script = ExtResource("1_gyum5")
+title = "SM_NJ_Jiaozi_001"
+category = "建筑"
+source = ExtResource("3_il2wk")
+source_path = "res://assets/hd2d_presets/scenes/SM_NJ_Jiaozi_001_1d97f3c4.tscn"
+asset_id = &"SM_NJ_Jiaozi_001_1d97f3c4"
+family_id = &"family_7df67823af33ddfc"
+material_slots = {
+"Geometry/SM_NJ_Jiaozi_001/Skeleton3D/SM_NJ_Jiaozi_001": Array[String](["mat_a58f0f2103ae84d3"])
+}
+static_collision = true
+wind = 0.0

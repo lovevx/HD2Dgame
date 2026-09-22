@@ -12,6 +12,9 @@ const OUTER := "res://scenes/world/colpo_forest_outer.tscn"
 const CLEARING := "res://scenes/world/colpo_forest_clearing.tscn"
 var player: CharacterBody3D
 var world: Node
+## 编辑器直接打开地图调试：非空时复用当前场景（不再新实例化），
+## 由地图根的 _ready 注入本控制器，让调试所见与正式游玩完全一致。
+var adopt_world: Node = null
 var hud: CanvasLayer
 var sheet: Control
 var notice: Label
@@ -24,10 +27,18 @@ var boss: Node
 var loot_position := Vector3.ZERO
 var loot_marker: Label3D
 var _paused := false
+## 新手教学进度（仅试炼场教学用，不落档）：木桩命中 / 剃使用次数。
+var training_hits := 0
+var training_dashes := 0
+var _was_dodging := false
 
 func _ready() -> void:
 	add_to_group("campaign_controller")
-	if GameState.campaign_practice:
+	if adopt_world != null:
+		# 编辑器直接打开地图调试：区域按场景文件定，不信任存档里的流程位置标志。
+		location = _location_of(adopt_world)
+		state = "prepare"
+	elif GameState.campaign_practice:
 		location = "practice"
 		state = "practice"
 	elif GameState.campaign.hub:
@@ -37,6 +48,12 @@ func _ready() -> void:
 		location = "clearing" if GameState.campaign.get("colpo_outer_cleared", false) or GameState.campaign.cleared else "outer"
 	if GameState.campaign.cleared and not GameState.campaign.hub:
 		state = "cleared"
+	# 出击事务：只有战斗区域才开本局记账，灰潮港/演武场没有「未提交的本场状态」。
+	# 死亡重试会重新进入本函数，于是重新拍一次快照（基线即回滚后的状态）。
+	if location in ["arena", "outer", "clearing"]:
+		GameState.begin_sortie()
+	else:
+		GameState.end_sortie()
 	_build_world()
 	hud = HudScene.instantiate()
 	hud.campaign_controller = self
@@ -54,6 +71,11 @@ func _ready() -> void:
 		player.mp = player.max_mp
 		player.potions = 2
 		player.bombs = 3
+		if _training_active():
+			player.hit_target.connect(_on_training_hit)
+	if location == "hub" and _onboarding():
+		# 船靠岸后从码头出生，港口向导就在跳板边
+		player.position = Vector3(0, 0, 9)
 	if location == "clearing":
 		_restore_full_state()
 	_refresh_objective()
@@ -69,8 +91,12 @@ func _show_story() -> void:
 
 func _build_world() -> void:
 	var path: String = {"hub": HARBOR, "outer": OUTER, "clearing": CLEARING}.get(location, ARENA)
-	world = load(path).instantiate()
-	world.campaign_managed = true
+	if adopt_world != null:
+		# 编辑器直接打开调试：世界就是当前场景，只补战役装配，不再实例化新地图。
+		world = adopt_world
+	else:
+		world = load(path).instantiate()
+		world.campaign_managed = true
 	player = world.get_node("player" if location in ["arena", "practice"] else "Player")
 	player.campaign_mode = true
 	if location == "outer":
@@ -80,7 +106,8 @@ func _build_world() -> void:
 	elif location == "clearing":
 		director = world.get_node("BossDirector")
 		director.campaign_managed = true
-	add_child(world)
+	if adopt_world == null:
+		add_child(world)
 	_wire_interactions()
 	_spawn_scene_chest()
 	player.hp = player.max_hp * float(GameState.campaign.hp_ratio)
@@ -118,13 +145,27 @@ func _wire_interactions() -> void:
 		portal.prompt_text = "进入下一地区"
 		portal.locked_text = "清场领奖后，完成当前地区目标"
 	elif location == "hub":
-		world.get_node("DeparturePortal").campaign_action = depart
-		world.get_node("DeparturePortal").prompt_text = "接受下一次阶段试炼"
+		var portal := world.get_node("DeparturePortal")
+		# 新手流程：传送阵门控与动作都随 flow 动态判定（接完任务即解锁出发），
+		# 不依赖接线时刻的 flow 快照，流程推进后无需重接线。
+		portal.campaign_can_enter = func(): return _flow() == "quested" or not _onboarding()
+		portal.locked_text = "先完成新手教学并接取任务"
+		portal.campaign_action = func():
+			if _flow() == "quested":
+				start_first_trial()
+			elif _onboarding():
+				GameState.push_message("先完成新手教学并接取任务")
+			else:
+				depart()
+		portal.prompt_text = "传送阵 · 开始试炼（废品终点站）" if _flow() == "quested" else "接受下一次阶段试炼"
 		world.get_node("DeparturePortalSign").text = "世界入口 · 阶段试炼"
 		world.get_node("TrialPortal").campaign_action = enter_practice
-		world.get_node("ShopService").campaign_action = show_shop
+		# 轮回商店走 ShopPanel 完整商店 UI（harbor.gd 已把 panel_handler 接到 open，买药等全部商品统一走它）
 		world.get_node("ForgeService").campaign_action = show_forge
 		world.get_node("QuestService").campaign_action = show_tasks
+		var npc := world.get_node_or_null("GuideNpc")
+		if npc != null:
+			npc.set("campaign_action", talk_to_guide)
 
 ## 每个场景一个场景宝箱（1.2~1.5 按关、科尔波山外围与 BOSS 房各一）：
 ## 开启产出 1 炸弹 + 1 血药 + 1 随机装备，开启记录落档，重进同一关不再刷新。
@@ -162,6 +203,17 @@ func _spawn_equipment_drop(enemy: Node, chance: float) -> void:
 	world.add_child(drop)
 	drop.global_position = enemy.global_position
 
+## 编辑器直接打开地图调试：按场景文件反推所在区域，绕开存档里的流程位置标志。
+func _location_of(world: Node) -> String:
+	var p := str(world.scene_file_path)
+	if p.ends_with("harbor.tscn"):
+		return "hub"
+	if p.ends_with("colpo_forest_outer.tscn"):
+		return "outer"
+	if p.ends_with("colpo_forest_clearing.tscn"):
+		return "clearing"
+	return "arena"
+
 ## 进入 BOSS 房（林间决战空地）自动全回复：生命/法力回满 + 所有已持有装备耐久修满。
 func _restore_full_state() -> void:
 	player._refresh_derived_stats()
@@ -170,9 +222,18 @@ func _restore_full_state() -> void:
 	GameState.campaign.hp_ratio = 1.0
 	GameState.campaign.mp_ratio = 1.0
 	var repaired := GameState.repair_all_equipment()
+	# 决战前休整是检查点：即使没修到装备，满血满蓝也要落盘（提交本局）。
+	GameState.save_game()
 	GameState.push_message("[科尔波山] 决战前休整：生命与法力回满%s" % ("，装备耐久全部修满" if repaired > 0 else ""))
 
 func _process(_delta: float) -> void:
+	# 新手教学：记一次剃（按下即进入闪避态），与木桩命中一起凑完成条件。
+	if location == "practice" and _training_active():
+		if player.dodging and not _was_dodging:
+			training_dashes += 1
+			GameState.push_message("剃 ×%d / 1" % training_dashes)
+			_check_training_done()
+		_was_dodging = player.dodging
 	if state == "combat":
 		var living := 0
 		for enemy in enemies:
@@ -206,15 +267,30 @@ func _refresh_objective() -> void:
 	var text: String = Data.STAGES[GameState.campaign.stage].brief
 	if location == "hub":
 		title = "灰潮港 · 单机乐园"
-		text = "北：世界入口
-西：补给 / 委托所
-东：工坊整备 / 演武场
-靠近功能点按 V"
+		if GameState.player_name != "":
+			title += "　契约者 %s" % GameState.player_name
+		match _flow():
+			"ship":
+				text = "港口向导在码头等你\n靠近向导按 V 对话"
+			"training":
+				text = "前往东侧 · 试炼传送阵（演武场）\n完成新手教学"
+			"equipped":
+				text = "轮回乐园已发布新任务\n前往西侧 · 任务委托所接取"
+			"quested":
+				text = "任务已接取\n前往北侧 · 传送阵开始试炼"
+			_:
+				text = "北：世界入口
+	西：补给 / 委托所
+	东：工坊整备 / 演武场
+	靠近功能点按 V · J 任务档案"
 	elif location == "practice":
 		title = "灰潮 · 自由练习场"
-		text = "打木桩练习连击 / 拼刀
-不消耗正式物资
-Esc 返回灰潮港"
+		if _training_active():
+			text = "新手教学：攻击木桩 ×3 · 剃 ×1（Shift）\n完成后发放整套基础装备\nEsc 返回灰潮港"
+		else:
+			text = "打木桩练习连击 / 拼刀
+	不消耗正式物资
+	Esc 返回灰潮港"
 	elif location == "outer":
 		title = "科尔波山 · 原始丛林外围"
 		text = "清除三波威胁后，经北侧传送门进入决战空地"
@@ -324,7 +400,15 @@ func _on_death() -> void:
 	state = "dead"
 	sync_pause()
 	hud.hide_boss()
-	hud.show_panel("行动失败", "未提交的本场消耗与收益回滚。\n可从最近检查点重新挑战。", "重试当前地区", reload_scene)
+	# 四条结束路径共用同一事务（P1：正常撤离 / 逃脱币救援 / 无币永久死亡 / 超时）。
+	# 战死走回滚：未提交的途中拾取与战斗中耐久损耗一并作废，已提交部分保留。
+	var body := "练习场不消耗正式物资。\n可直接重试或返回灰潮港。"
+	if GameState.is_sortie_active():
+		var had_uncommitted := GameState.is_sortie_dirty()
+		GameState.settle_sortie(GameState.Sortie.DEATH)
+		body = ("未提交的本场拾取与装备损耗已回滚。\n" if had_uncommitted else "本场没有未提交的收益或损耗。\n") \
+			+ "已提交的进度（宝箱、换装、乐园消费）保留。\n可从最近检查点重新挑战。"
+	hud.show_panel("行动失败", body, "重试当前地区", reload_scene)
 	if location == "practice": hud.add_choice("返回灰潮港", return_from_practice)
 
 func _set_return_gate_visible(enabled: bool) -> void:
@@ -367,13 +451,6 @@ func use_item(id: String) -> void:
 func _use_item(id: String) -> void:
 	use_item(id)
 	show_sheet()
-
-func show_shop() -> void:
-	hud.show_panel("潮汐杂货 · 补给", "恢复药剂 ×1 / 100乐园币\n当前乐园币：%d · 已有药剂：%d" % [GameState.coins, GameState.item_count("potion")], "返回港口", hud.hide_panel)
-	hud.add_choice("购买恢复药剂 · 100币", func():
-		GameState.push_message("购买成功" if GameState.buy_potion() else "乐园币不足")
-		_sync_inventory()
-		show_shop())
 
 func show_forge() -> void:
 	var body := "铸潮工坊 · 装备整备\n强化 / 修复 / 分解 / 出售 / 成长吞噬\n乐园币：%d" % GameState.coins
@@ -514,11 +591,15 @@ func _upgrade(key: String) -> void:
 	player.hp = player.max_hp
 	show_forge()
 
+## 灰潮港西侧「港务委托所」（V）：打开任务档案面板。
+## 新手流程有待接任务时（flow == equipped）在面板底栏挂一个接取按钮 —— 接取动作仍在战役控制器里，
+## 面板只负责显示；其余档位（船到港 / 教学中 / 已接取 / 常规循环）都是只读查看，
+## 原来那几段纯文字说明由面板的序章条目与「轮回记录」章承接。
 func show_tasks() -> void:
-	var body := "国王主线：未完成（本次范围外）\n左大臣的藏品：" + ("虎齿已获取，后续交付未开放" if GameState.item_count("tiger_tooth") > 0 else "猎杀科尔波山巨虎，取得虎齿")
-	if state == "hub": body += "\n\n" + str(GameState.campaign.report)
-	else: body += "\n当前地区：" + Data.STAGES[GameState.campaign.stage].name
-	hud.show_panel("港务委托 · 任务与阶段记录", body, "返回", hud.hide_panel)
+	if _flow() == "equipped":
+		hud.open_quest_log_with("接取任务 · 猎杀者试炼", _accept_first_quest)
+		return
+	hud.open_quest_log()
 
 func depart() -> void:
 	if state != "hub": return
@@ -526,11 +607,83 @@ func depart() -> void:
 
 func enter_practice() -> void:
 	if state != "hub": return
+	# 新手流程：没跟向导对话就先进演武场，也按教学处理（流程推进到 training）
+	if _flow() == "ship":
+		GameState.campaign.flow = "training"
+		GameState.save_game()
 	GameState.campaign_practice = true
 	reload_scene()
 
 func return_from_practice() -> void:
 	GameState.campaign_practice = false
+	reload_scene()
+
+# ---------------------------------------------------------------- 新手流程
+
+## 当前新手流程阶段（campaign.flow 兜底空串）。
+func _flow() -> String:
+	return str(GameState.campaign.get("flow", ""))
+
+## 是否处于新手流程（船到港 → 教学 → 接任务 → 传送阵出发）。
+func _onboarding() -> bool:
+	return _flow() in ["ship", "training", "equipped", "quested"]
+
+## 试炼场教学是否进行中：进入教学阶段且还没领过基础装备。
+func _training_active() -> bool:
+	return location == "practice" and _flow() == "training" \
+		and not GameState.campaign.get("training_done", false)
+
+## 港口向导对话：V 触发（campaign.gd 注入到 GuideNpc 的 campaign_action）。
+func talk_to_guide() -> void:
+	if state != "hub": return
+	if _flow() == "ship":
+		GameState.campaign.flow = "training"
+		GameState.save_game()
+		hud.show_panel("港口向导", "「新人，快去东侧的试炼场地熟悉一下身手吧！」\n\n东侧码头旁的试炼传送阵会送你去练武场。\n\n在练武场打三下木桩、用一次剃（Shift），就能领到整套基础装备。", "前往试炼场", func():
+			hud.hide_panel()
+			_refresh_objective())
+	else:
+		hud.show_panel("港口向导", "「练熟了就去任务委托所看看吧，乐园在等着你的第一次猎杀。」", "返回", hud.hide_panel)
+
+## 木桩命中（player.hit_target 只统计 targets 组，即练功木桩）。
+func _on_training_hit(target: Node, _dmg: float) -> void:
+	if not _training_active() or not target.is_in_group("targets"):
+		return
+	training_hits += 1
+	GameState.push_message("木桩命中 %d / 3" % training_hits)
+	_check_training_done()
+
+## 教学完成判定：命中木桩 3 次 + 使用 1 次剃 → 发放整套基础装备，流程进 equipped。
+func _check_training_done() -> void:
+	if not _training_active():
+		return
+	if training_hits < 3 or training_dashes < 1:
+		return
+	GameState.campaign.training_done = true
+	GameState.campaign.flow = "equipped"
+	var gear := GameState.grant_starter_gear()
+	GameState.save_game()
+	GameState.push_message("[乐园] 新手教学完成 · 已发放整套基础装备")
+	hud.show_panel("新手教学完成", "已发放整套基础装备：\n%s\n\n轮回乐园检测到新的试炼任务，回到灰潮港后前往西侧 · 任务委托所接取。" % "、".join(gear), "返回灰潮港", return_from_practice)
+	_refresh_objective()
+
+## 接取第一个任务（废品终点站）：流程进 quested，目标改为北侧传送阵。
+func _accept_first_quest() -> void:
+	if state != "hub": return
+	GameState.campaign.flow = "quested"
+	GameState.save_game()
+	hud.hide_panel()
+	GameState.push_message("[乐园] 任务已接取 · 前往北侧传送阵开始试炼")
+	_refresh_objective()
+
+## 传送阵出发：开始第一次正式试炼（废品终点站），此后进入常规战役循环。
+func start_first_trial() -> void:
+	if state != "hub": return
+	GameState.campaign.hub = false
+	GameState.campaign.flow = "trial"
+	GameState.campaign_practice = false
+	GameState.save_game()
+	GameState.push_message("[乐园] 开始试炼 · 废品终点站")
 	reload_scene()
 
 func _sync_inventory() -> void:
@@ -547,13 +700,19 @@ func _copy_supplies() -> void:
 	GameState.campaign.bullets = player.bullets
 	GameState.campaign.hp_ratio = player.hp / player.max_hp
 	GameState.campaign.mp_ratio = player.mp / player.max_mp
+	# 这里直接写 campaign 易变键，绕过 give_item 的记账，需要手动标脏。
+	GameState.mark_sortie_dirty()
 
 func _store_supplies() -> void:
 	_copy_supplies()
 	GameState.save_game()
 
 func leave() -> void:
-	if state in ["cleared", "outer_cleared"]: _store_supplies()
+	if state in ["cleared", "outer_cleared"]:
+		_store_supplies()  # 已清场：正常撤离，提交本局
+	else:
+		# 战斗中退回主菜单按「放弃出击」处理，否则退菜单/关窗会变成偷偷提交。
+		GameState.settle_sortie(GameState.Sortie.ABANDON)
 	GameState.campaign_practice = false
 	GameState.save_game()
 	GameState.change_scene(GameState.MAIN_MENU_SCENE)

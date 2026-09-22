@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_hv8ah"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_24dkq"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_NJ_CSD_Huacao024_c73b4d76.tscn" id="3_fejqr"]
+
+[resource]
+script = ExtResource("1_hv8ah")
+title = "SM_NJ_CSD_Huacao024"
+category = "植被"
+source = ExtResource("3_fejqr")
+source_path = "res://assets/hd2d_presets/scenes/SM_NJ_CSD_Huacao024_c73b4d76.tscn"
+asset_id = &"SM_NJ_CSD_Huacao024_c73b4d76"
+family_id = &"family_e0ba4676b7290917"
+material_slots = {
+"Geometry/SM_NJ_CSD_Huacao024": Array[String](["mat_2962af75c7ee16a5"])
+}
+wind = 0.0

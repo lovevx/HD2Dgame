@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_Item_Baibulian006_3487c3c2_01.res" id="1_km1yi"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_ad1193358bf6ebfb_original.tres" id="2_no2yq"]
+
+[node name="Model" type="Node3D" unique_id=1413628104]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=921754455]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.017679444, -4.80628e-06)
+
+[node name="SM_Item_Baibulian006" type="MeshInstance3D" parent="Geometry" unique_id=1446508212]
+mesh = ExtResource("1_km1yi")
+surface_material_override/0 = ExtResource("2_no2yq")

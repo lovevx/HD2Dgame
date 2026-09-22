@@ -17,6 +17,10 @@ const BASE := 5
 const WEAPON_BASE_ATK := 7
 ## 首版允许用属性点提升的维度：力量/敏捷/体力/智力；魅力、幸运不透支。
 const SPENDABLE := [KEY_STR, KEY_AGI, KEY_CON, KEY_INT]
+## 体力条（stamina）基准与每点「体力」加成：六维 5 → 120。
+## 体力条用于闪避（剃）与直踹的消耗，是「体力」属性除 HP 之外的第二条战斗用途。
+const STAMINA_BASE := 60.0
+const STAMINA_PER_CON := 12.0
 
 ## 六维中文显示名，供 HUD / 面板使用。
 const CN_NAMES := {
@@ -49,6 +53,10 @@ static func max_hp(a: Dictionary) -> float:
 ## 最大 MP = 智力×10（六维 5 → 50）。
 static func max_mp(a: Dictionary) -> float:
 	return float(a.get(KEY_INT, BASE)) * 10.0
+
+## 最大体力 = 60 + 体力×12（六维 5 → 120）。见 STAMINA_BASE / STAMINA_PER_CON。
+static func max_stamina(a: Dictionary) -> float:
+	return STAMINA_BASE + float(a.get(KEY_CON, BASE)) * STAMINA_PER_CON
 
 ## 攻击 = 武器基础 7 + 力量（六维 5 → 12）。
 static func attack(a: Dictionary) -> float:

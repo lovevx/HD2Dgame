@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
-[ext_resource type="ArrayMesh" path="res://local_study/preset3d/meshes/SM_XYNJiangnan006_0b476e27_01.res" id="1_bvuod"]
-[ext_resource type="Texture2D" path="res://local_study/preset3d/textures/original/2139dc34d93deacf_T_XuanyaNew001.png" id="2_tf5pp"]
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_XYNJiangnan006_0b476e27_01.res" id="1_bvuod"]
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/2139dc34d93deacf_T_XuanyaNew001.png" id="2_tf5pp"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qat53"]
 resource_name = "mat_50bc367cd72d3ee3"

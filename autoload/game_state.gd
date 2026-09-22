@@ -1,7 +1,12 @@
 extends Node
 ## 全局游戏状态：契约者、阶段试炼、背包/装备、永久成长与场景过场。
-## 存档：单槽位 user://save.cfg；已提交检查点与乐园操作自动落盘，
-## 退出游戏兜底保存；主菜单据 player_name 是否为空决定是否显示「继续游戏」。
+## 存档分两层，只有「已提交层」会被写进 user://save.cfg：
+## - 已提交层：检查点、乐园操作（开箱/换装/商店）与结算提交的内容。写入走临时档 +
+##   rename 原子替换，并在替换前留一份 .bak，主档损坏时回退到备份。
+## - 本局临时层（SORTIE_KEYS）：一次出击里还没到提交点的易变状态 —— 途中拾取与战斗中
+##   扣掉的耐久。死亡 / 放弃出击 / 异常退出把临时层整体回滚，因此不会出现
+##   「收益留下、消耗不还原」的半提交。见 sortie 事务 API。
+## 主菜单据 player_name 是否为空决定是否显示「继续游戏」。
 const Attributes := preload("res://data/attributes.gd")
 const Campaign := preload("res://data/campaign.gd")
 const Equip := preload("res://data/equip_tables.gd")
@@ -25,6 +30,27 @@ const HARBOR_SCENE := "res://scenes/world/harbor.tscn"
 const DEFAULT_PLAYER_NAME := "苏晓"
 const SAVE_PATH := "user://save.cfg"
 var save_path := SAVE_PATH
+
+## 存档格式版本：落盘字段新增/改义时 +1，load_game 据它决定升级路径。
+## v1 = 无 version 字段的旧档（8 槽装备 / 未分离出击事务）。
+const SAVE_VERSION := 2
+
+## 出击事务里「未提交」的 campaign 键：这些键在本局可被整体回滚，其余键只经提交点写入。
+## bag = 途中拾取的装备与场景宝箱产出；item_dura = 战斗中扣掉的耐久。
+const SORTIE_KEYS: Array[String] = ["bag", "item_dura"]
+
+## 一次出击的结束路径。P1 要求四条路径共用同一事务：只有正常撤离提交，
+## 其余三条把未提交部分回滚，恢复时不得重复发奖、扣币或折损。
+## RESCUE 的「本局收益只结算 30%」与 PERMADEATH 的角色销毁尚未实装（待拍板），
+## 现在都按回滚处理。ABANDON = 玩家主动放弃（战斗中退回主菜单 / 关窗），
+## 同样只可能回滚，不允许靠退出「蒙混提交」。
+enum Sortie { NORMAL, DEATH, RESCUE, PERMADEATH, TIMEOUT, ABANDON }
+
+var _sortie_active := false
+## 本局是否有过未提交改动：用于把「已回滚」与「本局无未提交变更」对玩家说清楚。
+var _sortie_dirty := false
+## 上一个提交点的 SORTIE_KEYS 快照，回滚即还原到它。
+var _sortie_base: Dictionary = {}
 
 ## 契约者姓名：档案是否成立以它为准（空串 = 还没建档）。
 var player_name: String = ""
@@ -60,6 +86,13 @@ func complete_contract(raw: String) -> String:
 	player_name = n if n != "" else DEFAULT_PLAYER_NAME
 	save_game()
 	return player_name
+
+## 新手流程开局：签订契约后醒来在船上，船靠岸抵达灰潮港（港口引导阶段）。
+## 单独一步（不在 complete_contract 里）是为了保持旧档/验证脚本的契约语义不变。
+func begin_onboarding() -> void:
+	campaign.hub = true
+	campaign.flow = "ship"
+	save_game()
 
 func add_coins(n: int) -> void:
 	coins += n
@@ -99,23 +132,56 @@ func spend_attr_point(key: String, delta: int = 1) -> bool:
 func is_transitioning() -> bool:
 	return _transitioning
 
+## 显式落盘 = 出击事务的提交点：先把当前 SORTIE_KEYS 记为新的提交基线，
+## 之后的易变改动才算「未提交」、才回滚得动。所以检查点与乐园操作天然就是提交点。
 func save_game() -> void:
+	if _sortie_active:
+		_commit_sortie_now()
 	if not persistence_enabled:
 		return
 	var cfg := ConfigFile.new()
+	cfg.set_value("progress", "version", SAVE_VERSION)
 	cfg.set_value("progress", "campaign", campaign)
 	cfg.set_value("progress", "player_name", player_name)
 	cfg.set_value("progress", "coins", coins)
 	cfg.set_value("progress", "attributes", attributes)
 	cfg.set_value("progress", "attr_points", attr_points)
-	var error := cfg.save(save_path)
+	# 先写临时档，成功后再原地替换：中途掉电最多留一份 .tmp + 一份 .bak，
+	# 正式档始终是完整的某一代（旧写法直接覆盖正式档，写一半就整档报废）。
+	var tmp := save_path + ".tmp"
+	var error := cfg.save(tmp)
 	if error != OK:
 		push_error("存档写入失败：%s" % error_string(error))
-
-func load_game() -> void:
-	var cfg := ConfigFile.new()
-	if cfg.load(save_path) != OK:
 		return
+	var abs_save := ProjectSettings.globalize_path(save_path)
+	var abs_bak := ProjectSettings.globalize_path(save_path + ".bak")
+	# 只备份「读得动」的正式档：否则一次坏档会被复制成备份，把上一份好档顶掉。
+	if _is_valid_save(save_path):
+		DirAccess.copy_absolute(abs_save, abs_bak)
+	var rename_error := DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), abs_save)
+	if rename_error != OK:
+		push_error("存档替换失败：%s" % error_string(rename_error))
+
+func _is_valid_save(path: String) -> bool:
+	if not FileAccess.file_exists(path):
+		return false
+	var cfg := ConfigFile.new()
+	return cfg.load(path) == OK and cfg.has_section("progress")
+
+## 读档：正式档优先，解析失败或缺失时回退 .bak，再不行当新档处理。
+func load_game() -> void:
+	if not _load_from(save_path) and not _load_from(save_path + ".bak"):
+		return
+
+func _load_from(path: String) -> bool:
+	var cfg := ConfigFile.new()
+	# 两种坏档都要回退备份，不能当有效进度：load 失败（写一半被截断）与
+	# load 成功但没有 progress 段（空壳档 —— ConfigFile 对只有段头或纯垃圾的
+	# 内容不报错，直接读会把姓名与乐园币静默清空）。
+	if cfg.load(path) != OK or not cfg.has_section("progress"):
+		if FileAccess.file_exists(path):
+			push_warning("存档不可用，回退备份：%s" % path)
+		return false
 	player_name = str(cfg.get_value("progress", "player_name", ""))
 	coins = int(cfg.get_value("progress", "coins", 0))
 	# 旧档缺属性字段用默认六维兜底合并，attr_points 缺省为 0。
@@ -132,6 +198,86 @@ func load_game() -> void:
 	if not cfg.has_section_key("progress", "campaign"):
 		attributes = Campaign.BASE_STATS.duplicate()
 	campaign.stage = clampi(int(campaign.stage), 0, Campaign.STAGES.size() - 1)
+	# 新手流程：任何加载都回到灰潮港（教学中间状态不落档，继续游戏从港口接着走）。
+	if ["ship", "training", "equipped", "quested"].has(str(campaign.get("flow", ""))):
+		campaign.hub = true
+	# 载入即视为一个干净提交点：此时内存里的易变状态就等于落盘内容。
+	_sortie_dirty = false
+	if _sortie_active:
+		_commit_sortie_now()
+	return true
+
+# ---------------------------------------------------------------- 出击结算事务
+#
+# P1 基线：正常撤离、逃脱币救援、无币永久死亡与任务超时共用唯一事务提交，
+# 恢复时不得重复发奖、扣币或折损。这里的做法是「出击快照 → 本局临时状态 → 一次性提交」：
+#
+#   begin_sortie()        进入战斗区域时拍快照（SORTIE_KEYS 的当前值）
+#   （本局内的易变改动）  途中拾取、战斗扣耐久只改内存，不落盘
+#   commit_sortie()       检查点 / 领取战利品 / 开箱 / 换装 / 结算时提交，快照推进
+#   rollback_sortie()     死亡、放弃出击、异常退出时把临时层还原回快照
+#   settle_sortie(原因)   上面两条的唯一入口，四条结束路径都从这里走
+
+## 进入战斗区域：以一个干净的提交基线开启本局。可重复调用（重试会重新拍）。
+func begin_sortie() -> void:
+	_sortie_active = true
+	_commit_sortie_now()
+
+## 离开战斗进入非战斗区域（灰潮港 / 演武场）：本局结束，清掉会话。
+func end_sortie() -> void:
+	_sortie_active = false
+	_sortie_base.clear()
+	_sortie_dirty = false
+
+func is_sortie_active() -> bool:
+	return _sortie_active
+
+## 本局是否有过未提交改动（未提交的拾取 / 耐久损耗）。
+func is_sortie_dirty() -> bool:
+	return _sortie_active and _sortie_dirty
+
+## 标记本局有未提交改动。直接写 campaign 易变键的代码（如 _copy_supplies）应调用它。
+func mark_sortie_dirty() -> void:
+	if _sortie_active:
+		_sortie_dirty = true
+
+## 提交：把当前易变状态定为新的基线。注意它不落盘 —— save_game() 负责写盘，
+## 并在写盘前自动调用本函数，所以任何显式落盘都是提交点。
+func commit_sortie() -> void:
+	if _sortie_active:
+		_commit_sortie_now()
+
+## 回滚：把未提交的拾取与耐久损耗还原到上一个提交点。返回是否真的处于本局中。
+func rollback_sortie() -> bool:
+	if not _sortie_active:
+		return false
+	for key in SORTIE_KEYS:
+		var base = _sortie_base.get(key)
+		if base == null:
+			campaign[key] = Campaign.fresh().get(key)
+			continue
+		campaign[key] = (base as Dictionary).duplicate(true)
+	_sortie_dirty = false
+	return true
+
+## 四条结束路径 + 主动放弃的唯一入口：只有 NORMAL 提交；其余一律回滚未提交部分。
+## RESCUE 将来要「保留角色，本局收益只结算 30%」、PERMADEATH 要销毁角色档，
+## 都需要在回滚之后追加对应的资产/存档动作（待拍板，P1 未实装）。
+## 返回是否确实处于本局中（非战斗场景调用时返回 false，无事务可结束）。
+func settle_sortie(outcome: int) -> bool:
+	match outcome:
+		Sortie.NORMAL:
+			commit_sortie()
+		_:
+			rollback_sortie()
+	return _sortie_active
+
+func _commit_sortie_now() -> void:
+	_sortie_base.clear()
+	for key in SORTIE_KEYS:
+		var value = campaign.get(key)
+		_sortie_base[key] = (value as Dictionary).duplicate(true) if value is Dictionary else value
+	_sortie_dirty = false
 
 func effective_attributes() -> Dictionary:
 	## 作战六维 = 裸装 + 已穿戴装备词条（通用聚合，替换原项坠硬编码特例）。
@@ -148,6 +294,21 @@ func item_count(id: String) -> int:
 
 func give_item(id: String, count: int) -> void:
 	campaign.bag[id] = maxi(0, item_count(id) + count)
+	mark_sortie_dirty()
+
+## 新手教学完成后发放的整套基础装备（本土装备，结算时随世界限定清除）。
+const STARTER_GEAR := ["worn_blade", "leather_cap", "ragged_vest", "leather_bracer", "worn_boots", "tattered_cloak", "copper_ring"]
+
+## 发放整套基础装备并自动穿戴（无需求门槛），返回装备名列表。
+func grant_starter_gear() -> Array[String]:
+	var names: Array[String] = []
+	for id in STARTER_GEAR:
+		give_item(id, 1)
+		if Campaign.is_equippable(id):
+			equip_item(id)
+		names.append(item_def(id).get("name", id))
+	save_game()
+	return names
 
 ## 物品定义读取（含成长晋升后的覆盖层）：Campaign.ITEMS 为不可变 const，
 ## 成长改动写入 campaign.item_upgrade，读取一律走本函数保证口径一致。
@@ -191,6 +352,8 @@ func unequip_item(slot: String) -> bool:
 	return true
 
 ## ---------- 耐久（简化版：受伤扣护甲耐、击杀扣武器耐；两态，无灭失） ----------
+## 战斗中的损耗属于「本局消耗」：只改内存、不落盘，死亡回滚时连同拾取一起还原，
+## 提交点在检查点 / 领取战利品 / 开箱等显式 save_game() 处。
 func damage_item_dura(id: String, amount: float) -> void:
 	if amount <= 0 or item_count(id) < 1:
 		return
@@ -199,7 +362,7 @@ func damage_item_dura(id: String, amount: float) -> void:
 		return
 	state["cur"] = maxf(0.0, state["cur"] - amount)
 	campaign.item_dura[id] = state
-	save_game()
+	mark_sortie_dirty()
 
 func is_item_broken(id: String) -> bool:
 	var st: Dictionary = Campaign.dura_state(campaign, id)
@@ -482,14 +645,15 @@ func settle_trial() -> bool:
 	# 截止猎虎的独立切片结算；不冒充国王主线完成。
 	var high := float(campaign.source) >= 8.9
 	var multiplier := 2 if 6 - int(campaign.level) >= 5 else 1
-	var points := (2 if high else 1) * multiplier
+	# 属性点 = 世界之源每 20% 换 1 点（不足 20% 保底 1 点）；首轮噩梦倍率仍生效。
+	var points := maxi(1, int(floor(campaign.source / 20.0))) * multiplier
 	var money := (1000 if high else 600) * multiplier
 	attr_points += points
 	coins += money
 	campaign.level += 1
 	campaign.settled = true
 	campaign.hub = true
-	campaign.report = "阶段试炼评价 %s · 世界之源 %.1f%%\n属性点 +%d · 乐园币 +%d · 奖励倍率 ×%d\n巨虎已猎杀；国王主线与虎齿交付尚未完成。" % ["A" if high else "B", campaign.source, points, money, multiplier]
+	campaign.report = "阶段试炼评价 %s · 世界之源 %.1f%%\n属性点 +%d · 乐园币 +%d · 奖励倍率 ×%d\n世界之源每20%%兑1属性点（保底1点）· 巨虎已猎杀；国王主线与虎齿交付尚未完成。" % ["A" if high else "B", campaign.source, points, money, multiplier]
 	for id in campaign.bag.keys():
 		if not Campaign.ITEMS.get(id, {}).get("export", false):
 			campaign.bag.erase(id)
@@ -512,6 +676,21 @@ func settle_trial() -> bool:
 	campaign.hp_ratio = 1.0
 	campaign.mp_ratio = 1.0
 	save_game()
+	return true
+
+## ---------- 乐园商店购买（轮回商店 UI 走这里扣币/入包/落盘） ----------
+func buy_item(id: String, price: int) -> bool:
+	var def := item_def(id)
+	if def.is_empty() or price <= 0:
+		push_message("该商品暂无货源")
+		return false
+	if coins < price:
+		push_message("乐园币不足（需要 %d）" % price)
+		return false
+	coins -= price
+	give_item(id, 1)
+	save_game()
+	push_message("购入 · 【%s】" % def.get("name", id))
 	return true
 
 func buy_potion() -> bool:
@@ -554,8 +733,11 @@ func begin_next_trial() -> bool:
 	return true
 
 func _notification(what: int) -> void:
-	# 关窗/切后台（Android 返回）兜底保存，避免改了币没写盘
+	# 关窗/切后台（Android 返回）兜底保存，避免改了币没写盘。
+	# 但本局未提交的拾取/耐久损耗不能靠关窗「蒙混提交」：先按放弃出击回滚再写，
+	# 落盘内容因此永远是最近一个合法提交点（崩溃恢复口径，不是死亡回滚口径）。
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		settle_sortie(Sortie.ABANDON)
 		save_game()
 
 ## 场景过场：淡出 → 换场景 → 淡入，避免硬切。

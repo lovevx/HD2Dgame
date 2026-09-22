@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_p65ln"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_emutf"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_DM_TFK_Yunwen004_6863f8d5.tscn" id="3_quyal"]
+
+[resource]
+script = ExtResource("1_p65ln")
+title = "SM_DM_TFK_Yunwen004"
+category = "建筑"
+source = ExtResource("3_quyal")
+source_path = "res://assets/hd2d_presets/scenes/SM_DM_TFK_Yunwen004_6863f8d5.tscn"
+asset_id = &"SM_DM_TFK_Yunwen004_6863f8d5"
+family_id = &"family_1a242191ac10c409"
+material_slots = {
+"Geometry/SM_DM_TFK_Yunwen004": Array[String](["mat_70f9ebf5bd51fe72"])
+}
+static_collision = true
+wind = 0.0

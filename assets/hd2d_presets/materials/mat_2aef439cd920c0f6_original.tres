@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/9093420eb7e9e5fd_T_Bjb2.png" id="1_6bh23"]
+
+[resource]
+resource_name = "mat_2aef439cd920c0f6"
+cull_mode = 2
+albedo_texture = ExtResource("1_6bh23")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

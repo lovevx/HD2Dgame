@@ -32,8 +32,9 @@ func run() -> void:
 	player.reset()
 	var visual: AnimatedSprite3D = player.get_node("pivot/CharacterSprite")
 	for direction in ["left", "right", "down", "up"]:
-		check(visual.sprite_frames.has_animation("stab_" + direction) and visual.sprite_frames.has_animation("heavy_" + direction), "前刺与重斩四方向 %s" % direction)
-		check(visual.sprite_frames.get_frame_count("stab_" + direction) == 8 and visual.sprite_frames.get_frame_count("heavy_" + direction) == 8, "每个新动作八帧 %s" % direction)
+		check(visual.sprite_frames.has_animation("attack_" + direction) and visual.sprite_frames.has_animation("kick_" + direction), "斩与直踹四方向 %s" % direction)
+		check(visual.sprite_frames.get_frame_count("attack_" + direction) == 12 and visual.sprite_frames.get_frame_count("kick_" + direction) == 12, "每个新动作十二帧 %s" % direction)
+	check(visual.COMBO_CLIPS.size() == 1 and visual.COMBO_CLIPS[0] == "attack", "连段已取消：动作表只剩斜劈")
 	check(InputMap.has_action("sword_wave") and InputMap.has_action("shadow_stab"), "R/T 按键已映射")
 
 	var enemy := EnemyScene.instantiate()
@@ -46,14 +47,11 @@ func run() -> void:
 	player._start_shadow()
 	check(player.mp == mp_before and player.shadow_cd == 0.0, "未刺中时 T 不耗蓝且不进入冷却")
 	player._start_attack()
-	check(player.combo_stage == 0 and visual.animation == &"attack_up", "第一段使用原斜劈帧")
-	player._physics_process(Skills.COMBO_COOLDOWNS[0] + 0.01)
-	player._start_attack()
-	check(player.combo_stage == 1 and visual.animation == &"stab_up", "第二段播放独立前刺帧")
-	player._physics_process(Skills.COMBO_HIT_TIMES[1] - 0.01)
-	check(player.pierced_target == null, "前刺有效帧前无影刺标记")
+	check(player.combo_stage == 0 and visual.animation == &"attack_up", "单段攻击使用斜劈帧")
+	player._physics_process(Skills.COMBO_HIT_TIMES[0] - 0.01)
+	check(player.pierced_target == null, "有效帧前无影刺标记")
 	player._physics_process(0.02)
-	check(player.pierced_target == enemy and player.pierce_timer > 0.0, "前刺命中目标才留下影刺标记")
+	check(player.pierced_target == enemy and player.pierce_timer > 0.0, "斩击命中目标留下影刺标记")
 	if DisplayServer.get_name() != "headless":
 		visual.frame = 3
 		await process_frame
@@ -77,32 +75,30 @@ func run() -> void:
 
 	player.reset()
 	player.facing = Vector3.FORWARD
-	player.combo_timer = 1.0
-	player.combo_stage = 0
 	player._start_attack()
-	player._physics_process(Skills.COMBO_HIT_TIMES[1] + 0.01)
-	check(player.pierced_target == null, "前刺挥空不生成标记")
-	player._physics_process(Skills.COMBO_COOLDOWNS[1])
+	player._physics_process(Skills.COMBO_HIT_TIMES[0] + 0.01)
+	check(player.pierced_target == null, "斩击挥空不生成标记")
+	player._physics_process(Skills.COMBO_COOLDOWNS[0])
 	player._start_attack()
-	check(player.combo_stage == 2 and visual.animation == &"heavy_up", "第三段播放独立重斩帧")
+	check(player.combo_stage == 0 and visual.animation == &"attack_up", "冷却后再次攻击仍是单段斩击")
 	if DisplayServer.get_name() != "headless":
 		visual.frame = 3
 		await process_frame
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://.tmp_preview/combo-heavy.png")
 		player.facing = Vector3.RIGHT
-		visual._on_attacked(1)
+		visual._on_attacked(0)
 		visual.frame = 3
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://.tmp_preview/combo-stab-side.png")
 		player.facing = Vector3.BACK
-		visual._on_attacked(2)
+		visual._on_attacked(0)
 		visual.frame = 3
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://.tmp_preview/combo-heavy-down.png")
-	player._physics_process(Skills.COMBO_COOLDOWNS[2] + 0.2)
+	player._physics_process(Skills.COMBO_COOLDOWNS[0] + 0.2)
 	player._start_attack()
-	check(player.combo_stage == 0, "连段窗口结束后回到第一段")
+	check(player.combo_stage == 0, "连段取消后连续攻击不切换段位")
 	var marked := EnemyScene.instantiate()
 	marked.kind = EnemyScript.Kind.WOLF
 	marked.position = Vector3(0, 0, -2.0)

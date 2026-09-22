@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_xgg_chengmen001_d6aee4fd_01.res" id="1_wwt71"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_56b20a540e823385_original.tres" id="2_egg2v"]
+
+[node name="Model" type="Node3D" unique_id=1832770428]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1481159023]
+
+[node name="SM_xgg_chengmen001" type="MeshInstance3D" parent="Geometry" unique_id=2044359840]
+mesh = ExtResource("1_wwt71")
+surface_material_override/0 = ExtResource("2_egg2v")

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_cvfgb"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_aaqxl"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Waterfall_b6aabfbc.tscn" id="3_kbri2"]
+
+[resource]
+script = ExtResource("1_cvfgb")
+title = "SM_Waterfall"
+category = "环境"
+source = ExtResource("3_kbri2")
+source_path = "res://assets/hd2d_presets/scenes/SM_Waterfall_b6aabfbc.tscn"
+asset_id = &"SM_Waterfall_b6aabfbc"
+family_id = &"family_7b12713bdb9a7655"
+material_slots = {
+"Geometry/SM_Waterfall": Array[String](["mat_ffa2b567ec72e1a7"])
+}
+wind = 0.0

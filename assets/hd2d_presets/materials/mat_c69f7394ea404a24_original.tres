@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/hd2d_presets/textures/original/ac94b0af0dedbcc3_T_xuanhuojiao001.png" id="1_m5687"]
+
+[resource]
+resource_name = "mat_c69f7394ea404a24"
+transparency = 2
+alpha_scissor_threshold = 0.3333
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_m5687")
+metallic_specular = 0.15
+roughness = 0.95
+texture_filter = 2

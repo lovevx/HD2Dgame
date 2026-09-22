@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_xolep"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_v3ew3"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_xhj_shenkan002_c622131b.tscn" id="3_utsjf"]
+
+[resource]
+script = ExtResource("1_xolep")
+title = "SM_xhj_shenkan002"
+category = "建筑"
+source = ExtResource("3_utsjf")
+source_path = "res://assets/hd2d_presets/scenes/SM_xhj_shenkan002_c622131b.tscn"
+asset_id = &"SM_xhj_shenkan002_c622131b"
+family_id = &"family_c40f2142e373f48c"
+material_slots = {
+"Geometry/SM_xhj_shenkan002": Array[String](["mat_c69f7394ea404a24"])
+}
+static_collision = true
+wind = 0.0

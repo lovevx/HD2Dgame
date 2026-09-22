@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/hd2d_presets/meshes/SM_Item_damogutou004_2a7f9f72_01.res" id="1_fi780"]
+[ext_resource type="Material" path="res://assets/hd2d_presets/materials/mat_afcc548cf40150ff_original.tres" id="2_rrtpy"]
+
+[node name="Model" type="Node3D" unique_id=2106439729]
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1792204384]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.020179272, 0.09626192, 1.1920929e-06)
+
+[node name="SM_Item_damogutou004" type="MeshInstance3D" parent="Geometry" unique_id=1134633583]
+mesh = ExtResource("1_fi780")
+surface_material_override/0 = ExtResource("2_rrtpy")

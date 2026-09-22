@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3 uid="uid://y5wkojm66uw4"]
+
+[ext_resource type="Script" uid="uid://tfihpnl3bnrw" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_tmp8g"]
+[ext_resource type="Script" uid="uid://ddb66wr46eh8h" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_3m82y"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_HD_Guanmu007_1c899642.tscn" id="3_c8lt3"]
+
+[resource]
+script = ExtResource("1_tmp8g")
+title = "SM_HD_Guanmu007"
+category = "植被"
+source = ExtResource("3_c8lt3")
+source_path = "res://assets/hd2d_presets/scenes/SM_HD_Guanmu007_1c899642.tscn"
+asset_id = &"SM_HD_Guanmu007_1c899642"
+family_id = &"family_2f80e1da58c97daa"
+material_slots = {
+"Geometry/SM_HD_Guanmu007": Array[String](["mat_78a478bf8cad2254"])
+}
+facing = 2
+wind = 0.0

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_u631x"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_3nar1"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_Item_Yingkuang001_9e99cc4e.tscn" id="3_dm4f8"]
+
+[resource]
+script = ExtResource("1_u631x")
+title = "SM_Item_Yingkuang001"
+category = "道具"
+source = ExtResource("3_dm4f8")
+source_path = "res://assets/hd2d_presets/scenes/SM_Item_Yingkuang001_9e99cc4e.tscn"
+asset_id = &"SM_Item_Yingkuang001_9e99cc4e"
+family_id = &"family_69d6e52909b25856"
+material_slots = {
+"Geometry/SM_Item_Yingkuang001": Array[String](["mat_afcc548cf40150ff"])
+}
+static_collision = true
+wind = 0.0

@@ -83,9 +83,10 @@ func _collect() -> void:
 		queue_free()
 		return
 	GameState.give_item(item_id, 1)
-	GameState.save_game()
+	# 不落盘：途中拾取属于「本局未提交收益」，死亡重试要跟着回滚。
+	# 提交点是领取战利品 / 开箱 / 检查点等显式 save_game()（见 GameState 出击事务）。
 	var def: Dictionary = Campaign.ITEMS.get(item_id, {})
-	GameState.push_message("[乐园] 拾取装备 · %s（%s）" % [def.get("name", item_id), Equip.quality_cn(def.get("quality", "white"))])
+	GameState.push_message("[乐园] 拾取装备 · %s（%s）· 领取战利品前阵亡则失去" % [def.get("name", item_id), Equip.quality_cn(def.get("quality", "white"))])
 	var tween := create_tween()
 	tween.set_parallel(true)
 	if _mesh != null:

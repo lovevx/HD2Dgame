@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_i1vgi"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_ar7ho"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_NJ_Yvlinzhiwu003_ba40b840.tscn" id="3_421cq"]
+
+[resource]
+script = ExtResource("1_i1vgi")
+title = "SM_NJ_Yvlinzhiwu003"
+category = "植被"
+source = ExtResource("3_421cq")
+source_path = "res://assets/hd2d_presets/scenes/SM_NJ_Yvlinzhiwu003_ba40b840.tscn"
+asset_id = &"SM_NJ_Yvlinzhiwu003_ba40b840"
+family_id = &"family_c46ce3a09f94ad8d"
+material_slots = {
+"Geometry/SM_NJ_Yvlinzhiwu003": Array[String](["mat_019196eccbd5430c"])
+}
+facing = 2
+wind = 0.0

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_6jvki"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_jheol"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/SM_NJ_Gurongshu001_2_a0cc6fb2.tscn" id="3_xrawj"]
+
+[resource]
+script = ExtResource("1_6jvki")
+title = "SM_NJ_Gurongshu001_2"
+category = "植被"
+source = ExtResource("3_xrawj")
+source_path = "res://assets/hd2d_presets/scenes/SM_NJ_Gurongshu001_2_a0cc6fb2.tscn"
+asset_id = &"SM_NJ_Gurongshu001_2_a0cc6fb2"
+family_id = &"family_e75ee5a29ed63a51"
+material_slots = {
+"Geometry/SM_NJ_Gurongshu001_2": Array[String](["mat_31aa906f49bd7377"])
+}
+wind = 0.0

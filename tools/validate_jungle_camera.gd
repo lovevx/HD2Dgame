@@ -18,32 +18,63 @@ func onscreen(camera: Camera3D, at: Vector3, margin: float) -> bool:
 	var uv := camera.unproject_position(at) / camera.get_viewport().get_visible_rect().size
 	return not camera.is_position_behind(at) and uv.x > margin and uv.x < 1.0 - margin and uv.y > margin and uv.y < 1.0 - margin
 
-## 鼠标让路：光标方向决定焦点让出的方向，并且真的接到取景里。
-func check_mouse_lead(scene: Node3D, camera: Camera3D, level: String) -> void:
+## 机位控制：中键拖动转视角、滚轮推拉距离；旧的「鼠标让出」必须已经取消。
+func check_orbit(scene: Node3D, camera: Camera3D, level: String) -> void:
 	var player: CharacterBody3D = scene.get_node("Player")
 	player.position = Vector3.ZERO
 	player.velocity = Vector3.ZERO
 	scene._camera_lead = Vector3.ZERO
-	var lead = scene.get("_mouse_lead")
-	var size := Vector2(1280, 720)
-	check(lead.offset_for(camera, size, size * 0.5).is_zero_approx(), level + ": cursor at screen center must not move the camera")
-	check(lead.offset_for(camera, size, Vector2(size.x, size.y * 0.5)).is_equal_approx(ground_axis(camera.global_transform.basis.x) * lead.max_lean), level + ": cursor on the right must pull the camera right")
-	check(lead.offset_for(camera, size, Vector2(size.x * 0.5, size.y)).is_equal_approx(ground_axis(-camera.global_transform.basis.y) * lead.max_lean), level + ": cursor at the bottom must pull the camera towards the viewer")
+	check(scene.get("_mouse_lead") == null, level + ": cursor must no longer drive the camera (mouse lead removed)")
+	var orbit = scene.get("_orbit")
+	if orbit == null:
+		check(false, level + ": camera orbit controls are not wired in")
+		return
 	settle(scene)
 	var baseline := camera.position
-	lead._seen_mouse = true
+	orbit.yaw_deg = 0.0
+	orbit.pitch_deg = 16.0
 	settle(scene)
-	var leaned := camera.position
-	check(leaned.distance_to(baseline) > 0.5, level + ": mouse lead is not wired into the framing")
-	lead._seen_mouse = false
-	lead.offset = Vector3.ZERO
+	check(camera.position.distance_to(baseline) < 0.05, level + ": default framing must match the settled pose")
+	# 中键向右拖 → 相机绕到焦点西侧，并且真的落到机位上
+	var middle := InputEventMouseButton.new()
+	middle.button_index = MOUSE_BUTTON_MIDDLE
+	middle.pressed = true
+	scene._input(middle)
+	var drag := InputEventMouseMotion.new()
+	drag.relative = Vector2(240, 0)
+	scene._input(drag)
+	check(orbit.dragging and orbit.yaw_deg < -20.0, level + ": middle-drag must turn the camera")
 	settle(scene)
-	check(camera.position.distance_to(baseline) < 0.05, level + ": camera must return when the mouse lead clears")
-
-## 世界向量在水平面上的单位方向；纯竖直的向量返回零。
-func ground_axis(v: Vector3) -> Vector3:
-	var flat := Vector3(v.x, 0, v.z)
-	return flat.normalized() if flat.length_squared() > 0.0001 else Vector3.ZERO
+	check(orbit.offset().x < -8.0, level + ": middle-drag must swing the camera to the west side")
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_MIDDLE
+	release.pressed = false
+	scene._input(release)
+	check(not orbit.dragging, level + ": releasing the middle button must end the drag")
+	# 滚轮推拉距离
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed = true
+	var before: float = orbit.distance
+	scene._input(wheel)
+	check(orbit.distance < before, level + ": wheel up must pull the camera closer")
+	var wheel_down := InputEventMouseButton.new()
+	wheel_down.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	wheel_down.pressed = true
+	scene._input(wheel_down)
+	check(orbit.distance > before - 0.001, level + ": wheel down must push the camera back")
+	# 光标位置不再参与取景
+	orbit.yaw_deg = 0.0
+	orbit.pitch_deg = 16.0
+	orbit.distance = orbit._base_distance
+	orbit.zoom(0)
+	settle(scene)
+	baseline = camera.position
+	var size := Vector2(1280, 720)
+	var viewport := scene.get_viewport()
+	viewport.warp_mouse(Vector2(size.x - 6.0, 6.0))
+	settle(scene, 60)
+	check(camera.position.distance_to(baseline) < 0.001, level + ": cursor position must not move the camera")
 
 func run() -> void:
 	for level in ["outer", "clearing"]:
@@ -101,7 +132,7 @@ func run() -> void:
 				scene._update_camera(1.0 / float(fps))
 			results.append(camera.position)
 		check(results[0].distance_to(results[1]) < 0.06, level + ": camera follow varies too much across frame rates")
-		check_mouse_lead(scene, camera, level)
+		check_orbit(scene, camera, level)
 		scene.free()
 		await process_frame
 	for failure in failures:

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="HD2DAsset" format=3]
+
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset.gd" id="1_1mp1i"]
+[ext_resource type="Script" path="res://addons/hd2d_scene_tools/runtime/asset_skin.gd" id="2_17jcq"]
+[ext_resource type="PackedScene" path="res://assets/hd2d_presets/scenes/sm_merged_jiuguan_ccb87eb4.tscn" id="3_divri"]
+
+[resource]
+script = ExtResource("1_1mp1i")
+title = "sm_merged_jiuguan"
+category = "建筑"
+source = ExtResource("3_divri")
+source_path = "res://assets/hd2d_presets/scenes/sm_merged_jiuguan_ccb87eb4.tscn"
+asset_id = &"sm_merged_jiuguan_ccb87eb4"
+family_id = &"family_9b3322f555c633af"
+material_slots = {
+"Geometry/sm_merged_jiuguan": Array[String](["mat_d181c9d21706fa7a"])
+}
+static_collision = true
+wind = 0.0
