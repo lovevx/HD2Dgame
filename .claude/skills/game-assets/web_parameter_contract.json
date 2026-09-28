@@ -176,7 +176,11 @@
             "image-2",
             "image-2.5"
           ],
-          "request_field": "generation_provider"
+          "request_field": "generation_provider",
+          "defaults_by_mode": {
+            "pixel": "nano-banana",
+            "hd": "image-2.5"
+          }
         },
         "quality": {
           "flag": "--quality",
@@ -204,7 +208,11 @@
             "1K",
             "2K"
           ],
-          "request_field": "resolution"
+          "request_field": "resolution",
+          "defaults_by_mode": {
+            "pixel": "1K",
+            "hd": "2K"
+          }
         },
         "strict": {
           "flag": "--strict",
@@ -278,11 +286,10 @@
           "flag": "--remove-bg-batch-size",
           "default": "16",
           "choices": [
-            "1",
+            "2",
             "4",
             "8",
-            "16",
-            "all"
+            "16"
           ],
           "request_field": "remove_bg_batch_size",
           "available_when": "animated input except Pixel advanced"
@@ -654,13 +661,19 @@
           "default": "image-2",
           "choices": [
             "nano-banana",
-            "image-2"
+            "image-2",
+            "image-2.5"
           ],
           "request_field": "generation_provider"
         },
         "quality": {
           "flag": "--quality",
           "default": "detailed",
+          "conditional_default": {
+            "nano-banana": "detailed",
+            "image-2": "detailed",
+            "image-2.5": "standard"
+          },
           "choices": [
             "standard",
             "detailed",
@@ -767,7 +780,8 @@
           "default": "4.2",
           "choices": [
             "4.2",
-            "3.8"
+            "3.8.99",
+            "3.8.75"
           ],
           "request_field": "export_version"
         },
@@ -870,6 +884,16 @@
             "ultimate"
           ],
           "request_field": "image2_quality"
+        },
+        "export_version": {
+          "flag": "--export-version",
+          "default": "4.2",
+          "choices": [
+            "4.2",
+            "3.8.99",
+            "3.8.75"
+          ],
+          "request_field": "export_version"
         }
       }
     },
@@ -931,6 +955,49 @@
             "standard"
           ],
           "request_field": "remove_bg_method"
+        },
+        "export_version": {
+          "flag": "--export-version",
+          "default": "4.2",
+          "choices": [
+            "4.2",
+            "3.8.99",
+            "3.8.75"
+          ],
+          "request_field": "export_version"
+        }
+      }
+    },
+    "spine_frame_cleanup": {
+      "command": "spine-cleanup-run",
+      "web_sources": [
+        "components/spine-editor/SpineAtlasEditor.tsx",
+        "services/spineAgentService.ts"
+      ],
+      "parameters": {
+        "source_spine_package": {
+          "flag": "--source-spine-package",
+          "request_field": "spine_asset_id"
+        },
+        "display_name": {
+          "flag": "--display-name",
+          "default": "Spine",
+          "request_field": "display_name"
+        },
+        "skin_name": {
+          "flag": "--skin-name",
+          "default": "",
+          "request_field": "skin_name"
+        },
+        "export_version": {
+          "flag": "--export-version",
+          "default": "4.2",
+          "choices": [
+            "4.2",
+            "3.8.99",
+            "3.8.75"
+          ],
+          "request_field": "export_version"
         }
       }
     },
@@ -988,6 +1055,16 @@
             "ultimate"
           ],
           "request_field": "image2_quality"
+        },
+        "export_version": {
+          "flag": "--export-version",
+          "default": "4.2",
+          "choices": [
+            "4.2",
+            "3.8.99",
+            "3.8.75"
+          ],
+          "request_field": "export_version"
         }
       }
     },
@@ -1126,28 +1203,42 @@
       "parameters": {
         "animation_model": {
           "flag": "--animation-model",
-          "default": "",
-          "conditional_default": {
-            "source_at_most_256x256": "pixel-engine-v1.1",
-            "larger_source": "frame-engine-v1.1"
-          },
+          "default": "pixel-engine-v1.1",
           "choices": [
             "pixel-engine-v1.1",
             "frame-engine-v1.1"
           ],
-          "request_field": "model"
+          "request_field": "model/render_mode"
+        },
+        "intelligence": {
+          "flag": "--intelligence",
+          "default": "standard",
+          "choices": [
+            "standard",
+            "advanced"
+          ],
+          "request_field": "intelligence"
         },
         "output_frames": {
           "flag": "--output-frames",
           "default": 8,
           "choices": [
+            3,
             4,
+            5,
             6,
+            7,
             8,
+            9,
             10,
+            11,
             12,
+            13,
+            14,
+            15,
             16
           ],
+          "available_when": "advanced supports every integer from 3 to 16; standard supports 4, 6, 8, 10, 12, or 16",
           "request_field": "output_frames"
         },
         "optimize_prompt": {
@@ -1236,13 +1327,9 @@
           "default": "480p",
           "choices": [
             "480p",
-            "720p"
+            "720p",
+            "1080p"
           ],
-          "unavailable_choices": {
-            "pixel": [
-              "720p"
-            ]
-          },
           "request_field": "resolution"
         },
         "alpha_mode": {
@@ -1266,6 +1353,9 @@
         "output_frames": {
           "flag": "--output-frames",
           "default": 16,
+          "conditional_default": {
+            "last_image_file": 24
+          },
           "choices": [
             8,
             16,
@@ -1300,6 +1390,11 @@
         "remove_bg_method": {
           "flag": "--remove-bg-method",
           "default": "standard",
+          "conditional_default": {
+            "480p": "standard",
+            "720p": "standard",
+            "1080p": "none"
+          },
           "choices": [
             "none",
             "standard",
@@ -1319,10 +1414,10 @@
           "flag": "--remove-bg-batch-size",
           "default": "16",
           "choices": [
+            "2",
             "4",
             "8",
-            "16",
-            "all"
+            "16"
           ],
           "available_when": {
             "remove_bg_method": [
@@ -1330,6 +1425,11 @@
             ]
           },
           "request_field": "remove_bg_batch_size"
+        },
+        "high_frame_rate": {
+          "flag": "--high-frame-rate",
+          "default": false,
+          "request_field": "high_frame_rate"
         },
         "background_color": {
           "flag": "--background-color",
@@ -1521,6 +1621,12 @@
             "Italian"
           ],
           "note": "tts-run --language is shared with voice cloning; without --reference-audio only canonical_choices are valid and ZH/EN/JA/ES map to Chinese/English/Japanese/Spanish."
+        },
+        "optimize_prompt": {
+          "flag": "--optimize-prompt",
+          "default": false,
+          "request_field": "text/voice_description",
+          "note": "Mirrors the web 'AI polish' button (manual click, so default false): POST /api/workflows/meowa_tts/prompts polishes punctuation in text and expands the voice hint, then the polished values are submitted as text and voice_description."
         }
       }
     },
@@ -1572,6 +1678,16 @@
             "AR"
           ],
           "note": "Same tts-run command with --reference-audio; Chinese/English/Japanese/Spanish map to ZH/EN/JA/ES, so the shared parser default Chinese submits the web default ZH."
+        },
+        "emotion": {
+          "flag": "--emotion",
+          "default": "",
+          "request_field": "emotion"
+        },
+        "emotion_intensity": {
+          "flag": "--emotion-intensity",
+          "default": 0.5,
+          "request_field": "emotion_intensity"
         }
       }
     },
@@ -1855,16 +1971,31 @@
           "flag": "--remove-bg-batch-size",
           "default": "16",
           "choices": [
+            "2",
             "4",
             "8",
-            "16",
-            "all"
+            "16"
           ],
           "request_field": "remove_bg_batch_size"
+        },
+        "high_frame_rate": {
+          "flag": "--high-frame-rate",
+          "default": false,
+          "request_field": "high_frame_rate"
+        },
+        "primary_reference": {
+          "flag": "--primary-reference",
+          "default": "video",
+          "choices": [
+            "video",
+            "image"
+          ],
+          "request_field": "primary_reference",
+          "notes": "video: edit the video's character; image: the image character performs the video's action in place. image requires image_file."
         }
       },
       "reference_timing": {
-        "max_duration_seconds": 4,
+        "max_duration_seconds": 4.5,
         "generation_fps": 24,
         "output_fps": 8,
         "source_duration_tiers": {
@@ -1969,16 +2100,30 @@
           "flag": "--remove-bg-batch-size",
           "default": "16",
           "choices": [
+            "2",
             "4",
             "8",
-            "16",
-            "all"
+            "16"
           ],
           "request_field": "remove_bg_batch_size"
+        },
+        "high_frame_rate": {
+          "flag": "--high-frame-rate",
+          "default": false,
+          "request_field": "high_frame_rate"
+        },
+        "primary_reference": {
+          "flag": "--primary-reference",
+          "default": "video",
+          "choices": [
+            "video",
+            "image"
+          ],
+          "request_field": "primary_reference"
         }
       },
       "reference_timing": {
-        "max_duration_seconds": 4,
+        "max_duration_seconds": 4.5,
         "generation_fps": 24,
         "output_fps": 8,
         "source_duration_tiers": {

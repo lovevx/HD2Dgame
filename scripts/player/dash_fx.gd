@@ -4,7 +4,7 @@ extends Node3D
 
 enum Phase { IDLE, WINDUP, BURST }
 
-const Prefs := preload("res://data/prefs.gd")
+const GameAudio := preload("res://data/game_audio.gd")
 
 const STOMP_SOUND := preload("res://assets/audio/dash/dash_stomp.mp3")
 const WHOOSH_SOUND := preload("res://assets/audio/dash/dash_whoosh.mp3")
@@ -43,9 +43,6 @@ var _ghost_shader: Shader
 var _stomp_dust: CPUParticles3D
 var _land_dust: CPUParticles3D
 var _trail: CPUParticles3D
-var _stomp_audio: AudioStreamPlayer
-var _whoosh_audio: AudioStreamPlayer
-var _land_audio: AudioStreamPlayer
 
 func _ready() -> void:
 	_ghost_shader = Shader.new()
@@ -58,9 +55,6 @@ func _ready() -> void:
 	_trail.one_shot = false
 	_trail.explosiveness = 0.0
 	_trail.position = Vector3(0, 0.5, 0)
-	_stomp_audio = _add_audio(STOMP_SOUND)
-	_whoosh_audio = _add_audio(WHOOSH_SOUND)
-	_land_audio = _add_audio(LAND_SOUND)
 
 func _process(delta: float) -> void:
 	var next := _current_phase()
@@ -83,19 +77,19 @@ func _enter_phase(next: int, previous: int) -> void:
 		Phase.WINDUP:
 			# 蓄力踩踏：脚掌砸地，尘土碎石向外崩起
 			_stomp_dust.restart()
-			_stomp_audio.play()
+			GameAudio.play_stream(STOMP_SOUND, global_position, -5.0)
 		Phase.BURST:
 			# 爆发启动：破空声、稀薄气流，并在旧位置开始留残影
 			afterimage_timer = 0.0
 			_trail.emitting = true
-			_whoosh_audio.play()
+			GameAudio.play_stream(WHOOSH_SOUND, global_position, -5.0)
 		Phase.IDLE:
 			afterimage_timer = 0.0
 			_trail.emitting = false
 			# 只有真正冲出去过才算落地，避免刚按下就中断时误触发
 			if previous == Phase.BURST and player.alive:
 				_land_dust.restart()
-				_land_audio.play()
+				GameAudio.play_stream(LAND_SOUND, global_position, -5.0)
 
 ## 爆发冲刺期间每隔一小段在旧位置留一个灰色剪影，自行渐隐后释放。
 func _tick_afterimage(delta: float) -> void:
@@ -189,12 +183,3 @@ func _add_dust(node_name: String, amount: int, lifetime: float, velocity_min: fl
 	particles.add_to_group("dash_particles")
 	add_child(particles)
 	return particles
-
-func _add_audio(stream: AudioStream) -> AudioStreamPlayer:
-	var audio := AudioStreamPlayer.new()
-	audio.stream = stream
-	audio.volume_db = -5.0
-	# 挂在 SFX 总线上，设置页的「音效」滑条才管得到它（正本见 res://default_bus_layout.tres）。
-	audio.bus = Prefs.SFX_BUS
-	add_child(audio)
-	return audio

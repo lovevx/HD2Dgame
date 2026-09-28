@@ -7,10 +7,11 @@
 
 ---
 
+
 ## 0. 三步用法
 
 1. **改代码前**：按 §1 找到对应「类型」的权威文档，先读它 —— 别从最早的那份开始读。
-2. **两份文档打架**：查 §3 的效力表。设计层 < PRD 层 < **代码（as-built）**。
+2. **目标方向**：优先按作者最新明确决定；本次战斗唯一方向见 [REALTIME_COMBAT_EXTRACTION.md](REALTIME_COMBAT_EXTRACTION.md)。代码与旧文档只用于说明现状和迁移差距。
 3. **看到标 🔒 的**：已完成或被取代的**冻结件**。它们记录的是当时的事实，不要在上面追新改动 —— 新事实写进 §1 里标 ✅/🟡 的那几份。
 
 **状态图例**
@@ -31,7 +32,7 @@
 
 | 文档 | 版本 / 日期 | 状态 | 效力 | 一句话定位 |
 |---|---|---|---|---|
-| [GDD.md](GDD.md) | v0.4 · 2026-09-16（09-19 有改） | 📌 生效 | **§5 战斗规格、§15 已确认按键与技能集**：与 [COMBAT_DESIGN.md](COMBAT_DESIGN.md) 冲突时以 GDD 已确认项为准 | 玩法总规则、四支柱、关卡与排期 |
+| [GDD.md](GDD.md) | v0.4 · 2026-09-16（09-19 有改） | 📌 生效 | 玩法与关卡通用规则；战斗目标范围以 [REALTIME_COMBAT_EXTRACTION.md](REALTIME_COMBAT_EXTRACTION.md) 的最新方向更新为准 | 玩法总规则、四支柱、关卡与排期 |
 | [P1_SCOPE_BASELINE.md](P1_SCOPE_BASELINE.md) | v1.1 · 2026-09-16 | 📌 生效 | **P1 范围裁决最高**：保留 / 降级 / 禁止新增以它为准 | P1 垂直切片范围基线、退出标准 |
 | [GDD_legacy_20260916.md](GDD_legacy_20260916.md) | 旧版 | 🔒 冻结 | 无（已被 GDD.md v0.4 取代） | 换代前的 GDD，留作对照 |
 
@@ -42,8 +43,6 @@
 | 文档 | 版本 / 日期 | 状态 | 一句话定位 |
 |---|---|---|---|
 | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | 2026-09-16 | 🟡 部分落地 | A01~E04 工作包与验收清单。A 组（战斗）已基本落地；B03/B04 逃脱币与永久死亡、C02~C05 世界任务与情报、D01 整备仍 ⬜ |
-| [COMBAT_REWORK_PLAN.md](COMBAT_REWORK_PLAN.md) | 2026-09-21 起，09-22 / 09-23 更新 | 🟡 **P1 ✅ / P2 🟡 / P3 ⬜** | 双形态战斗分期实施计划（含 validate 命令）。**动手前先读它的「⚠️ 设计变更」表** |
-| [TURNBASED_COMBAT_PLAN.md](TURNBASED_COMBAT_PLAN.md) | 2026-09-20（状态仍写「待确认」） | 🔒 历史依据 | 双形态改版的**提案原文 + D1~D5 决策记录**。D1~D5 已定案，正本在 plan/design 两份 |
 | [.trae/documents/技能树与天赋面板实现计划.md](../.trae/documents/技能树与天赋面板实现计划.md) | 2026-09-21 | ⬜ 未开工 | 刀术技能树（`campaign.training` 可视化）+ 天赋面板（噬灵者 / 灵魂回响）。代码里查不到 `soul_fragments` / `spirit_echo` / `skill_tree` |
 | [.trae/documents/六维属性系统实现.md](../.trae/documents/六维属性系统实现.md) | 2026-09-18 | ✅ 已落地 | 六维属性落地方案书。落地结果见 `data/attributes.gd`，回归 `tools/validate_six_attrs.gd` |
 
@@ -51,8 +50,9 @@
 
 | 文档 | 版本 / 日期 | 状态 | 一句话定位 |
 |---|---|---|---|
-| [COMBAT_DESIGN.md](COMBAT_DESIGN.md) | **v0.8 草稿** · 09-22 起草 → 09-23 定 v0.8 | 📌 设计层（待评审） | 战斗**应该是什么样、为什么**。标记约定 `✅已定` / `📝提案` / `⚑待定`；**§4.2 有 13 条 `Qn` 待拍板** |
-| [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) | v1.1 · 整理 09-21 · 回合补录 09-22 | 📌 as-built | 战斗**实际是什么**。真值源是代码；§3 有「设计 vs 已实现」差异框（8 行） |
+| [REALTIME_COMBAT_EXTRACTION.md](REALTIME_COMBAT_EXTRACTION.md) | 2026-09-23 | 📌 战斗规格 | 即时战斗规则、数值、运行入口与资源清单 |
+| [COMBAT_DESIGN.md](COMBAT_DESIGN.md) | 即时战斗设计入口 | 📌 当前规格 | 指向 REALTIME_COMBAT_EXTRACTION.md |
+| [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) | 即时战斗实现入口 | 📌 当前规格 | 指向上表 |
 | [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) | v0.2 原著向整合版 · 2026-09-18 | 🟡 主体已落地 | 装备策划与实施：11 槽 / 5 品质 / 评分 / 耐久 / 强化 / 分解 / 成长吞噬。`export=true` 的高阶防具首饰仍缺 |
 | [QUEST_PANEL.md](QUEST_PANEL.md) | 2026-09-22 | ✅ 已落地 | 任务档案面板（<kbd>J</kbd>）三个入口与只读映射设计；数据源 `data/quest_log.gd` |
 | [SETTINGS.md](SETTINGS.md) | 2026-09-23 | ✅ 已落地 | 设置页（画面 / 声音 / 游玩 / 按键）的四个分页、每项的作用点、改键对调规则与未做项；正本 `autoload/game_settings.gd` + `scripts/ui/settings_panel.gd` |
@@ -88,7 +88,7 @@
 | 位置 | 日期 | 说明 |
 |---|---|---|
 | `docs/meowa_design_20260916/**` | 2026-09-16 | Meowa 生成的策划骨架 16 份（concept / top_design / architecture / systems），内容基本为占位 |
-| `.workbuddy/memory/**` · `.codebuddy/memory/**` | 09-19 ~ 09-21 | 各 Agent 的会话记忆。⚠️ **`.codebuddy/memory/MEMORY.md` 已 stale**：仍把 `COMBAT_SPEC_SUXIAO.md` / `SKILL_NUMERICS_SUXIAO.md` 列为战斗规格正本，这两份已于 09-21 删除并合并进 [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) |
+| `.workbuddy/memory/**` · `.codebuddy/memory/**` | 09-19 ~ 09-21 | 各 Agent 的会话记忆。旧战斗规格文件已删除；当前正本见实时源文件与 REALTIME_COMBAT_EXTRACTION.md |
 | `.local-backups/**` | 09-17 ~ 09-19 | 关键改动前的快照（camera / jungle / core-loop / reuse-existing 等），可回滚 |
 | `tools/meowa-skills-update-20260919-v2/**` | 2026-09-19 | meowart `game-assets` skill 包快照（SKILL.md + references）。属工具链，非项目文档 |
 | `background/轮回乐园_*.txt` | — | 原著 1~4172 章考据素材，不入库 |
@@ -112,29 +112,25 @@
 | 09-18 | .trae/…/六维属性系统实现.md | 计划 | ✅ 同日落地 |
 | **09-19** | DEMO_STATUS.md · README.md（初版） | 验收 + 入口 | 提交日，5 个 commit 入库 |
 | 09-19 | assets/characters/black_swordsman/{ANIMATION_SPEC,README}.md · combo/README.md | 素材规格 | 图集四方向化统一 |
-| **09-20** | TURNBASED_COMBAT_PLAN.md | 计划 | 双形态提案起草（状态「待确认」） |
 | 09-20 | art/…/attack2_redraw_prompts.md | 素材规格 | ⬜ 至今未接入 |
-| **09-21** | COMBAT_SYSTEM.md v1.1 · COMBAT_REWORK_PLAN.md | 设计 + 计划 | 三份旧战斗文档合并；P1 当日定案并实装 |
 | 09-21 | .trae/…/技能树与天赋面板实现计划.md | 计划 | ⬜ 至今未开工 |
-| **09-22** | COMBAT_DESIGN.md（v0.1→v0.7）· QUEST_PANEL.md | 设计 + 设计 | 战斗设计草稿七轮；任务面板落地 |
+| **09-22** | COMBAT_DESIGN.md · QUEST_PANEL.md | 设计 + 设计 | 即时战斗文档入口与任务面板整理 |
 | 09-22 | PROJECT_OVERVIEW.md · PROJECT_STATUS_AUDIT.md | 索引 | 结构与进度双双校准 |
-| **09-23** | COMBAT_DESIGN.md **v0.8** · COMBAT_REWORK_PLAN.md（P2 状态回填） | 设计 + 计划 | 指令集**由三条改回五条** |
 | 09-23 | PROJECT_STATUS_AUDIT.md（追加存档事务）· README.md（更新） | 索引 + 入口 | 出击快照 / `settle_sortie` 落地 |
+| 09-23 | REALTIME_COMBAT_EXTRACTION.md | 即时战斗规格 | 规则、数值、运行入口与素材清单 |
 | **09-23** | **DOCS_INDEX.md（本文）** | 索引 | 文档清单与状态复核 |
 
 ---
 
 ## 3. 冗余与冲突：谁压谁
 
-### 3.1 战斗四份 + 提案一份
+### 3.1 战斗资料效力
 
 | 文档 | 回答的问题 | 效力 |
 |---|---|---|
-| [GDD.md](GDD.md) §5 / §15 | PRD 层规则；§15 载有**已确认**的按键与技能集 | 与 COMBAT_DESIGN 冲突时**以 GDD 已确认项为准** |
-| [COMBAT_DESIGN.md](COMBAT_DESIGN.md) | 战斗**应该是什么样、为什么** | 设计层，**待评审** |
-| [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) | 现在**实际**是什么（as-built） | 与代码冲突时**以代码为准** |
-| [COMBAT_REWORK_PLAN.md](COMBAT_REWORK_PLAN.md) | **怎么落地**（分期任务 + validate 命令） | 实施层 |
-| [TURNBASED_COMBAT_PLAN.md](TURNBASED_COMBAT_PLAN.md) | 提案原文与 D1~D5 决策过程 | 历史依据 |
+| [REALTIME_COMBAT_EXTRACTION.md](REALTIME_COMBAT_EXTRACTION.md) | 当前战斗规则与代码入口 | 即时战斗唯一规格 |
+| [GDD.md](GDD.md) §5 / §15 | 玩法总规则、部分战斗按键与技能资料 | 具体战斗模式范围服从本文最新方向 |
+| [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) | 即时战斗实现入口 | 指向 REALTIME_COMBAT_EXTRACTION.md |
 
 ### 3.2 其他重复
 
@@ -150,9 +146,9 @@
 
 | 系统 | 证据 |
 |---|---|
-| 核心循环：主菜单 → 开场（取名）→ 船上过场 → 五阶段试炼 → 巨虎 Boss → 结算 → 灰潮港 → 再出发 | `scripts/main/campaign.gd` |
-| 即时战斗全套：单段斜劈 / 剃 / 拼刀 / 直踢 / 燧发枪 / 炼金炸弹 / 药剂 | `player.gd` |
-| 技能：猎魔 Q / 傲歌护盾 E / 刀芒 R / 环断 F / 影刺 T | `data/combat_skills.gd` |
+| 核心循环：主菜单 → 开场（取名）→ 船上过场 → 五阶段试炼与动作解锁 → 巨虎 Boss → 结算整备 → 灰潮港 → 再出发 | `scripts/main/campaign.gd` · `data/quest_log.gd` |
+| 即时战斗现有可操作集：单段斩击 / 剃 / 直踹 / 燧发枪 / 炼金炸弹 / 药剂 / 环断 / 猎魔 / 傲歌；眩晕与处决 | `player.gd` · `data/combat_skills.gd` · `enemy.gd` |
+| 实时技能与动作解锁：燧发枪、直踹、影刺、刀芒、环断、猎魔、傲歌、陷阱；教学提示从当前键位设置读取 | `player.gd` · `data/combat_skills.gd` · `scripts/main/campaign.gd` · `scripts/ui/key_bindings.gd` |
 | 装备：11 槽 / 64 格背包 / 5 品质 / 需求 / 耐久 / 强化 / 修复 / 出售 / 分解 / 成长吞噬 | `autoload/game_state.gd` · `data/equip_tables.gd` |
 | 六维属性 + 属性点 + 装备词条聚合 | `data/attributes.gd` |
 | 面板体系：角色 C / 商店 / 任务档案 J / 统一设计语言 | `scripts/ui/{system_ui,shop_panel,quest_panel}.gd` · `data/quest_log.gd` |
@@ -160,27 +156,19 @@
 | 开场两幕（2D 剧情 + 3D 坐船过场） | `scripts/main/{opening,opening_boat,cinematic}.gd` |
 | 波次系统 + 巨虎三阶段 Boss + 检查点 | `scripts/world/wave_spawner.gd` · `scripts/combat/boss_colpo.gd` |
 | 灰潮港服务：杂货 / 工坊 / 委托 / 演武场 / 世界入口 | `scripts/world/harbor_service.gd` |
-| **回合指令战 P1**：五条指令 / 侧背击加成 / 防御减伤 75% + 30% 弹反 | `scripts/battle/**`（**仅练习场与教学场，战役未接**） |
-| **回合战 P2（部分）**：眩晕链 `stun_gauge.gd` + `enemy.add_stun()` + 处决、眩晕补刀触发回合、首轮先手权、山之主接入 | `scripts/battle/stun_gauge.gd` · `scripts/combat/enemy.gd:467` · `boss_colpo.gd:132` |
-| 新手教程训练场（小怪 + 山之主，均不还手） | `scenes/main/battle_lab.tscn` · `scripts/main/battle_lab.gd` |
+| 即时眩晕 / 处决与 Boss 短暂硬直 | `scripts/combat/stun_gauge.gd` · `scripts/combat/enemy.gd` · `scripts/combat/boss_colpo.gd` |
 | 存档可靠性：出击快照 → 一次性提交、`settle_sortie` 四路径、版本字段 / 原子写 / `.bak` 回退 | `autoload/game_state.gd` · `tools/validate_save_transaction.gd` |
-| 回归套件（18 支 `validate_*`，套件内只放全绿） | `tools/run_regressions.sh` |
+| 回归脚本（13 支默认套件，均登记于 `tools/run_regressions.sh`） | `tools/run_regressions.sh` |
 
 ### 4.2 🟡 部分完成
 
 | 项 | 还缺什么 |
 |---|---|
-| **回合战 P2** | 影刺 / 傲歌 / 青钢影回合化、猎魔被动化、意图预告、战斗运镜（`start_battle()` 未锁机位）、炸弹延迟引爆 |
-| **回合战 P3** | **未开始**：`campaign.gd` / `wave_spawner.gd` / `colpo_level.gd` / `boss_colpo.gd` 对 battle 侧引用数为 0 |
-| **MP 生态** | 回蓝口径已改（命中 1% + 被动 0.2%/秒），但**尚无技能消耗出口设计** |
-| **装备内容** | 11 槽中 `export=true` 的乐园公证高阶防具 / 首饰仍缺，多槽无高阶物可填 |
-| **逃脱币 / 救援 / 永久死亡** | 结算入口已就绪（`settle_sortie`），**规则与数值未拍板** —— 与 P1 基线/原著「等价交换」冲突 |
-| **强化经济** | 斩龙闪单次 1500 币 vs 一局收入 ≈ 1000~1760，强化/分解/出售难进入玩家决策 |
-| **伤害公式** | 双轨：campaign 走区间链，独立试炼/面板仍用「武器 7 + 力量」 |
-| **拼刀** | D3 已决定删（机制转生为回合「防御」），但实时侧 `CLASH_*` 仍在跑，两套语义并存 |
-| **K 直踢** | `player.gd` 已实装，但**不在** `scripts/ui/key_bindings.gd` 的 `HINT`/`GROUPS`，F1 面板与底部提示看不到它 |
-| **`encounter_zone.gd`** | 文件在 `scripts/battle/`，但只被 `tools/validate_battle.gd` 引用，**未挂进任何场景**；白盒开战走 `main.gd::_try_trigger_battle()` |
-
+| MP 生态 | 调整技能消耗与回复节奏 |
+| 装备内容 | 11 槽中的高阶防具 / 首饰仍缺 |
+| 逃脱币 / 救援 / 永久死亡 | 规则与数值未拍板 |
+| 强化经济 | 强化成本与单局收入还需校准 |
+| 伤害公式 | 战役区间链与练习场基础攻击公式尚未统一 |
 ### 4.3 ⬜ 未开工
 
 | 项 | 证据 |
@@ -193,31 +181,15 @@
 
 ---
 
-## 5. 09-23 复核发现的「文档 vs 代码」不一致
+## 5. 文档与代码对照
 
-本轮对照代码，发现下列断言已被推翻；其中前三条**已在 [PROJECT_STATUS_AUDIT.md](PROJECT_STATUS_AUDIT.md) 就地更新**（沿用该文件既有的删除线+✅ 约定）：
-
-| # | 文档原话 | 实际 | 处理 |
-|---|---|---|---|
-| 1 | 审计 §5 #9「角色帧表依赖未提交资源」 | `player_frames_video.tres` 与 `black_swordsman_video/`（256 文件）**均已入库** | ✅ 已更新 |
-| 2 | 审计 §5 #10「眩晕链是空调用，`enemy.gd` 无 `add_stun`」 | `scripts/combat/enemy.gd:467` 与 `boss_colpo.gd:132` **都有** `add_stun` / `is_stunned` | ✅ 已更新 |
-| 3 | 审计 §5 #11「`BattleUnit.sync_from_player()` 从未被调用」 | `scripts/battle/battle_controller.gd:84` **已在调用** | ✅ 已更新 |
-| 4 | 审计 §4「双形态战斗 P2/P3 未做」 | P2 **部分完成**（眩晕链 / 触发 / 先手权 / 山之主接口 / 教学场） | ✅ 已更新为 P1 ✅ / P2 🟡 / P3 ⬜ |
-| 5 | GDD §5 与 P1 基线「鼠标左键 = 近战三段连击」 | 09-20 已定案**单段斜劈** | ⚠️ 未改 GDD（属 PRD 层，改它要走变更流程）；以代码为准 |
-| 6 | `.codebuddy/memory/MEMORY.md` 把 `COMBAT_SPEC_SUXIAO.md` / `SKILL_NUMERICS_SUXIAO.md` 列为战斗规格正本 | 两份文档 09-21 已删除，合并进 [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) | ⚠️ 该文件 gitignore，不进版本库；如仍在用请手改 |
-
-仍成立、未修的两条（都是设计层有意为之，不是错误）：
-
-- [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) §3 的「设计 vs 已实现」差异框（8 行）—— 按仓库约定**故意保留双份**，直到代码真的改。
-- [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) line 159 把 `combat_skills.gd` 描述为「三段连击命中帧」—— 数组仍在，但普攻只用第一段。
-
----
-
+- 即时战斗的规则和文件地图集中在 [REALTIME_COMBAT_EXTRACTION.md](REALTIME_COMBAT_EXTRACTION.md)。
+- 当前输入以 `project.godot` 和 `scripts/ui/key_bindings.gd` 为准；普攻已经是单段斜劈。
+- 当前战斗数值以 `data/combat_skills.gd`、`data/attributes.gd`、`data/equip_tables.gd` 和实时脚本为准。
 ## 6. 维护约定
 
-1. **改前先读对的那份**：设计意图 → COMBAT_DESIGN；现有行为 → COMBAT_SYSTEM；怎么落地 → COMBAT_REWORK_PLAN；范围该不该做 → P1_SCOPE_BASELINE。
-2. **更新顺序**：先改两份索引（本文 + [PROJECT_STATUS_AUDIT.md](PROJECT_STATUS_AUDIT.md)），再看专题文档是否还成立。
-3. **文档与代码冲突时，记录双方而不是覆盖**：把「设计 vs 已实现」差异框加在该节开头，as-built 描述在被改之前保持准确。
-4. **冻结件不回改**：标 🔒 的文档记录的是当时事实；新事实写进 ✅/🟡 的文档，或在 [HARBOR_MAP.md](HARBOR_MAP.md) 这类日志里**往后追加**。
-5. **重复符号先 grep 再写**：往文档里写某个常量 / 函数 / 文件前，先确认它还存在（历史上出现过 `harbor_glints` 式幽灵引用）。
-6. **新增文档**：加进 §1 对应类型的分组表，并在 §2 时间线补一行 —— 否则三个月后又变成「太多太杂」。
+1. 改战斗前先读 [REALTIME_COMBAT_EXTRACTION.md](REALTIME_COMBAT_EXTRACTION.md) 和相关实时源文件。
+2. 更新完事实后同步本文、[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) 和 [PROJECT_STATUS_AUDIT.md](PROJECT_STATUS_AUDIT.md)。
+3. 文档说明规则，运行行为以代码为准；需要改规则时同步调整源文件与玩家提示。
+4. 冻结的港口施工日志只向后追加；其余系统文档按对应专题更新。
+5. 新增文档时加入本文分类表，并补充时间线。

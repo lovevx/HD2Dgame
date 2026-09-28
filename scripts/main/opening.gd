@@ -1,11 +1,12 @@
 extends Control
-## 开场过场播片·第一幕：现实车祸 → 死亡 → 轮回乐园契约 → 取名。
-## 取名完成后切到第二幕 3D 过场（opening_boat.tscn：船上醒来 → 靠灰潮港）。
-## 画面 = 程序化 2D 电影镜头（cinematic.gd）+ 全屏片场特效（cinematic_overlay.gdshader）。
+## 开场过场播片·第一幕：现实车祸 → 死亡 → 输入姓名并按手印签订契约。
+## 契约完成后切到第二幕 3D 过场（opening_boat.tscn：船上醒来 → 靠灰潮港）。
+## 画面 = 2.5D 环境底图 + 程序化镜头效果（cinematic.gd）+ 全屏片场特效（cinematic_overlay.gdshader）。
 ## 节奏 = 打字机推进，播完镜头停留片刻自动进下一镜；点击/空格可跳过当前文字或立刻前进。
 
 const Cinematic := preload("res://scripts/main/cinematic.gd")
 const SystemUI := preload("res://scripts/ui/system_ui.gd")
+const ContractPanelScript := preload("res://scripts/ui/contract_panel.gd")
 const OVERLAY_SHADER := preload("res://shaders/cinematic_overlay.gdshader")
 const OPENING_BOAT_SCENE := "res://scenes/main/opening_boat.tscn"
 
@@ -16,14 +17,21 @@ const LINES: Array[String] = [
  "——砰！",
  "身体被巨力抛起，重重砸在柏油路面上。",
  "剧痛与黑暗一同涌来。意识沉没的最后一刻，你只听见自己的心跳——",
- "「轮回乐园 · 猎杀者试炼」",
- "检测到契约者灵魂强度达标，伤势已修复。",
- "签订契约，开启半数据化与天赋【噬灵者】。",
- "从今天起，每一次猎杀都会带来成长。",
 ]
 
-const NAME_PROMPT := "契约者，报上你的名字"
+## 契约过场分镜共约 32 秒；填写姓名和按手印由玩家推进，不限时。
+const CONTRACT_SHOTS: Array[Dictionary] = [
+	{"id": "B1", "duration": 4.0},
+	{"id": "B2", "duration": 5.0},
+	{"id": "B3", "duration": 7.0},
+	{"id": "B4"}, # 姓名输入与按手印
+	{"id": "B5", "duration": 6.0},
+	{"id": "B6", "duration": 6.0},
+	{"id": "B7", "duration": 4.0},
+]
+
 const CHAR_INTERVAL := 0.045
+const CONTRACT_COUNTDOWN_START := 5710 # 1:35:10
 
 ## 每行台词 → {scene, sub, hold 停留秒, cap 截屏验收帧, title/tag 中心摆字}。
 const SHOTS_0: Array[Dictionary] = [
@@ -33,14 +41,6 @@ const SHOTS_0: Array[Dictionary] = [
  {"scene": Cinematic.SceneId.CITY, "sub": Cinematic.SubId.IMPACT, "hold": 1.9, "cap": 0.34},
  {"scene": Cinematic.SceneId.CITY, "sub": Cinematic.SubId.DYING, "hold": 2.7, "cap": 1.5},
  {"scene": Cinematic.SceneId.CITY, "sub": Cinematic.SubId.DYING, "hold": 2.3, "cap": 2.2},
- {"scene": Cinematic.SceneId.CONTRACT, "sub": 0, "hold": 2.7, "cap": 1.7,
-  "title": "「轮回乐园 · 猎杀者试炼」", "tag": "检测到契约者灵魂强度达标"},
- {"scene": Cinematic.SceneId.CONTRACT, "sub": 0, "hold": 2.3, "cap": 2.6,
-  "tag": "伤势已修复 · 签订契约开启半数据化"},
- {"scene": Cinematic.SceneId.CONTRACT, "sub": 0, "hold": 2.4, "cap": 3.5,
-  "tag": "天赋【噬灵者】已绑定"},
- {"scene": Cinematic.SceneId.CONTRACT, "sub": 0, "hold": 1.9, "cap": 4.4,
-  "tag": "从今天起，每一次猎杀都会带来成长"},
 ]
 
 var _line_index := -1
@@ -54,6 +54,14 @@ var _fading := false
 var _fade_tween: Tween
 var _title_tween: Tween
 var _capture_static := false
+var _contract_started := false
+var _contract_active := false
+var _contract_accepted := false
+var _contract_stage := -1
+var _contract_elapsed := 0.0
+var _countdown_start_elapsed := 0.0
+var _countdown_active := false
+var _contract_caption_tween: Tween
 
 var cinematic: Cinematic
 var overlay: ColorRect
@@ -63,15 +71,19 @@ var text_label: Label
 var hint_label: Label
 var title_label: Label
 var tag_label: Label
-var name_panel: Control
-var name_edit: LineEdit
+var countdown_label: Label
+var contract_hud: Control
+var contract_health_bar: ProgressBar
+var contract_stamina_bar: ProgressBar
+var contract_panel: ContractPanel
 
 func _ready() -> void:
 	_build_cinematic()
 	_build_overlay()
 	_build_subtitles()
 	_build_flourish()
-	_build_name_panel()
+	_build_contract_hud()
+	_build_contract_panel()
 	_build_fade_rect()
 	text_label.text = ""
 	_advance_line()
@@ -120,14 +132,22 @@ func _build_subtitles() -> void:
 	text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_label = _label(box, "", 18, Color("7d94a8"))
 	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	countdown_label = _label(self, "", 22, Color("ff4d4d"))
+	countdown_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	countdown_label.position = Vector2(42, -84)
+	countdown_label.size = Vector2(440, 40)
+	countdown_label.add_theme_constant_override("outline_size", 7)
+	countdown_label.hide()
 
 func _build_flourish() -> void:
 	title_label = _label(self, "", 48, Color("f2dc9b"))
+	title_label.z_index = 2
 	title_label.position = Vector2(0, 288)
 	title_label.size = Vector2(1920, 90)
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_label.add_theme_constant_override("outline_size", 10)
 	tag_label = _label(self, "", 27, SystemUI.ACCENT)
+	tag_label.z_index = 2
 	tag_label.position = Vector2(0, 392)
 	tag_label.size = Vector2(1920, 60)
 	tag_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -136,67 +156,57 @@ func _build_flourish() -> void:
 func _build_fade_rect() -> void:
 	fade_rect = ColorRect.new()
 	fade_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fade_rect.z_index = 1
 	fade_rect.color = Color(0, 0, 0, 0)
 	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade_rect.hide()
 	add_child(fade_rect)
 
-func _build_name_panel() -> void:
-	name_panel = Control.new()
-	name_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	name_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(name_panel)
-	var shade := ColorRect.new()
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0.01, 0.02, 0.04, 0.62)
-	name_panel.add_child(shade)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	name_panel.add_child(center)
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", SystemUI.card())
-	SystemUI.decor(card)
-	center.add_child(card)
-	var column := VBoxContainer.new()
-	column.custom_minimum_size.x = 640
-	column.add_theme_constant_override("separation", 20)
-	column.alignment = BoxContainer.ALIGNMENT_CENTER
-	card.add_child(column)
-	var title := _label(column, "契约签订", 44, Color("ebd6a2"))
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var prompt := _label(column, NAME_PROMPT, 26, SystemUI.ACCENT)
-	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_edit = LineEdit.new()
-	name_edit.text = GameState.DEFAULT_PLAYER_NAME
-	name_edit.placeholder_text = GameState.DEFAULT_PLAYER_NAME
-	name_edit.custom_minimum_size = Vector2(520, 62)
-	name_edit.add_theme_font_size_override("font_size", 30)
-	name_edit.add_theme_stylebox_override("normal", _edit_style(Color(0.10, 0.17, 0.22)))
-	name_edit.add_theme_stylebox_override("focus", _edit_style(Color("0f2232")))
-	name_edit.add_theme_color_override("font_color", SystemUI.TEXT)
-	name_edit.add_theme_color_override("caret_color", Color("ebd6a2"))
-	name_edit.max_length = 12
-	name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_edit.text_submitted.connect(_on_name_submitted)
-	column.add_child(name_edit)
-	var confirm := Button.new()
-	confirm.text = "签订契约"
-	confirm.custom_minimum_size = Vector2(520, 66)
-	confirm.add_theme_font_size_override("font_size", 26)
-	SystemUI.style_button(confirm)
-	confirm.pressed.connect(_on_name_submitted)
-	column.add_child(confirm)
-	var tip := _label(column, "回车或点击按钮确认 · 将写入本机存档", 18, Color("5f7a8a"))
-	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_panel.hide()
+func _build_contract_panel() -> void:
+	contract_panel = ContractPanelScript.new()
+	contract_panel.name = "ContractPanel"
+	contract_panel.accepted.connect(_on_contract_accepted)
+	add_child(contract_panel)
 
-func _edit_style(bg: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = bg
-	style.border_color = Color(0.35, 0.55, 0.68, 0.5)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(SystemUI.RADIUS)
-	return style
+func _build_contract_hud() -> void:
+	contract_hud = Control.new()
+	contract_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	contract_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	contract_hud.modulate.a = 0.0
+	add_child(contract_hud)
+	var frame := PanelContainer.new()
+	frame.position = Vector2(34, 32)
+	frame.custom_minimum_size = Vector2(390, 142)
+	frame.add_theme_stylebox_override("panel", SystemUI.flat(Color(SystemUI.BG, 0.82), Color(SystemUI.BORDER, 0.78), 1, SystemUI.RADIUS, 14))
+	contract_hud.add_child(frame)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 7)
+	frame.add_child(column)
+	_label(column, "半数据化状态", 18, SystemUI.GOLD)
+	var health_row := HBoxContainer.new()
+	health_row.add_theme_constant_override("separation", 10)
+	column.add_child(health_row)
+	_label(health_row, "生命", 16, SystemUI.TEXT)
+	contract_health_bar = _contract_bar(health_row, Color("c95449"))
+	var stamina_row := HBoxContainer.new()
+	stamina_row.add_theme_constant_override("separation", 10)
+	column.add_child(stamina_row)
+	_label(stamina_row, "体力", 16, SystemUI.TEXT)
+	contract_stamina_bar = _contract_bar(stamina_row, SystemUI.GOLD)
+	SystemUI.decor(frame, SystemUI.CRYSTAL)
+	contract_hud.hide()
+
+func _contract_bar(parent: Node, color: Color) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.custom_minimum_size = Vector2(270, 18)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.max_value = 100.0
+	bar.value = 0.0
+	bar.show_percentage = false
+	bar.add_theme_stylebox_override("background", SystemUI.track())
+	bar.add_theme_stylebox_override("fill", SystemUI.fill(color))
+	parent.add_child(bar)
+	return bar
 
 # ---------------------------------------------------------------- 主循环
 
@@ -204,7 +214,9 @@ func _process(delta: float) -> void:
 	_update_overlay()
 	if _capture_static:
 		return
-	if name_panel.visible:
+	if _contract_active:
+		_contract_elapsed += delta
+		_update_contract_countdown()
 		return
 	_type_step(delta)
 	if _finished:
@@ -214,6 +226,9 @@ func _process(delta: float) -> void:
 
 func _update_overlay() -> void:
 	var mat := overlay.material as ShaderMaterial
+	if _contract_active:
+		_update_contract_overlay(mat)
+		return
 	var sid: int = cinematic.scene_id
 	var s: int = cinematic.sub
 	var tt: float = cinematic.shot_t
@@ -246,6 +261,56 @@ func _update_overlay() -> void:
 	mat.set_shader_parameter("u_grain", 0.075)
 	mat.set_shader_parameter("u_t", cinematic.scene_t)
 
+func _update_contract_overlay(mat: ShaderMaterial) -> void:
+	var vig := 0.78
+	var dark := 0.22
+	var heart := 0.0
+	var flash_amt := 0.0
+	var flash_col := Color(0.68, 0.86, 1.0)
+	match _contract_stage:
+		0:
+			dark = 0.82
+			heart = 0.22
+		1:
+			dark = 0.66
+			heart = 0.35
+		2:
+			dark = 0.38
+			vig = 0.62
+		3:
+			dark = 0.16
+			vig = 0.48
+		4:
+			dark = 0.10
+			vig = 0.42
+		5:
+			dark = 0.04
+			vig = 0.36
+			flash_col = Color("9cffb3")
+			flash_amt = 0.08 + 0.035 * (0.5 + 0.5 * sin(_contract_elapsed * 3.0))
+		6:
+			dark = 0.12
+			vig = 0.44
+	mat.set_shader_parameter("u_vignette", vig)
+	mat.set_shader_parameter("u_dark", dark)
+	mat.set_shader_parameter("u_heart", heart)
+	mat.set_shader_parameter("u_heart_hue", 0.0)
+	mat.set_shader_parameter("u_flash", flash_col)
+	mat.set_shader_parameter("u_flash_amt", flash_amt)
+	mat.set_shader_parameter("u_grain", 0.055)
+	mat.set_shader_parameter("u_t", cinematic.scene_t)
+
+func _update_contract_countdown() -> void:
+	if not _countdown_active:
+		return
+	var remaining := maxi(0, CONTRACT_COUNTDOWN_START - int(_contract_elapsed - _countdown_start_elapsed))
+	var hours := int(remaining / 3600)
+	var minutes := int((remaining % 3600) / 60)
+	var seconds := remaining % 60
+	countdown_label.text = "灵魂消散倒计时  %d:%02d:%02d" % [hours, minutes, seconds]
+	if contract_panel.visible:
+		contract_panel.set_death_countdown(remaining)
+
 # ---------------------------------------------------------------- 打字机
 
 func _type_step(delta: float) -> void:
@@ -276,7 +341,7 @@ func _type_step(delta: float) -> void:
 func _advance_line() -> void:
 	_line_index += 1
 	if _line_index >= _lines.size():
-		_show_name_panel()
+		_start_contract_scene()
 		return
 	var def := shot_def()
 	_hold = float(def.get("hold", 1.8))
@@ -290,6 +355,137 @@ func _advance_line() -> void:
 	speaker_label.hide()
 	_set_flourish(str(def.get("title", "")), str(def.get("tag", "")))
 	_apply_shot(def)
+
+func _start_contract_scene() -> void:
+	if _contract_started:
+		return
+	_contract_started = true
+	_contract_active = true
+	_contract_stage = 0
+	_contract_elapsed = 0.0
+	_contract_accepted = false
+	_countdown_active = false
+	countdown_label.hide()
+	contract_hud.hide()
+	contract_panel.close()
+	hint_label.text = ""
+	speaker_label.hide()
+	_clear_flourish()
+	_kill_fade()
+	fade_rect.hide()
+	cinematic.shot(Cinematic.SceneId.CITY, Cinematic.SubId.DYING)
+	_run_contract_scenes()
+
+func _run_contract_scenes() -> void:
+	var b1 := float(CONTRACT_SHOTS[0]["duration"])
+	_show_contract_caption("【检测到适格灵魂。】", 1.45)
+	await _wait_contract(b1 * 0.5)
+	_show_contract_caption("【「轮回乐园」契约邀请已送达。】", 1.0)
+	await _wait_contract(b1 * 0.5)
+
+	_contract_stage = 1
+	_countdown_active = true
+	_countdown_start_elapsed = _contract_elapsed
+	countdown_label.show()
+	_update_contract_countdown()
+	_show_contract_caption("【灵魂稳定度持续下降。请于倒计时结束前完成签约。】", 1.4)
+	await _wait_contract(float(CONTRACT_SHOTS[1]["duration"]))
+	countdown_label.hide()
+
+	_contract_stage = 2
+	_apply_shot({"scene": Cinematic.SceneId.CONTRACT, "sub": 0})
+	_show_contract_caption("【签约后，你将进入衍生位面，完成乐园发布的任务。】\n【任务奖励将依据获得的「世界之源」结算。】", 2.8)
+	await _wait_contract(4.5)
+	_show_contract_caption("【详细规则以契约条款为准。】", 0.8)
+	await _wait_contract(float(CONTRACT_SHOTS[2]["duration"]) - 4.5)
+
+	_contract_stage = 3
+	contract_panel.open()
+	_update_contract_countdown()
+	_show_contract_caption("【先输入姓名，再按下手印。】", 0.8)
+	while not _contract_accepted:
+		await get_tree().process_frame
+
+	_contract_stage = 4
+	_show_contract_caption("指尖刺痛。艳红的血浸入羊皮纸……", 1.25)
+	await contract_panel.play_blood_animation(float(CONTRACT_SHOTS[4]["duration"]) - 0.5)
+	_countdown_active = false
+	await contract_panel.fade_out_and_close(0.5)
+
+	_contract_stage = 5
+	title_label.text = "【契约成立！】"
+	title_label.modulate.a = 1.0
+	title_label.add_theme_color_override("font_color", Color("a8ffb6"))
+	title_label.show()
+	_show_contract_caption("【伤势修复启动。】", 0.9)
+	await _wait_contract(2.0)
+	title_label.text = "【强制觉醒猎杀者天赋·噬灵者】"
+	_show_contract_caption("剧痛袭来，血管暴起。\n身体不受控制地跪倒在地。", 1.2)
+	await _wait_contract(float(CONTRACT_SHOTS[5]["duration"]) - 2.0)
+
+	_contract_stage = 6
+	title_label.text = "【半数据化开启】"
+	title_label.add_theme_color_override("font_color", SystemUI.GOLD)
+	_show_contract_caption("【半数据化开启】", 0.65)
+	_reveal_contract_hud()
+	await _wait_contract(1.2)
+	title_label.text = "【警告】"
+	_show_contract_caption("【警告：心脏、大脑等关键组织仍严重受损。】\n【猎杀者仍会死亡。】\n【乐园条例：一切都将等价交换。】", 1.25)
+	await _wait_contract(float(CONTRACT_SHOTS[6]["duration"]) - 1.2)
+	await _finish_contract_scene()
+
+func _wait_contract(seconds: float) -> void:
+	await get_tree().create_timer(maxf(seconds, 0.0)).timeout
+
+func _show_contract_caption(text: String, reveal_seconds: float) -> void:
+	if _contract_caption_tween != null and _contract_caption_tween.is_running():
+		_contract_caption_tween.kill()
+	text_label.text = text
+	text_label.visible_characters = 0
+	_contract_caption_tween = create_tween()
+	_contract_caption_tween.tween_property(text_label, "visible_characters", text.length(), maxf(reveal_seconds, 0.05)).set_trans(Tween.TRANS_LINEAR)
+
+func _on_contract_accepted() -> void:
+	_contract_accepted = true
+
+func _reveal_contract_hud() -> void:
+	contract_hud.show()
+	contract_hud.modulate.a = 0.0
+	contract_health_bar.value = 0.0
+	contract_stamina_bar.value = 0.0
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(contract_hud, "modulate:a", 1.0, 0.8)
+	tween.tween_property(contract_health_bar, "value", 62.0, 1.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(contract_stamina_bar, "value", 38.0, 1.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+func _finish_contract_scene() -> void:
+	_countdown_active = false
+	countdown_label.hide()
+	contract_hud.hide()
+	_fading = true
+	fade_rect.show()
+	fade_rect.color = Color(0.0, 0.0, 0.0, 0.0)
+	var darken := create_tween()
+	darken.tween_property(fade_rect, "color:a", 1.0, 0.65)
+	await darken.finished
+	title_label.text = "传送开始……"
+	title_label.modulate.a = 0.0
+	title_label.show()
+	var transfer := create_tween()
+	transfer.tween_property(title_label, "modulate:a", 1.0, 0.32)
+	await transfer.finished
+	await _wait_contract(0.35)
+	_clear_flourish()
+	var reveal := create_tween()
+	reveal.tween_property(fade_rect, "color:a", 0.0, 0.85)
+	await reveal.finished
+	fade_rect.hide()
+	_fading = false
+	text_label.visible_characters = -1
+	GameState.complete_contract(contract_panel.get_signer_name())
+	GameState.begin_onboarding()
+	_contract_active = false
+	GameState.change_scene(OPENING_BOAT_SCENE)
 
 func _apply_shot(def: Dictionary) -> void:
 	var sid: int = int(def["scene"])
@@ -326,7 +522,7 @@ func _set_flourish(title: String, tag: String) -> void:
 
 ## 跳过：打字中→整句放完；已放完→立刻进下一镜。
 func _on_skip() -> void:
-	if name_panel.visible or _fading:
+	if _fading or _contract_active:
 		return
 	if _finished:
 		_advance_line()
@@ -340,20 +536,6 @@ func _skip_line() -> void:
 
 # ---------------------------------------------------------------- 阶段流转
 
-func _show_name_panel() -> void:
-	hint_label.text = ""
-	name_panel.show()
-	name_edit.grab_focus()
-	name_edit.select_all()
-
-func _on_name_submitted(_ignored: String = "") -> void:
-	GameState.complete_contract(name_edit.text)
-	GameState.begin_onboarding()
-	name_panel.hide()
-	_clear_flourish()
-	# 契约签订完毕 → 第二幕 3D 过场（船上醒来 → 靠灰潮港），由它收尾进港口
-	GameState.change_scene(OPENING_BOAT_SCENE)
-
 func _clear_flourish() -> void:
 	if _title_tween and _title_tween.is_valid():
 		_title_tween.kill()
@@ -363,14 +545,14 @@ func _clear_flourish() -> void:
 # ---------------------------------------------------------------- 输入
 
 func _gui_input(event: InputEvent) -> void:
-	if name_panel.visible or _fading:
+	if _fading or _contract_active:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_on_skip()
 		accept_event()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if name_panel.visible or _fading:
+	if _fading or _contract_active:
 		return
 	var press := false
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -408,7 +590,6 @@ func shot_count_phase(_phase: int) -> int:
 ## 截屏验收：摆到指定台词的自定义帧，锁死后续自动推进。
 func capture_pose(i: int, _phase: int = 0) -> void:
 	_capture_static = true
-	name_panel.hide()
 	_line_index = i
 	var def := shot_def()
 	_apply_shot(def)

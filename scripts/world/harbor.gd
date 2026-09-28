@@ -5,6 +5,8 @@ extends Node3D
 ## 光标移到哪都不再带动镜头。
 const HudScene := preload("res://scripts/ui/hud.tscn")
 const Orbit := preload("res://scripts/world/camera_orbit_controls.gd")
+## 港口文案里的键名现读（改键后不会还写着旧键）。
+const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
 ## 默认机位参数与 tools/build_harbor.gd 保持一致：俯角 / 侧转 / 焦点距离 / 活动范围收边。
 ## 16° 俯角、正面视角、48 米距离与 18° FOV，长焦压缩透视形成平铺舞台感；
 ## 机位比 24°/33m 时更远，是为了在收窄焦距后保持角色在画面里的占比不变。
@@ -57,7 +59,7 @@ func _ready() -> void:
 		var title := "灰潮港 · 主城"
 		if GameState.player_name != "":
 			title += "　契约者 %s" % GameState.player_name
-		hud.configure(title, "北：传送广场    西北：轮回商店\n西：任务    东：工坊 / 试炼\n靠近功能点按 V · J 任务档案")
+		hud.configure(title, "北：传送广场    西北：轮回商店\n西：任务    东：工坊 / 试炼\n靠近功能点按 %s · %s 任务档案" % [KeyBindings.key_text("interact"), KeyBindings.key_text("quest_log")])
 	# 轮回商店：左上街角的店面，V 打开完整商店 UI（购买走 GameState.buy_item）；
 	# 战役模式不会再覆盖 campaign_action，所有商品统一由店内购买。
 	var shop_panel_script := preload("res://scripts/ui/shop_panel.gd")
@@ -107,7 +109,7 @@ func _build_guide_npc() -> void:
 	npc.position = Vector3(4.0, 0, 9.0)
 	npc.set_script(preload("res://scripts/world/harbor_service.gd"))
 	npc.set("title", "港口向导")
-	npc.set("description", "「新人，快去东侧的试炼场地熟悉一下身手吧！」\n\n东侧码头旁的试炼传送阵会送你去练武场。\n\n打三下木桩、用一次剃（Shift），就能领到整套基础装备。")
+	npc.set("description", "「新人，快去东侧的试炼场地熟悉一下身手吧！」\n\n东侧码头旁的试炼传送阵会送你去练武场。\n\n打三下木桩、用一次剃（%s），就能领到整套基础装备。" % KeyBindings.key_text("dodge"))
 	var collision := CollisionShape3D.new()
 	var shape := CylinderShape3D.new()
 	shape.radius = 1.7

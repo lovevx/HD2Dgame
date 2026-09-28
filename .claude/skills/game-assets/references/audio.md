@@ -80,7 +80,17 @@ python3 skills/game-assets/meowart_api.py tts-run \
 
 `--text` is the exact line to speak, counted after trimming, up to 200 characters; longer scripts must be split into one job per line. `--voice` is a natural-language voice description and defaults to `可爱的小女孩，明亮欢快`, the same default the web Speech Generation tab opens with. `--language` defaults to `Chinese` and accepts `Auto`, `English`, `Japanese`, `Korean`, `French`, `German`, `Spanish`, `Portuguese`, `Russian`, or `Italian`.
 
-Speech jobs belong to a project. Pass `--project-id` (and optionally `--thread-id`) to reuse an existing project; omit it to create one titled by `--project-title`. Cost is 5 credits per 50 characters (5 / 10 / 15 / 20 credits for up to 50 / 100 / 150 / 200 characters). Recover an interrupted job with `tts-poll --job-id <job-id>`; recovery never resubmits or charges again.
+Add `--optimize-prompt` to mirror the web **AI polish** button (free, description mode only). It first adds natural punctuation and pauses to `--text` without changing any word, and expands a short `--voice` hint such as `女孩，可爱` into a full voice description (gender/age, pitch, pace, timbre, emotion, use), then synthesizes with the polished values. The speech model does not support inline emotion tags such as `[excited]`; emotion is expressed through the voice description instead.
+
+```bash
+python3 skills/game-assets/meowart_api.py tts-run \
+  --text "今天天气真不错我们一起出去玩吧" \
+  --voice "女孩，可爱" \
+  --optimize-prompt \
+  --output-dir <output-dir>
+```
+
+Speech jobs belong to a project. Pass `--project-id` (and optionally `--thread-id`) to reuse an existing project; omit it to create one titled by `--project-title`. Cost is 1 credit per 10 characters with a 2-credit minimum; English / EN is billed per whitespace-separated word instead of per character. Lines are capped at 200 characters. Recover an interrupted job with `tts-poll --job-id <job-id>`; recovery never resubmits or charges again.
 
 ### Clone a voice from reference audio
 
@@ -95,7 +105,17 @@ python3 skills/game-assets/meowart_api.py tts-run \
   --output-dir <output-dir>
 ```
 
-Repeat `--reference-audio` for up to 5 clips (`mp3`, `wav`, `m4a`, `aac`, `flac`, `ogg`, `opus`, `webm`, `mp4`, 25 MB each). Clips are joined in the given order into one reference track that must last 1 to 300 seconds; use clean speech of the target voice without music. In this mode `--voice` must be omitted, and `--language` accepts `ZH`, `EN`, `JA`, `ES`, or `AR` (`Chinese`, `English`, `Japanese`, and `Spanish` are accepted as aliases, so the default `Chinese` becomes `ZH`). Pricing, the 200-character limit, and `tts-poll` recovery are the same as description mode.
+Repeat `--reference-audio` for up to 5 clips (`mp3`, `wav`, `m4a`, `aac`, `flac`, `ogg`, `opus`, `webm`, `mp4`, 25 MB each). Clips are joined in the given order into one reference track that must last 1 to 300 seconds; use clean speech of the target voice without music. In this mode `--voice` must be omitted, and `--language` accepts `ZH`, `EN`, `JA`, `ES`, or `AR` (`Chinese`, `English`, `Japanese`, and `Spanish` are accepted as aliases, so the default `Chinese` becomes `ZH`). Optional `--emotion` is a short natural-language emotion prompt (default empty, up to 200 characters). `--emotion-intensity` is 0 to 1 and defaults to `0.5`, matching the web Voice Clone tab. Pricing, the 200-character line limit, and `tts-poll` recovery are the same as description mode.
+
+```bash
+python3 skills/game-assets/meowart_api.py tts-run \
+  --text "勇者啊，前方的洞穴里藏着传说中的宝藏。" \
+  --reference-audio ./voice/line-01.wav \
+  --language ZH \
+  --emotion "坚定" \
+  --emotion-intensity 0.8 \
+  --output-dir <output-dir>
+```
 
 ## Validate
 

@@ -8,6 +8,9 @@ extends RefCounted
 ## 不引用任何 autoload —— 这样 headless 校验可以 preload 它并直接构造各种进度状态。
 
 const Data := preload("res://data/campaign.gd")
+## 目标文案里的键名现读（玩家改键后「剃（空格）」这类字眼跟着变）。
+## 本模块仍然不引用任何 autoload —— key_bindings 是零依赖叶子，只读 InputMap。
+const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
 
 ## 任务状态：已完成 / 待交接（条件已满足，还差交付或离场）/ 进行中 / 未解锁
 const DONE := "done"
@@ -105,7 +108,7 @@ static func _prologue(c: Dictionary) -> Array:
 		arrive, []))
 	var learn := [
 		_obj("在演武场命中练功木桩 ×3", learned),
-		_obj("使用一次剃（Shift）", learned),
+		_obj("使用一次剃（%s）" % KeyBindings.key_text("dodge"), learned),
 		_obj("领取整套基础装备", learned),
 	]
 	out.append(_entry("ep_training", "演武场 · 新手教学", "序章",
@@ -168,35 +171,44 @@ static func _past(c: Dictionary, i: int) -> bool:
 static func _stage_objectives(i: int, c: Dictionary) -> Array:
 	var past := _past(c, i)
 	var here := int(c.get("stage", 0)) == i and bool(c.get("cleared", false))
+	var tutorials: Dictionary = c.get("tutorial_steps", {})
 	match i:
 		0:
 			return [
 				_obj("击败持械流民", past or _killed(c, "0_0")),
-				_obj("靠近战利品标记按 V 领取", past or here),
+				_obj("靠近战利品标记按 %s 领取" % KeyBindings.key_text("interact"), past or here),
 				_obj("前往北侧出口传送门", past),
 			]
 		1:
 			return [
 				_obj("击败黑市商人·卡洛斯", past or _killed(c, "1_0")),
+				_obj("装备并试射燧发枪", past or bool(tutorials.get("gun", false))),
 				_obj("开启卡洛斯白色宝箱 · 取得引荐信", past or _bag(c, "letter") > 0),
 				_obj("携引荐信前往北侧出口", past),
 			]
 		2:
 			return [
 				_obj("通过考核教官的实战考核", past or _killed(c, "2_0")),
+				_obj("使用直踹", past or bool(tutorials.get("kick", false))),
+				_obj("使用影刺", past or bool(tutorials.get("shadow", false))),
 				_obj("取得斩龙闪", past or _bag(c, "dragon") > 0 or _equipped(c, "dragon")),
-				_obj("装上斩龙闪后前往北侧出口", past),
+				_obj("装备斩龙闪并完成技能练习后前往北侧出口", past),
 			]
 		3:
 			return [
 				_obj("击败布兰登·欧卡", past or _killed(c, "3_0")),
 				_obj("清掉欧卡的护卫", past or _killed(c, "3_1")),
+				_obj("释放刀芒", past or bool(tutorials.get("wave", false))),
+				_obj("释放环断", past or bool(tutorials.get("ring", false))),
 				_obj("开启欧卡白色宝箱", past or _bag(c, "pendant") > 0),
-				_obj("前往北侧出口", past),
+				_obj("整备后前往科尔波山外围", past),
 			]
 		_:
 			return [
 				_obj("清理外围三波威胁", past or bool(c.get("colpo_outer_cleared", false))),
+				_obj("开启傲歌护盾", past or bool(tutorials.get("shield", false))),
+				_obj("开启猎魔", past or bool(tutorials.get("hunter", false))),
+				_obj("预埋一枚陷阱引出巨虎", past or bool(c.get("tutorial_steps", {}).get("trap", false))),
 				_obj("猎杀科尔波山巨虎", past or _killed(c, "tiger")),
 				_obj("开启巨虎的绿色宝箱", past or _bag(c, "claw") > 0 or _bag(c, "crystal") > 0),
 				_obj("领取战利品并完成阶段结算", past or bool(c.get("settled", false))),

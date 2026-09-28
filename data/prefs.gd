@@ -9,9 +9,9 @@ extends RefCounted
 ##
 ## 用法：`const Prefs := preload("res://data/prefs.gd")` → `Prefs.value("camera_sensitivity", 1.0)`
 
-## 音效总线名（正本在 res://default_bus_layout.tres）：主音量外唯一一条总线。
-## GameSettings 按它调音量、dash_fx 按它挂播放器，两边不会各写一个字符串。
+## 声音总线名（正本在 res://default_bus_layout.tres），播放器与设置共用同一名字。
 const SFX_BUS := "SFX"
+const MUSIC_BUS := "Music"
 
 ## 设置自动加载的节点名（与 project.godot 的 [autoload] 一致）。
 const AUTOLOAD_NAME := "GameSettings"

@@ -1,5 +1,7 @@
 extends SceneTree
 
+const CombatSkills := preload("res://data/combat_skills.gd")
+
 var failures: Array[String] = []
 
 func _initialize() -> void:
@@ -81,12 +83,21 @@ func _run() -> void:
 		_buffer_attack_toward(player, direction)
 		await physics_frame
 		await process_frame
-		check(visual.animation == "attack_" + direction, "Attack selects " + direction)
+		var attack_action: String = player.current_attack_animation
+		check(visual.animation == StringName(attack_action + "_" + direction),
+			"Attack selects %s %s" % [attack_action, direction])
 		check(not visual.flip_h, "Attack never mirrors " + direction)
-		# 攻击图集已归一化到本体 104px（tools/extract_latest_12.py）→ pixel_size 恒为基准值
+		# 攻击尺寸校正写入图集，运行时 pixel_size 保持基准值。
 		check(absf(visual.pixel_size - visual.BASE_PIXEL_SIZE) < 0.0001,
 			"Attack pixel_size stays at the base value " + direction)
 		check(player.attack_cd > 0.0, "Attack gameplay still triggers")
+		var hit_time: float = CombatSkills.HORIZONTAL_ATTACK_HIT_TIME if attack_action == "attack_horizontal" \
+			else CombatSkills.COMBO_HIT_TIMES[0]
+		check(absf(player.current_attack_hit_time - hit_time) < 0.001,
+			"Hit time matches %s" % attack_action)
+		var hit_frame := int(player.current_attack_hit_time / maxf(player.attack_cd, 0.001)
+			* visual.sprite_frames.get_frame_count(visual.animation)) + 1
+		check(hit_frame == 5, "%s hit lands in frame 5 %s" % [attack_action, direction])
 		if DisplayServer.get_name() != "headless" and direction in ["up", "down"]:
 			await create_timer(0.12).timeout
 			await RenderingServer.frame_post_draw

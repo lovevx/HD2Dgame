@@ -26,8 +26,8 @@ const MAIN_MENU_SCENE := "res://scenes/main/main_menu.tscn"
 const OPENING_SCENE := "res://scenes/main/opening.tscn"
 const HARBOR_SCENE := "res://scenes/world/harbor.tscn"
 
-## 契约者默认名（原著主角），开场取名留空时回退到它。
-const DEFAULT_PLAYER_NAME := "苏晓"
+## 玩家未填写姓名时使用的中性默认名。
+const DEFAULT_PLAYER_NAME := "契约者"
 const SAVE_PATH := "user://save.cfg"
 var save_path := SAVE_PATH
 
@@ -58,6 +58,10 @@ var player_name: String = ""
 var coins: int = 0
 ## 六维属性：str/agi/con/int/cha/luk，见 data/attributes.gd。
 var attributes: Dictionary = Attributes.defaults()
+## 测试面板临时属性覆盖，不进存档；调试期间所有派生属性读取都能看到它。
+var debug_attribute_overrides: Dictionary = {}
+## 测试面板打开过的本次运行会话：离开战役区域时不回写临时资源。
+var debug_mode_active := false
 ## 永久属性点：由阶段评价发放，仅力量/敏捷/体力/智力可分配。
 var attr_points: int = 0
 var _transitioning := false
@@ -74,6 +78,8 @@ func reset_progress() -> void:
 	player_name = ""
 	coins = 0
 	attributes = Attributes.defaults()
+	debug_attribute_overrides.clear()
+	debug_mode_active = false
 	attr_points = 0
 	campaign = Campaign.fresh()
 	campaign_practice = false
@@ -170,6 +176,8 @@ func _is_valid_save(path: String) -> bool:
 
 ## 读档：正式档优先，解析失败或缺失时回退 .bak，再不行当新档处理。
 func load_game() -> void:
+	debug_attribute_overrides.clear()
+	debug_mode_active = false
 	if not _load_from(save_path) and not _load_from(save_path + ".bak"):
 		return
 
@@ -279,9 +287,33 @@ func _commit_sortie_now() -> void:
 		_sortie_base[key] = (value as Dictionary).duplicate(true) if value is Dictionary else value
 	_sortie_dirty = false
 
+func debug_attributes() -> Dictionary:
+	var result: Dictionary = attributes.duplicate()
+	for key in debug_attribute_overrides:
+		result[key] = int(debug_attribute_overrides[key])
+	return result
+
+## 测试面板使用：临时覆写裸装属性，不扣属性点、不写存档。
+func set_debug_attribute(key: String, value: int) -> void:
+	if not Attributes.ALL_KEYS.has(key):
+		return
+	var normalized := clampi(value, 1, 999)
+	var base_value := int(attributes.get(key, Attributes.BASE))
+	if normalized == base_value:
+		debug_attribute_overrides.erase(key)
+	else:
+		debug_attribute_overrides[key] = normalized
+	attributes_changed.emit()
+
+func clear_debug_attribute_overrides() -> void:
+	if debug_attribute_overrides.is_empty():
+		return
+	debug_attribute_overrides.clear()
+	attributes_changed.emit()
+
 func effective_attributes() -> Dictionary:
 	## 作战六维 = 裸装 + 已穿戴装备词条（通用聚合，替换原项坠硬编码特例）。
-	var result := attributes.duplicate()
+	var result := debug_attributes()
 	for slot in campaign.equipment:
 		var id: String = str(campaign.equipment[slot])
 		var def := item_def(id)
@@ -625,9 +657,16 @@ func clear_region(hp_ratio: float) -> bool:
 func can_advance_region() -> bool:
 	if not campaign.cleared or campaign.hub or campaign.stage >= 4:
 		return false
+	var tutorials: Dictionary = campaign.get("tutorial_steps", {})
 	if campaign.stage == 1 and item_count("letter") == 0:
 		return false
+	if campaign.stage == 1 and not bool(tutorials.get("gun", false)):
+		return false
 	if campaign.stage == 2 and campaign.equipment.get("main_weapon") != "dragon":
+		return false
+	if campaign.stage == 2 and (not bool(tutorials.get("kick", false)) or not bool(tutorials.get("shadow", false))):
+		return false
+	if campaign.stage == 3 and (not bool(tutorials.get("wave", false)) or not bool(tutorials.get("ring", false))):
 		return false
 	return true
 
@@ -654,6 +693,8 @@ func settle_trial() -> bool:
 	campaign.settled = true
 	campaign.hub = true
 	campaign.report = "阶段试炼评价 %s · 世界之源 %.1f%%\n属性点 +%d · 乐园币 +%d · 奖励倍率 ×%d\n世界之源每20%%兑1属性点（保底1点）· 巨虎已猎杀；国王主线与虎齿交付尚未完成。" % ["A" if high else "B", campaign.source, points, money, multiplier]
+	campaign.hub_guide_done = {"growth": false, "supplies": false, "training": false, "archive": false, "practice": false}
+	campaign.settlement_intro_seen = false
 	for id in campaign.bag.keys():
 		if not Campaign.ITEMS.get(id, {}).get("export", false):
 			campaign.bag.erase(id)
@@ -726,6 +767,8 @@ func begin_next_trial() -> bool:
 	campaign.bullets = 6
 	campaign.hp_ratio = 1.0
 	campaign.mp_ratio = 1.0
+	campaign.hub_guide_done = {}
+	campaign.settlement_intro_seen = false
 	if campaign.equipment.get("main_weapon", "") == "":
 		give_item("knife", 1)
 		campaign.equipment.main_weapon = "knife"

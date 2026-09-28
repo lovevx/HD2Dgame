@@ -39,7 +39,7 @@ func run() -> void:
 	check(scene.hud.objective.text.contains("港口向导"), "引导目标指向向导")
 	npc.campaign_action.call()
 	check(gs.campaign.flow == "training", "对话后流程进入教学")
-	scene.hud.hide_panel()
+	scene.hud.close_dialogue()
 	scene.world.get_node("TrialPortal").enter()
 	await create_timer(0.85).timeout
 	scene = current_scene

@@ -64,6 +64,30 @@
 [ext_resource type="Texture2D" uid="uid://cq5eaqjw4i8km" path="res://assets/characters/black_swordsman_video/行走_up_12.png" id="62_oyvsy"]
 [ext_resource type="Texture2D" uid="uid://cldcn5qcqv7s3" path="res://assets/characters/black_swordsman_video/行走_up_left_12.png" id="63_4t7gq"]
 [ext_resource type="Texture2D" uid="uid://b6fkb368wlqxh" path="res://assets/characters/black_swordsman_video/行走_up_right_12.png" id="64_otinx"]
+[ext_resource type="Texture2D" uid="uid://lu74qibsftwi" path="res://assets/characters/black_swordsman_video/横斩_down_12.png" id="gen_tex_attack_horizontal_down"]
+[ext_resource type="Texture2D" uid="uid://kl4jateqrfes" path="res://assets/characters/black_swordsman_video/横斩_down_left_12.png" id="gen_tex_attack_horizontal_down_left"]
+[ext_resource type="Texture2D" uid="uid://6xsrmteeld2k" path="res://assets/characters/black_swordsman_video/横斩_down_right_12.png" id="gen_tex_attack_horizontal_down_right"]
+[ext_resource type="Texture2D" uid="uid://7xy7mdso2x0o" path="res://assets/characters/black_swordsman_video/横斩_left_12.png" id="gen_tex_attack_horizontal_left"]
+[ext_resource type="Texture2D" uid="uid://cemciyg1oyct5" path="res://assets/characters/black_swordsman_video/横斩_right_12.png" id="gen_tex_attack_horizontal_right"]
+[ext_resource type="Texture2D" uid="uid://bvpnwvm7ubggp" path="res://assets/characters/black_swordsman_video/横斩_up_12.png" id="gen_tex_attack_horizontal_up"]
+[ext_resource type="Texture2D" uid="uid://cf77qb6dl0swn" path="res://assets/characters/black_swordsman_video/横斩_up_left_12.png" id="gen_tex_attack_horizontal_up_left"]
+[ext_resource type="Texture2D" uid="uid://c6mixfesb7sgf" path="res://assets/characters/black_swordsman_video/横斩_up_right_12.png" id="gen_tex_attack_horizontal_up_right"]
+[ext_resource type="Texture2D" uid="uid://dppwigymewrtp" path="res://assets/characters/black_swordsman_video/环断_down_12.png" id="gen_tex_ring_break_down"]
+[ext_resource type="Texture2D" uid="uid://e2jnt3rnciv3" path="res://assets/characters/black_swordsman_video/环断_down_left_12.png" id="gen_tex_ring_break_down_left"]
+[ext_resource type="Texture2D" uid="uid://bi7ows6q7risf" path="res://assets/characters/black_swordsman_video/环断_down_right_12.png" id="gen_tex_ring_break_down_right"]
+[ext_resource type="Texture2D" uid="uid://lthaob53isxs" path="res://assets/characters/black_swordsman_video/环断_left_12.png" id="gen_tex_ring_break_left"]
+[ext_resource type="Texture2D" uid="uid://cj2eptaxvx7c4" path="res://assets/characters/black_swordsman_video/环断_right_12.png" id="gen_tex_ring_break_right"]
+[ext_resource type="Texture2D" uid="uid://ciwa66npe0nio" path="res://assets/characters/black_swordsman_video/环断_up_12.png" id="gen_tex_ring_break_up"]
+[ext_resource type="Texture2D" uid="uid://suo4v6m4ff3d" path="res://assets/characters/black_swordsman_video/环断_up_left_12.png" id="gen_tex_ring_break_up_left"]
+[ext_resource type="Texture2D" uid="uid://bie103cyi8gx2" path="res://assets/characters/black_swordsman_video/环断_up_right_12.png" id="gen_tex_ring_break_up_right"]
+[ext_resource type="Texture2D" uid="uid://cu1ugejs5hjbk" path="res://assets/characters/black_swordsman_video/刀芒_down_12.png" id="gen_tex_sword_wave_down"]
+[ext_resource type="Texture2D" uid="uid://3a2eerymg20g" path="res://assets/characters/black_swordsman_video/刀芒_down_left_12.png" id="gen_tex_sword_wave_down_left"]
+[ext_resource type="Texture2D" uid="uid://byhwh0rk6fmja" path="res://assets/characters/black_swordsman_video/刀芒_down_right_12.png" id="gen_tex_sword_wave_down_right"]
+[ext_resource type="Texture2D" uid="uid://6xr5xp8llihg" path="res://assets/characters/black_swordsman_video/刀芒_left_12.png" id="gen_tex_sword_wave_left"]
+[ext_resource type="Texture2D" uid="uid://cs3imspira8pc" path="res://assets/characters/black_swordsman_video/刀芒_right_12.png" id="gen_tex_sword_wave_right"]
+[ext_resource type="Texture2D" uid="uid://bfndtwme642ik" path="res://assets/characters/black_swordsman_video/刀芒_up_12.png" id="gen_tex_sword_wave_up"]
+[ext_resource type="Texture2D" uid="uid://cnxo682hoaxox" path="res://assets/characters/black_swordsman_video/刀芒_up_left_12.png" id="gen_tex_sword_wave_up_left"]
+[ext_resource type="Texture2D" uid="uid://detoa4vx025hv" path="res://assets/characters/black_swordsman_video/刀芒_up_right_12.png" id="gen_tex_sword_wave_up_right"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_iawd8"]
 atlas = ExtResource("1_pjevo")
@@ -242,6 +266,486 @@ filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vh8b1"]
 atlas = ExtResource("3_r5pup")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_00"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_01"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_02"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_03"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_04"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_05"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_06"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_07"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_08"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_09"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_10"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_11"]
+atlas = ExtResource("gen_tex_attack_horizontal_down")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_00"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_01"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_02"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_03"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_04"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_05"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_06"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_07"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_08"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_09"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_10"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_left_11"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_00"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_01"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_02"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_03"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_04"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_05"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_06"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_07"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_08"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_09"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_10"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_down_right_11"]
+atlas = ExtResource("gen_tex_attack_horizontal_down_right")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_00"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_01"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_02"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_03"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_04"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_05"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_06"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_07"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_08"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_09"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_10"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_left_11"]
+atlas = ExtResource("gen_tex_attack_horizontal_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_00"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_01"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_02"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_03"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_04"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_05"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_06"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_07"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_08"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_09"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_10"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_right_11"]
+atlas = ExtResource("gen_tex_attack_horizontal_right")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_00"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_01"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_02"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_03"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_04"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_05"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_06"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_07"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_08"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_09"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_10"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_11"]
+atlas = ExtResource("gen_tex_attack_horizontal_up")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_00"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_01"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_02"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_03"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_04"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_05"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_06"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_07"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_08"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_09"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_10"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_left_11"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_00"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_01"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_02"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_03"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_04"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_05"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_06"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_07"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_08"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_09"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_10"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_attack_horizontal_up_right_11"]
+atlas = ExtResource("gen_tex_attack_horizontal_up_right")
 region = Rect2(1120, 192, 224, 192)
 filter_clip = true
 
@@ -2945,6 +3449,486 @@ atlas = ExtResource("48_qjfcs")
 region = Rect2(1120, 192, 224, 192)
 filter_clip = true
 
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_00"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_01"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_02"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_03"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_04"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_05"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_06"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_07"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_08"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_09"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_10"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_11"]
+atlas = ExtResource("gen_tex_ring_break_down")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_00"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_01"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_02"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_03"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_04"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_05"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_06"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_07"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_08"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_09"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_10"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_left_11"]
+atlas = ExtResource("gen_tex_ring_break_down_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_00"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_01"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_02"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_03"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_04"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_05"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_06"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_07"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_08"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_09"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_10"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_down_right_11"]
+atlas = ExtResource("gen_tex_ring_break_down_right")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_00"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_01"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_02"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_03"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_04"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_05"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_06"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_07"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_08"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_09"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_10"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_left_11"]
+atlas = ExtResource("gen_tex_ring_break_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_00"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_01"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_02"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_03"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_04"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_05"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_06"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_07"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_08"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_09"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_10"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_right_11"]
+atlas = ExtResource("gen_tex_ring_break_right")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_00"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_01"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_02"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_03"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_04"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_05"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_06"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_07"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_08"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_09"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_10"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_11"]
+atlas = ExtResource("gen_tex_ring_break_up")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_00"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_01"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_02"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_03"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_04"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_05"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_06"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_07"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_08"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_09"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_10"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_left_11"]
+atlas = ExtResource("gen_tex_ring_break_up_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_00"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_01"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_02"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_03"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_04"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_05"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_06"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_07"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_08"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_09"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_10"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_ring_break_up_right_11"]
+atlas = ExtResource("gen_tex_ring_break_up_right")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_ai40j"]
 atlas = ExtResource("49_v1vr6")
 region = Rect2(0, 0, 224, 192)
@@ -3422,6 +4406,486 @@ filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3dqfk"]
 atlas = ExtResource("56_wujrx")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_00"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_01"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_02"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_03"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_04"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_05"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_06"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_07"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_08"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_09"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_10"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_11"]
+atlas = ExtResource("gen_tex_sword_wave_down")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_00"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_01"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_02"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_03"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_04"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_05"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_06"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_07"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_08"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_09"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_10"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_left_11"]
+atlas = ExtResource("gen_tex_sword_wave_down_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_00"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_01"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_02"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_03"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_04"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_05"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_06"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_07"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_08"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_09"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_10"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_down_right_11"]
+atlas = ExtResource("gen_tex_sword_wave_down_right")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_00"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_01"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_02"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_03"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_04"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_05"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_06"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_07"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_08"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_09"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_10"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_left_11"]
+atlas = ExtResource("gen_tex_sword_wave_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_00"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_01"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_02"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_03"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_04"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_05"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_06"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_07"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_08"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_09"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_10"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_right_11"]
+atlas = ExtResource("gen_tex_sword_wave_right")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_00"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_01"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_02"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_03"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_04"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_05"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_06"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_07"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_08"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_09"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_10"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_11"]
+atlas = ExtResource("gen_tex_sword_wave_up")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_00"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_01"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_02"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_03"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_04"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_05"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_06"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_07"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_08"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_09"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_10"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_left_11"]
+atlas = ExtResource("gen_tex_sword_wave_up_left")
+region = Rect2(1120, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_00"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(0, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_01"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(224, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_02"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(448, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_03"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(672, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_04"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(896, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_05"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(1120, 0, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_06"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(0, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_07"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(224, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_08"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(448, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_09"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(672, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_10"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
+region = Rect2(896, 192, 224, 192)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="gen_atlas_sword_wave_up_right_11"]
+atlas = ExtResource("gen_tex_sword_wave_up_right")
 region = Rect2(1120, 192, 224, 192)
 filter_clip = true
 
@@ -3946,7 +5410,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack_down",
-"speed": 12.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -3987,7 +5451,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack_down_left",
-"speed": 12.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -4028,7 +5492,335 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack_down_right",
-"speed": 12.0
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_11")
+}],
+"loop": 0,
+"name": &"attack_horizontal_down",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_left_11")
+}],
+"loop": 0,
+"name": &"attack_horizontal_down_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_down_right_11")
+}],
+"loop": 0,
+"name": &"attack_horizontal_down_right",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_left_11")
+}],
+"loop": 0,
+"name": &"attack_horizontal_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_right_11")
+}],
+"loop": 0,
+"name": &"attack_horizontal_right",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_11")
+}],
+"loop": 0,
+"name": &"attack_horizontal_up",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_left_11")
+}],
+"loop": 0,
+"name": &"attack_horizontal_up_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_attack_horizontal_up_right_11")
+}],
+"loop": 0,
+"name": &"attack_horizontal_up_right",
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -4069,7 +5861,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack_left",
-"speed": 12.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -4110,7 +5902,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack_right",
-"speed": 12.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -4151,7 +5943,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack_up",
-"speed": 12.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -4192,7 +5984,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack_up_left",
-"speed": 12.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -4233,7 +6025,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack_up_right",
-"speed": 12.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -5877,6 +7669,334 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_11")
+}],
+"loop": 0,
+"name": &"ring_break_down",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_left_11")
+}],
+"loop": 0,
+"name": &"ring_break_down_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_down_right_11")
+}],
+"loop": 0,
+"name": &"ring_break_down_right",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_left_11")
+}],
+"loop": 0,
+"name": &"ring_break_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_right_11")
+}],
+"loop": 0,
+"name": &"ring_break_right",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_11")
+}],
+"loop": 0,
+"name": &"ring_break_up",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_left_11")
+}],
+"loop": 0,
+"name": &"ring_break_up_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_ring_break_up_right_11")
+}],
+"loop": 0,
+"name": &"ring_break_up_right",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_ai40j")
 }, {
 "duration": 1.0,
@@ -6201,6 +8321,334 @@ animations = [{
 }],
 "loop": 1,
 "name": &"run_up_right",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_11")
+}],
+"loop": 0,
+"name": &"sword_wave_down",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_left_11")
+}],
+"loop": 0,
+"name": &"sword_wave_down_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_down_right_11")
+}],
+"loop": 0,
+"name": &"sword_wave_down_right",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_left_11")
+}],
+"loop": 0,
+"name": &"sword_wave_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_right_11")
+}],
+"loop": 0,
+"name": &"sword_wave_right",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_11")
+}],
+"loop": 0,
+"name": &"sword_wave_up",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_left_11")
+}],
+"loop": 0,
+"name": &"sword_wave_up_left",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_00")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_01")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_02")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_03")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_04")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_05")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_06")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_07")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_08")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_09")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("gen_atlas_sword_wave_up_right_11")
+}],
+"loop": 0,
+"name": &"sword_wave_up_right",
 "speed": 15.0
 }, {
 "frames": [{

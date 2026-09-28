@@ -50,6 +50,7 @@ var fps_limit := 60
 ## 0~100 的百分比：滑条与档位都用整数，写进配置也读得懂。落在总线上换算成 dB。
 var master_volume := 100
 var sfx_volume := 100
+var music_volume := 70
 
 # ---------------------------------------------------------------- 游玩
 var camera_sensitivity := 1.0
@@ -134,6 +135,7 @@ func set_fps_limit(value: int) -> void:
 func apply_audio() -> void:
 	_set_bus_volume("Master", master_volume)
 	_set_bus_volume(Prefs.SFX_BUS, sfx_volume)
+	_set_bus_volume(Prefs.MUSIC_BUS, music_volume)
 
 ## 按名取总线，缺了就现建一条挂在 Master 下：正常情况布局文件里已经有 SFX，
 ## 这里只是新克隆 / 布局文件丢失时的兜底，保证滑条永远有真实作用对象、不会是空操作。
@@ -161,6 +163,11 @@ func set_master_volume(value: int) -> void:
 
 func set_sfx_volume(value: int) -> void:
 	sfx_volume = clampi(value, 0, 100)
+	apply_audio()
+	_commit("audio")
+
+func set_music_volume(value: int) -> void:
+	music_volume = clampi(value, 0, 100)
 	apply_audio()
 	_commit("audio")
 
@@ -282,6 +289,7 @@ func save_settings() -> void:
 	cfg.set_value("display", "fps_limit", fps_limit)
 	cfg.set_value("audio", "master", master_volume)
 	cfg.set_value("audio", "sfx", sfx_volume)
+	cfg.set_value("audio", "music", music_volume)
 	cfg.set_value("gameplay", "camera_sensitivity", camera_sensitivity)
 	cfg.set_value("gameplay", "camera_invert_y", camera_invert_y)
 	cfg.set_value("gameplay", "cinematic_shake", cinematic_shake)
@@ -306,6 +314,7 @@ func load_settings() -> void:
 	fps_limit = saved_fps if FPS_OPTIONS.has(saved_fps) else 60
 	master_volume = clampi(int(cfg.get_value("audio", "master", master_volume)), 0, 100)
 	sfx_volume = clampi(int(cfg.get_value("audio", "sfx", sfx_volume)), 0, 100)
+	music_volume = clampi(int(cfg.get_value("audio", "music", music_volume)), 0, 100)
 	camera_sensitivity = clampf(float(cfg.get_value("gameplay", "camera_sensitivity", camera_sensitivity)), MIN_SENSITIVITY, MAX_SENSITIVITY)
 	camera_invert_y = bool(cfg.get_value("gameplay", "camera_invert_y", camera_invert_y))
 	cinematic_shake = bool(cfg.get_value("gameplay", "cinematic_shake", cinematic_shake))

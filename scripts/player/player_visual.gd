@@ -1,8 +1,8 @@
 extends AnimatedSprite3D
-## 八方向移动 + 单段斩击 + 受击/闪避/死亡动画。
+## 八方向移动 + 竖斩/横斩交替普攻 + 独立技能/受击/闪避/死亡动画。
 ## 优先级：死亡 > 攻击 > 受击 > 闪避 > 待机/移动。
-## 图集：每动作 8 个朝向**全部真实绘制**（新版动作 sheet，见 docs/TURNBASED_COMBAT_PLAN.md 附录 A），
-## 因此不再水平镜像、也不再需要斜向尺寸补偿——打包时已把本体高统一到 104px。
+## 图集：每动作 8 个朝向**全部真实绘制**（新版动作 sheet，见 assets/characters/black_swordsman/ANIMATION_SPEC.md），
+## 因此不再水平镜像、也不做斜向尺寸补偿；各动作的方向比例已烘焙进图集。
 ## 格子尺寸全动作统一（224×192，地面线在格底往上 GROUND_SLACK），offset 由当前帧区域高度推出（见 _sync_offset）。
 
 const CLIP_LEN := 0.8  # 单个动作动画全长（12 帧 @ 15fps）
@@ -19,7 +19,7 @@ const GROUND_SLACK := 16
 ## 常驻移动模式 = 跑步（2026-09-21：walk 图集斜向帧序列有复用问题，直接停用，
 ## 移动一律播 run；run 的 8 向图集都是真实绘制，无斜向复用）。
 const LOCOMOTION_CLIP := "run"
-## 连段已取消（2026-09-20）：普攻只有一记斜劈；直踹动作留在图集里备用。
+## 连段仍是单段；普攻在原竖斩与新横斩间交替，直踹继续使用独立动作。
 const COMBO_CLIPS: Array[String] = ["attack"]
 
 ## 跑步剪辑（12 帧 @15fps = 0.8s，= **一个**步态周期）覆盖的地面位移（米）。
@@ -57,6 +57,7 @@ var display_direction: String = "up"
 
 func _ready() -> void:
 	player.attacked.connect(_on_attacked)
+	player.skill_animation_requested.connect(_on_skill_animation_requested)
 	player.kicked.connect(_on_kicked)
 	player.received_hit.connect(_on_hit)
 	player.guarded.connect(_on_guarded)
@@ -71,6 +72,8 @@ func _process(delta: float) -> void:
 		return
 
 	attack_time_left = maxf(0.0, attack_time_left - delta)
+	if player.dodging:
+		attack_time_left = 0.0
 	hit_timer = maxf(0.0, hit_timer - delta)
 	guard_timer = maxf(0.0, guard_timer - delta)
 
@@ -108,8 +111,8 @@ func _to_dir_name(direction: Vector3) -> String:
 	return DIR_NAMES[index]
 
 ## 该动作 + 该朝向下应使用的 pixel_size：斜向补偿表为空，恒为基准值。
-## 攻击图集已归一化到本体 104px（见 tools/normalize_attack_video_sheets.py），
-## 与移动/待机同尺寸，不再需要额外补偿。
+## 动作素材的尺寸校正在图集中完成；运行时 pixel_size 始终使用基准值，不缩放角色节点。
+## 斜向补偿表为空，所有朝向都使用同一像素尺寸。
 func _pixel_size_for(action: String, direction: String) -> float:
 	if direction in DIAGONAL_DIRS:
 		return BASE_PIXEL_SIZE * float(DIAGONAL_SCALE.get(action, 1.0))
@@ -192,9 +195,15 @@ func _update_locomotion() -> void:
 	_sync_offset()
 
 func _on_attacked(stage: int) -> void:
+	var action: String = player.current_attack_animation if stage == 0 else COMBO_CLIPS[clampi(stage, 0, COMBO_CLIPS.size() - 1)]
+	_play_combat_action(action)
+
+func _on_skill_animation_requested(action: String) -> void:
+	_play_combat_action(action)
+
+func _play_combat_action(action: String) -> void:
 	display_direction = _to_dir_name(player.facing)
 	attack_time_left = player.attack_cd
-	var action: String = COMBO_CLIPS[clampi(stage, 0, COMBO_CLIPS.size() - 1)]
 	action = _resolve_action(action, display_direction)
 	var clip := StringName(action + "_" + display_direction)
 	pixel_size = _pixel_size_for(action, display_direction)

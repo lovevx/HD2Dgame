@@ -62,11 +62,14 @@ func run() -> void:
 	check(scene.world.scene_file_path == scene.ARENA and get_nodes_in_group("hud").size() == 1, "复用原练习场和唯一HUD")
 	check(scene.hud.bag_cells.size() == 64 and scene.hud.equipment_slots.size() == 11, "复用64格背包与11槽人物面板")
 	check(scene.player.max_mp == 60, "初始法力60，无未来职业技能")
+	check(scene.hud.objective.text.contains("红色预警") and scene.hud.objective.text.contains("领取"), "1.2开场提示预警、生命与战利品交互")
 	scene.player.hp = 40
 	var drink := InputEventAction.new()
 	drink.action = "potion"
 	drink.pressed = true
 	scene.player._unhandled_input(drink)
+	scene._track_tutorial_actions()
+	check(gs.campaign.tutorial_steps.get("potion", false), "有效使用药剂后记录教学完成")
 	check(scene.player.potions == 1 and scene.player.healing_time > 0 and scene.player.hp == 40, "药剂先消耗且有饮用时间")
 	scene.player._physics_process(1.3)
 	check(scene.player.hp == 80, "首次药剂回复40%")
@@ -115,11 +118,26 @@ func run() -> void:
 			check(not scene.director.is_processing(), "菜单暂停准备倒计时")
 			scene.close_sheet()
 			scene.director._process(16.0)
+			check(scene.director.phase == "prep" and not is_instance_valid(scene.boss), "未用陷阱时巨虎不会提前出现")
+			var prep_camera: Camera3D = root.get_camera_3d()
+			var prep_rotation := prep_camera.rotation
+			prep_camera.rotation.x = -PI / 2.0
+			scene.player._throw_bomb()
+			prep_camera.rotation = prep_rotation
+			check(gs.campaign.tutorial_steps.get("trap", false), "预埋陷阱后记录核心练习完成")
+			scene.player._toggle_shield()
+			check(gs.campaign.tutorial_steps.get("shield", false), "开启傲歌护盾后记录核心练习完成")
+			scene.player._toggle_hunter()
+			scene._track_tutorial_actions()
+			check(gs.campaign.tutorial_steps.get("hunter", false), "开启猎魔后记录核心练习完成")
+			scene.director._process(0.1)
+			check(is_instance_valid(scene.boss), "三项猎虎准备练习完成后引出巨虎")
 			await capture("tiger")
 		scene.show_sheet()
 		check(not scene.player.is_physics_processing() and not scene.enemies[0].is_physics_processing(), "烙印暂停双方 stage%d" % stage)
 		scene.close_sheet()
 		if stage == 1:
+			check(scene.hud.objective.text.contains("燧发枪"), "1.3提示装备并试射燧发枪")
 			var camera: Camera3D = root.get_camera_3d()
 			var saved_rotation := camera.rotation
 			camera.rotation.x = -PI / 2.0 # 无头环境鼠标固定在视口边缘，让测试射线落地。
@@ -127,12 +145,38 @@ func run() -> void:
 			var direction: Vector3 = point - scene.player.global_position
 			direction.y = 0
 			scene.enemies[0].global_position = scene.player.global_position + direction.normalized() * 4
+			scene.enemies[0].attack_cd = 10.0
+			scene.enemies[0].set_physics_process(false)
+			scene.enemies[0].force_update_transform()
 			var old_hp: float = scene.enemies[0].hp_
 			gs.campaign.equipment.offhand = "flintlock"  # 副手槽装备燧发枪（右键触发）
 			scene.player._fire_flintlock()
 			camera.rotation = saved_rotation
 			# 枪械攻击区间 2-13 × 力量倍率，双 roll 伪随机：确认命中并扣弹、伤害落区间内
 			check(scene.player.bullets == 5 and scene.enemies[0].hp_ < old_hp and scene.enemies[0].hp_ >= old_hp - 15, "副手燧发枪命中并消耗弹药")
+			await process_frame
+			check(gs.campaign.tutorial_steps.get("gun", false), "试射燧发枪后记录教学完成")
+		if stage == 2:
+			check(scene.hud.objective.text.contains("直踹") and scene.hud.objective.text.contains("影刺"), "1.4提示教官战练习直踹与影刺")
+			scene.player.stamina = scene.player.max_stamina
+			scene.player.kick_cd = 0.0
+			scene.player.attack_cd = 0.0
+			scene.player._start_kick()
+			scene.player.global_position = scene.enemies[0].global_position + Vector3(0, 0, 2)
+			scene.player._mark_pierced(scene.enemies[0])
+			scene.player.shadow_cd = 0.0
+			scene.player._start_shadow()
+			await process_frame
+			check(gs.campaign.tutorial_steps.get("kick", false) and gs.campaign.tutorial_steps.get("shadow", false), "直踹与影刺成功释放后记录教学完成")
+		if stage == 3:
+			check(scene.hud.objective.text.contains("刀芒") and scene.hud.objective.text.contains("环断"), "1.5提示双目标范围技能")
+			scene.player.attack_cd = 0.0
+			scene.player.wave_cd = 0.0
+			scene.player._start_wave(Vector3.FORWARD)
+			scene.player.attack_cd = 0.0
+			scene.player.ring_cd = 0.0
+			scene.player._start_ring()
+			check(gs.campaign.tutorial_steps.get("wave", false) and gs.campaign.tutorial_steps.get("ring", false), "刀芒与环断释放后记录教学完成")
 		if stage == 4:
 			var tiger: Node = scene.boss
 			var trap: Node = load("res://scripts/combat/alchemy_bomb.tscn").instantiate()
@@ -144,19 +188,34 @@ func run() -> void:
 			tiger.take_damage(290)
 			check(tiger.phase == 1, "巨虎65%狂暴")
 			tiger.take_damage(320)
-			check(tiger.is_faking_death(), "巨虎25%诈死尚未胜利")
-			check(scene.state == "combat" and not gs.campaign.cleared, "诈死不能领取奖励")
 			for i in 3:
 				scene.player.global_position = tiger.global_position + tiger.global_basis.z * 4
 				tiger.take_damage(1, Vector3.ZERO, scene.player)
 			check(tiger.tendon_broken, "后方三次命中破坏筋腱")
+			tiger.p3_delay = 0.0
+			tiger._physics_process(0.1)
+			check(tiger.is_faking_death(), "巨虎25%诈死尚未胜利")
+			check(scene.state == "combat" and not gs.campaign.cleared, "诈死不能领取奖励")
+			check(tiger.confirm_evacuation_kill(), "诈死阶段确认补刀后击杀巨虎")
 		for enemy in scene.enemies:
 			enemy.take_damage(10000)
 		await process_frame
 		await process_frame
 		check(scene.state == "loot", "清场生成可领取战利品 stage%d" % stage)
+		var delayed_tutorial_steps: Array[String] = []
+		if stage == 2: delayed_tutorial_steps = ["kick", "shadow"]
+		elif stage == 3: delayed_tutorial_steps = ["wave", "ring"]
+		for step_id in delayed_tutorial_steps:
+			gs.campaign.tutorial_steps[step_id] = false
+			scene.tutorial_steps[step_id] = false
 		scene.claim_loot()
 		check(gs.campaign.cleared, "领取后持久化 stage%d" % stage)
+		if not delayed_tutorial_steps.is_empty():
+			check(scene.world.get_node_or_null("PracticeDummy") != null, "技能未在战斗完成时开放安全补练木桩 stage%d" % stage)
+			for step_id in delayed_tutorial_steps:
+				gs.campaign.tutorial_steps[step_id] = true
+				scene.tutorial_steps[step_id] = true
+			scene._refresh_objective()
 		var source: float = gs.campaign.source
 		check(not gs.clear_region(1) and gs.campaign.source == source, "重复领奖被拒绝 stage%d" % stage)
 		if stage == 0:
@@ -171,6 +230,13 @@ func run() -> void:
 		if stage == 1:
 			check(not gs.advance_region(), "引荐信推进门槛")
 			check(scene.world.get_node("ExitPortal")._locked(), "缺引荐信时出口保持锁定")
+			var gun_was_tried: bool = bool(gs.campaign.tutorial_steps.get("gun", false))
+			gs.campaign.tutorial_steps["gun"] = false
+			scene.tutorial_steps["gun"] = false
+			use_inventory("carlos_chest")
+			check(gs.item_count("carlos_chest") == 1 and gs.item_count("letter") == 0, "试射燧发枪前卡洛斯宝箱保持锁定")
+			gs.campaign.tutorial_steps["gun"] = gun_was_tried
+			scene.tutorial_steps["gun"] = gun_was_tried
 			use_inventory("carlos_chest")
 			check(gs.item_count("letter") == 1 and gs.item_count("carlos_chest") == 0, "原背包按钮开箱取得引荐信")
 			check(not scene.world.get_node("ExitPortal")._locked(), "取得引荐信后出口解锁")
@@ -181,8 +247,31 @@ func run() -> void:
 			use_inventory("dragon")
 			# 新攻击模型：区间中点 10.5 × 力量倍率 1.10（str 6）× 刀术训练 1.0 = 11.55
 			check(gs.campaign.equipment.main_weapon == "dragon" and is_equal_approx(scene.player.attack_damage, 11.55), "原背包装备按钮即时提高攻击")
-			check(not scene.world.get_node("ExitPortal")._locked(), "装备斩龙闪后出口解锁")
+			var kick_done: bool = bool(gs.campaign.tutorial_steps.get("kick", false))
+			var shadow_done: bool = bool(gs.campaign.tutorial_steps.get("shadow", false))
+			gs.campaign.tutorial_steps["kick"] = false
+			gs.campaign.tutorial_steps["shadow"] = false
+			scene.tutorial_steps["kick"] = false
+			scene.tutorial_steps["shadow"] = false
+			check(scene.world.get_node("ExitPortal")._locked(), "直踹与影刺未完成时欢乐街保持锁定")
+			gs.campaign.tutorial_steps["kick"] = kick_done
+			gs.campaign.tutorial_steps["shadow"] = shadow_done
+			scene.tutorial_steps["kick"] = kick_done
+			scene.tutorial_steps["shadow"] = shadow_done
+			check(not scene.world.get_node("ExitPortal")._locked(), "斩龙闪与直踹、影刺完成后出口解锁")
 		if stage == 3:
+			var wave_done: bool = bool(gs.campaign.tutorial_steps.get("wave", false))
+			var ring_done: bool = bool(gs.campaign.tutorial_steps.get("ring", false))
+			gs.campaign.tutorial_steps["wave"] = false
+			gs.campaign.tutorial_steps["ring"] = false
+			scene.tutorial_steps["wave"] = false
+			scene.tutorial_steps["ring"] = false
+			check(scene.world.get_node("ExitPortal")._locked(), "刀芒与环断未完成时科尔波山保持锁定")
+			gs.campaign.tutorial_steps["wave"] = wave_done
+			gs.campaign.tutorial_steps["ring"] = ring_done
+			scene.tutorial_steps["wave"] = wave_done
+			scene.tutorial_steps["ring"] = ring_done
+			check(not scene.world.get_node("ExitPortal")._locked(), "刀芒与环断完成后科尔波山解锁")
 			use_inventory("oka_chest")
 			use_inventory("pendant")
 			check(gs.campaign.equipment.necklace == "pendant", "原项链槽显示真实装备")
@@ -194,7 +283,14 @@ func run() -> void:
 		gs.load_game()
 		check(gs.campaign.stage == stage and gs.campaign.cleared, "各阶段存读档一致 stage%d" % stage)
 		if stage == 1: check(gs.campaign.bullets == 5, "弹药随地区保存")
-		if stage < 4: check(gs.advance_region(), "推进下一地区 stage%d" % stage)
+		if stage == 3:
+			if scene.sheet.visible: scene.close_sheet()
+			scene.advance_next()
+			check(gs.campaign.stage == 4 and not gs.campaign_practice, "欢乐街结算后直接进入科尔波山，没有技能练习阻断")
+			await create_timer(0.85).timeout
+			scene = current_scene
+		elif stage < 4:
+			check(gs.advance_region(), "推进下一地区 stage%d" % stage)
 	check(is_equal_approx(float(gs.campaign.source), 8.9), "世界之源8.9%")
 	check(gs.campaign.permanent_mana == 31, "噬灵者5+10+1+15 =31")
 	check(gs.item_count("tiger_tooth") == 1 and gs.item_count("tiger_chest") == 1, "虎齿与绿宝箱入库")
@@ -218,6 +314,10 @@ func run() -> void:
 	check(gs.buy_potion(), "乐园补给")
 	await mount()
 	check(scene.state == "hub" and scene.world.scene_file_path == scene.HARBOR and scene.player.visible, "返回原港口可行走主城")
+	check(scene.hud.is_modal_open(), "回港先展示阶段结算报告")
+	scene._dismiss_settlement_intro()
+	check(not scene.hud.is_modal_open() and scene.hud.objective.text.contains("属性点"), "结算报告引导先分配属性点")
+	check(not scene.world.get_node("DeparturePortal")._locked(), "主城整备引导不锁下一轮出发")
 	await capture("harbor")
 	var shop: Node = scene.world.get_node("ShopService")
 	scene.player.global_position = shop.global_position
@@ -252,6 +352,7 @@ func run() -> void:
 	before = gs.attributes.str
 	scene.hud._choice_buttons[0].pressed.emit()
 	check(gs.attributes.str == before + 1, "原工坊按钮真实属性强化")
+	check(scene.hud.objective.text.contains("任务档案"), "属性成长后引导查看任务档案")
 	await capture("forge")
 	scene.hud.hide_panel()
 	var quest_panel = scene.hud.quest_panel
@@ -261,8 +362,10 @@ func run() -> void:
 	check(_panel_text(quest_panel).contains("取得虎齿") and _panel_text(quest_panel).contains("■"),
 		"任务档案读到真实任务进度（虎齿已取得）")
 	quest_panel.call("close")
+	check(scene.hud.objective.text.contains("演武场"), "任务档案后提示自选演武场")
 	var saved: Dictionary = gs.campaign.duplicate(true)
 	scene.world.get_node("TrialPortal").enter()
+	check(gs.campaign.hub_guide_done.get("practice", false), "进入演武场后记录可选练习已查看")
 	await create_timer(0.85).timeout
 	scene = current_scene
 	check(scene.location == "practice" and get_nodes_in_group("targets").size() == 1, "原演武场传送与练功木桩")
@@ -271,7 +374,9 @@ func run() -> void:
 	scene.return_from_practice()
 	await create_timer(0.85).timeout
 	scene = current_scene
-	check(scene.location == "hub" and gs.campaign == saved, "演武场返回港口且正式物资不变")
+	check(scene.location == "hub" and gs.campaign.stage == saved.stage and gs.campaign.bag == saved.bag \
+		and gs.campaign.equipment == saved.equipment and gs.campaign.hub_guide_done.get("practice", false), "演武场往返保留正式物资并记住引导进度")
+	saved = gs.campaign.duplicate(true)
 	scene.leave()
 	await create_timer(0.85).timeout
 	check(current_scene.scene_file_path == gs.MAIN_MENU_SCENE, "正式菜单返回主菜单")

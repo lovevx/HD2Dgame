@@ -29,7 +29,7 @@ func run() -> void:
 	current_scene = open
 	await process_frame
 	await process_frame
-	open.capture_pose(9)
+	open.capture_pose(5)
 	open._show_name_panel()
 	await _shot("opening_name")
 	open.free()

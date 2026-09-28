@@ -1,6 +1,8 @@
 extends CanvasLayer
 const SystemUI := preload("res://scripts/ui/system_ui.gd")
 const QuestLog := preload("res://data/quest_log.gd")
+## 底栏提示里的键名现读（改键后不会还写着旧键）。
+const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
 ## 「任务档案」面板：左侧任务名列表（分章、带状态方块），右侧选中任务的详情
 ## （状态 / 委托方与地点 / 目标清单 / 说明 / 奖励 / 记录）。
 ##
@@ -108,7 +110,7 @@ func _ready() -> void:
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 16)
 	page.add_child(footer)
-	var hint := _label(footer, "J / Esc 关闭 · 点选左侧任务查看详情 · ↑↓ 切换任务", 16, SystemUI.TEXT_DIM)
+	var hint := _label(footer, "%s / %s 关闭 · ↑↓ 移动焦点 · 回车查看详情 · 也可直接点选左侧任务" % [KeyBindings.key_text("quest_log"), KeyBindings.key_text("open_menu")], 16, SystemUI.TEXT_DIM)
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_summary = _label(footer, "", 18, SystemUI.GOLD)
 	_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -233,7 +235,7 @@ func _refresh_detail() -> void:
 			var line := HBoxContainer.new()
 			line.add_theme_constant_override("separation", 8)
 			col.add_child(line)
-			_label(line, "■" if done else "□", 18, Color("6fdc9a") if done else Color("7f949b"))
+			_label(line, "■" if done else "□", 18, Color("6fdc9a") if done else SystemUI.TEXT_DIM)
 			var text := _label(line, str(obj["text"]), 18, SystemUI.TEXT if done else SystemUI.TEXT_DIM)
 			text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -273,7 +275,7 @@ func _select(id: String) -> void:
 	_refresh_list()
 	_refresh_detail()
 
-## 行样式：按任务状态着色（已完成绿 / 待交接金 / 进行中蓝 / 未解锁灰），选中行加幽蓝描边。
+## 行样式：按任务状态着色（已完成绿 / 待交接金 / 进行中冰蓝 / 未解锁灰），选中行加金色描边。
 func _style_row(row: Button, status: String, selected: bool) -> void:
 	var bg := Color(SystemUI.BG_BLOCK, 0.35 if status == QuestLog.LOCKED else 0.95)
 	var border := Color(SystemUI.BORDER, 0.5 if status == QuestLog.LOCKED else 0.8)

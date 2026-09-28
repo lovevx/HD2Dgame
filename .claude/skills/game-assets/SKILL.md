@@ -64,7 +64,7 @@ Do not use legacy diffusion-style prompt engineering: no long keyword stacks, se
 3. **Large pixel assets:** use `large-pixel-gen-run` for larger scenes, illustrations, portraits, buildings, and other compositions that do not fit a small sprite preset.
 4. **Low-cost sprite batches and prototypes:** use the general pixel canvas through `pixel-universal-gen-run` when speed, volume, and low cost matter more than exact per-sprite sizing or maximum fidelity. Its built-in 4:3 `xlarge` mode is optimized for asset packs and provides a freer canvas for generating many differently sized assets at once. Its pixel quality is still lower than preset-driven pixel generation.
 5. **Pixel Universal Generation:** the same command is the pixel-art counterpart to a general Nano Banana-style image workflow. It uses a large 4:3 canvas and supports a normal composition or a top-down game view. Typical uses include converting HD artwork into a new pixel composition, generating pixel scenes or character illustrations, and designing multi-stage building-upgrade artwork.
-6. **Animation:** animate only after the character or prop design is stable. Before running, follow the high-quality animation workflow in [Animation and video](references/animation-and-video.md); it defines prompt preparation, automatic prompt enhancement, size-based mode routing, and mandatory transparent motion space.
+6. **Animation:** animate only after the character or prop design is stable. Before running, follow the high-quality animation workflow in [Animation and video](references/animation-and-video.md); it defines prompt preparation, automatic prompt enhancement, explicit Pixel/HD selection, intelligence tiers, and mandatory transparent motion space.
 
 Do not run standalone pixelation after any Meowa pixel-generation command. Pixel outputs are already perfectly pixelated.
 
@@ -73,7 +73,7 @@ Do not run standalone pixelation after any Meowa pixel-generation command. Pixel
 1. **Characters and props:** use an HD preset when the deliverable needs a controlled asset family, count, or composition, and use references for style or identity consistency.
 2. **General or batch generation:** use `nano-banana-run` or `image-2-run` for scenes, illustrations, portraits, sprite sheets, and batches of art assets. Default both to a shared 1K, 1:1 square canvas so a prompt or composition can move between them. Start Image-2 with `standard` for inexpensive prompt testing, then rerun an approved prompt with `detailed`. These paths prioritize composition freedom and throughput over a preset asset contract.
 3. **Automatic background removal and component segmentation:** use `ui-gen-run` when an HD asset sheet should be generated with background removal and automatic component detection. It can generate UI, ordinary art assets, or a sprite sheet; the result depends primarily on the prompt, not on the name of the module. The public final media remains one aggregate sheet accompanied by component segmentation data.
-4. **Animation:** For reference-video editing, Pixel/HD, resolution, alpha and background-removal options mirror the web card (see Animation and video); `--background-color` (default `#ffffff`) fills transparent pixels in both reference inputs; use `meowa-animation-edit-prompts` to prepare editable text and `meowa-animation-edit-run` to generate after filling video content and, if supplied, image content; polishing is manual. See [Animation and video](references/animation-and-video.md). finalize the still asset before animation, then follow the prompt, mode-routing, and motion-canvas checks in [Animation and video](references/animation-and-video.md). Use `meowa-animation-run` for the new 8/16/24/32-frame Pixel or HD path, or `animate-run` for the established frame-animation path. For an ordinary but complex action, prepare intermediate poses and use `keyframes-run` before considering video. Use `video-run` only as a fallback for motion that frame animation cannot represent or when higher video resolution is required.
+4. **Animation:** For reference-video editing, Pixel/HD, resolution, alpha and background-removal options mirror the web card (see Animation and video); `--background-color` (default `#ffffff`) fills transparent pixels in both reference inputs; use `meowa-animation-edit-prompts` to prepare editable text and `meowa-animation-edit-run` to generate after filling video content and, if supplied, image content; polishing is manual. See [Animation and video](references/animation-and-video.md). finalize the still asset before animation, then follow the prompt, mode-routing, and motion-canvas checks in [Animation and video](references/animation-and-video.md). Use `meowa-animation-run` for the new 8/16/24/32-frame Pixel or HD path (Pixel and HD support 480P/720P/1080P; 1080P generation is 30/35 credits for Standard/Detailed, plus the existing removal fee; `--high-frame-rate` keeps every generated frame in the output WebP instead of sampling to 8fps and defaults removal off with green `#00b140`), or `animate-run` for the established frame-animation path. For an ordinary but complex action, prepare intermediate poses and use `keyframes-run` before considering video. Use `video-run` only as a fallback for motion that frame animation cannot represent or when higher video resolution is required.
 
 ## Understand the modules
 
@@ -135,11 +135,11 @@ Use `free-credits` to read free-credit eligibility and return the website claim 
 
 For Frame Animation V2 removal batch size, quality levels, and per-batch credits, read [Animation and video](references/animation-and-video.md).
 
-Meowa Animation uses `--remove-bg-batch-size 4|8|16|all` (default `16`).
+Meowa Animation uses `--remove-bg-batch-size 2|4|8|16` (default `16`).
 
-Background removal accepts animated WebP/GIF with `--remove-bg-batch-size 1|4|8|16|all` (default `16`); HD defaults to General removal (`advanced`, 5 credits per batch); Budget removal (`standard`) costs 2. HD recommends batches of 4. Pixel defaults to General removal (`standard`), requires animation frames at most 256×256 (static images have no 256×256 restriction), and Complex removal (`advanced`) retains its separate frame tiers. See [Pixel and HD assets](references/pixel-and-hd-assets.md).
+Background removal returns lossless WebP for GIF, WebP and MP4 inputs (MP4 audio is omitted). It accepts animated WebP/GIF or MP4 with `--remove-bg-batch-size 2|4|8|16` (default `16`); HD defaults to General removal (`advanced`, 5 credits per batch); Budget removal (`standard`) costs 2. HD recommends batches of 4. Pixel defaults to General removal (`standard`), requires animation frames at most 256×256 (static images have no 256×256 restriction), and Complex removal (`advanced`) retains its separate frame tiers. See [Pixel and HD assets](references/pixel-and-hd-assets.md).
 
-Pixel background removal supports `--preserve-translucency` (default off) for both General and Complex removal. It skips alpha binarization and preserves soft alpha in PNG/WebP; GIF retains its format limitation. HD always preserves soft alpha. This option does not change credits.
+Pixel background removal supports `--preserve-translucency` (default off) for both General and Complex removal. It skips alpha binarization and preserves soft alpha in PNG/WebP outputs. HD always preserves soft alpha. This option does not change credits.
 
 ### 通用生成 Image 2.5
 
@@ -149,13 +149,13 @@ Pixel background removal supports `--preserve-translucency` (default off) for bo
 可重复 `--reference-image` 传参考图；失败或中断用 `image-2.5-poll --job-id ...` 恢复，勿重复提交。
 1K 基础积分为 1/5/10，2K 为 2/10/20；每张参考图另加 2 积分，由服务端结算。
 
-万能编辑支持 `image-edit-run --generation-model image-2.5`，参数与 `image-2` 相同。普通／精细／极致基础积分：1K 为 1/5/10，2K 为 2/10/20；每张参考图 +2。Image2.5 去背景免费，只提供普通抠图；失败则不去背景、不扣附加费。分区像素化沿用现有附加费。
+通用生成默认使用 Image2.5（`image-2.5-run`）。万能编辑高清模式默认使用 Image2.5、2K；像素模式默认不变。万能编辑支持 `image-edit-run --generation-model image-2.5`，参数与 `image-2` 相同。普通／精细／极致基础积分：1K 为 1/5/10，2K 为 2/10/20；每张参考图 +2。Image2.5 去背景免费，只提供普通抠图；失败则不去背景、不扣附加费。分区像素化沿用现有附加费。
 
 HD hex 公开 `--mode standard`（默认）和 `tetraploid`。七倍体与 Image2 暂时关闭。
 
 Image2.5 通用生成支持 `--remove-bg-method none|standard`，默认 `none`，与网页去背景开关一致。开启后尝试原生透明 PNG，免费；失败则保留原背景、不后处理、不扣附加费。万能编辑选择 Image2.5 时同样免费，高级抠图不可用。重新打开项目或轮询原任务不会再次提交生成。
 
-Video-reference animation accepts MP4 or animated GIF/WebP up to 4 seconds. Both edit commands select output duration from the source: ≤2s → 16 frames, ≤3s → 24, ≤4s → 32 at 8fps. Reference and generation are aligned to 56/73/90 frames at 24fps. See [Animation and video](references/animation-and-video.md) for shared pricing.
+Video-reference animation accepts MP4 or animated GIF/WebP up to 4.5 seconds. Both edit commands select output duration from the source: ≤2s → 16 frames, ≤3s → 24, ≤4.5s → 32 at 8fps. Sources between 4s and 4.5s stay on the 4-second / 32-frame tier so Meowa 32-frame outputs can be reused. Reference and generation are aligned to 56/73/90 frames at 24fps. See [Animation and video](references/animation-and-video.md) for shared pricing.
 
 修仙定制模板：先用 `custom-workflow-list` 确认账户授权，再用 `custom-workflow-run --workflow-id fixed_pixel_gen --template-id size_32x32|size_64x64|size_128x128 --params-json ...`。
 JSON 的 `generation_provider` 可选 `nanobanana`（默认）、`image2`、`image2_5`，与网页模型选择一致；省略时按服务端 schema 默认值提交。

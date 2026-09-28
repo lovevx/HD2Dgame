@@ -37,9 +37,11 @@ tools/backups/
 
 # 原著小说全文（版权文本，本地查阅用）
 background/
+docs/轮回乐园*.txt
 
 # docs 预览截图与生成任务中间产物
 docs/**/*.png
+!docs/novel_scene_moodboard.png
 docs/**/*.import
 docs/**/*.log
 docs/meowa_design_20260916/

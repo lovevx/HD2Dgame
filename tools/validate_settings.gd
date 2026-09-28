@@ -77,6 +77,10 @@ func run() -> void:
 	TestEnv.isolate(gs, "settings")
 	# 偏好档要真写盘才验得了往返，所以这里 keep_persistence=true；路径仍隔离在测试专属文件上。
 	var settings_path := TestEnv.isolate_settings(settings, "settings", true)
+	# 与 GameState 的 isolate() 同一个道理：_ready() 已经读过**本机**的真实偏好档，而
+	# load_settings() 对文件里缺的项沿用内存值 —— 不显式复位，本机把「游戏内光标」关过的人
+	# 就会让下面「默认用游戏内光标」变成假红（09-23 实测：本机 settings.cfg 里 game_cursor=false）。
+	settings.set_game_cursor(true)
 
 	# ---------- 设置档：非法值兜底 ----------
 	var cfg := ConfigFile.new()
@@ -87,7 +91,7 @@ func run() -> void:
 	cfg.set_value("gameplay", "camera_sensitivity", 99.0)
 	cfg.save(settings_path)
 	settings.load_settings()
-	check(int(settings.window_mode) == 2, "非法窗口模式夹回合法档位（9 → 无边框全屏）")
+	check(int(settings.window_mode) == 2, "非法窗口模式回落至有效档位（9 → 无边框全屏）")
 	check(int(settings.fps_limit) == 60, "非法帧率档位回落到 60")
 	check(settings.resolution == Vector2i(1920, 1080), "非法分辨率回落到内置默认")
 	check(int(settings.master_volume) == 100, "超范围音量夹到 100")
@@ -205,7 +209,7 @@ func run() -> void:
 	# ---------- 按键：改键 / 冲突对调 / 恢复默认 ----------
 	settings.rebind("dodge", "key", KEY_K)
 	check(KeyBindings.key_text("dodge") == "K", "dodge 改绑到 K 并同步写入 InputMap")
-	check(KeyBindings.key_text("kick") == "空格", "撞车的直踹（原 K）拿到 dodge 的旧键空格")
+	check(KeyBindings.key_text("aoge") == "空格", "撞车的傲歌（原 K）拿到 dodge 的旧键空格")
 	# 与新键冲突：对方只剩一个键时与旧键对调，不留下「按不出来」的动作
 	settings.rebind("potion", "key", KEY_K)
 	check(KeyBindings.key_text("potion") == "K", "potion 抢到 K")
@@ -225,11 +229,12 @@ func run() -> void:
 	settings.load_settings()
 	settings.apply_keys()
 	check(KeyBindings.key_text("dodge") == "K", "改键落盘后重启能读回")
-	check(KeyBindings.key_text("kick") == "空格", "对调结果也落盘：重启后直踹不会和新键撞在同一个键上")
+	check(KeyBindings.key_text("aoge") == "空格", "对调结果也落盘：重启后傲歌不会和新键撞在同一个键上")
 	settings.reset_keys()
 	check(KeyBindings.key_text("dodge") == "空格" and not settings.has_key_overrides(),
 		"恢复默认键位：InputMap 与覆盖表都清干净")
-	check(KeyBindings.key_text("kick") == "K", "直踹默认绑在 K")
+	check(KeyBindings.key_text("kick") == "E" and KeyBindings.key_text("aoge") == "K",
+		"直踹默认绑 E、傲歌默认绑 K（2026-09-23 作者要求两者对调）")
 	check(KeyBindings.key_text("shoot") == "右键", "燧发枪默认绑在鼠标右键")
 	check(KeyBindings.key_text("dodge") == "空格" and KeyBindings.key_text("potion") == "2", "恢复默认后 potion 也回到 2")
 

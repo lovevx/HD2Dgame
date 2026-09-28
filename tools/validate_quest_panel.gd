@@ -60,6 +60,13 @@ func run() -> void:
 	check(s["ep_training"] == QuestLog.LOCKED and s["ep_accept"] == QuestLog.LOCKED, "船到港：后续序章步骤未解锁")
 	check(s["stage_0"] == QuestLog.LOCKED, "船到港：主线未接取时压成未解锁")
 	check(QuestLog.default_id(c) == "ep_arrive", "默认选中当前进行中的任务")
+	# 教学目标里的键名必须现读（2026-09-23 修：原先写死「Shift」，而剃默认在空格 ——
+	# 那不是「文案不好」，是玩家照着按不出教学要求的那一下）。
+	var KeyBindings = preload("res://scripts/ui/key_bindings.gd")
+	var dodge_key: String = KeyBindings.key_text("dodge")
+	check(_objs(c, "ep_training").has("使用一次剃（%s）" % dodge_key),
+		"教学目标按当前键位写剃（当前 %s）" % dodge_key)
+	check(not "Shift" in " ".join(_objs(c, "ep_training")), "教学目标里不再残留写死的 Shift")
 
 	# ---------- 数据层：教学完成待接任务 ----------
 	c.flow = "equipped"
@@ -88,7 +95,7 @@ func run() -> void:
 	check(s["stage_0"] == QuestLog.DONE and s["stage_1"] == QuestLog.DONE, "走过的地区标记已完成")
 	check(s["stage_2"] == QuestLog.PENDING, "已清场待离场的地区标记待交接")
 	check(s["stage_3"] == QuestLog.LOCKED and s["stage_4"] == QuestLog.LOCKED, "未到达的地区标记未解锁")
-	check(_obj_done(c, "stage_2", "装上斩龙闪后前往北侧出口") == false, "待交接地区仍留着未完成目标")
+	check(_obj_done(c, "stage_2", "装备斩龙闪并完成技能练习后前往北侧出口") == false, "待交接地区仍留着未完成目标")
 	check(_obj_done(c, "stage_2", "取得斩龙闪") == true, "已装备的斩龙闪判定为取得")
 	check(_obj_done(c, "side_chest", "1.2 废品终点站补给箱") == true, "开过的补给箱打勾")
 	check(_obj_done(c, "side_chest", "1.3 王都入口补给箱") == false, "没开过的补给箱不打勾")
@@ -102,8 +109,15 @@ func run() -> void:
 	c.colpo_outer_cleared = true
 	c.bag = {"tiger_tooth": 1, "claw": 1}
 	s = stats(c)
+	var main_ids: Array[String] = []
+	for entry in QuestLog.entries(c):
+		if entry["kind"] == "主线": main_ids.append(str(entry["id"]))
+	check(not main_ids.has("skill_training"), "主线不再列欢乐街后的必经技能教学")
 	check(s["stage_4"] == QuestLog.ACTIVE, "决战进行中")
 	check(_obj_done(c, "stage_4", "清理外围三波威胁") == true, "外围清完打勾")
+	check(_obj_done(c, "stage_4", "预埋一枚陷阱引出巨虎") == false, "猎虎核心练习未完成时留在任务目标中")
+	c.tutorial_steps = {"trap": true}
+	check(_obj_done(c, "stage_4", "预埋一枚陷阱引出巨虎") == true, "已预埋陷阱后任务目标打勾")
 	check(_obj_done(c, "stage_4", "猎杀科尔波山巨虎") == true, "巨虎已猎杀打勾")
 	check(s["side_tiger"] == QuestLog.ACTIVE, "虎齿到手后支线进行中（交付未开放）")
 	check(_obj_done(c, "side_tiger", "交付左大臣的藏品（后续版本开放）") == false, "未开放的交付目标不打勾")

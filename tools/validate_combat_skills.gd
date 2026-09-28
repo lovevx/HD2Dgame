@@ -1,9 +1,9 @@
 extends SceneTree
 ## 战斗技能与法力经济的隔离检查，不碰玩家正式存档。
-const EnemyScene := preload("res://scripts/combat/enemy.tscn")
-const EnemyScript := preload("res://scripts/combat/enemy.gd")
 const Skills := preload("res://data/combat_skills.gd")
 var failures := 0
+var enemy_scene: PackedScene
+var enemy_kinds: Dictionary
 
 func _initialize() -> void:
 	call_deferred("run")
@@ -16,7 +16,7 @@ func check(ok: bool, label: String) -> void:
 		push_error("FAIL " + label)
 
 func add_enemy(parent: Node, at: Vector3, kind: int) -> Node:
-	var enemy := EnemyScene.instantiate()
+	var enemy := enemy_scene.instantiate()
 	enemy.kind = kind
 	enemy.position = at
 	parent.add_child(enemy)
@@ -25,6 +25,13 @@ func add_enemy(parent: Node, at: Vector3, kind: int) -> Node:
 
 func run() -> void:
 	await process_frame
+	var enemy_script := load("res://scripts/combat/enemy.gd") as GDScript
+	enemy_scene = load("res://scripts/combat/enemy.tscn") as PackedScene
+	if enemy_script == null or enemy_scene == null:
+		push_error("Cannot load enemy resources after autoload initialization")
+		quit(1)
+		return
+	enemy_kinds = enemy_script.get_script_constant_map().get("Kind", {})
 	var gs := root.get_node("GameState")
 	gs.save_path = "user://combat_skills_validation.cfg"
 	gs.reset_progress()
@@ -59,8 +66,8 @@ func run() -> void:
 	check(player.shield_hp == 0.0, "傲歌超时自动消失")
 	player.reset()
 
-	var energy := add_enemy(scene, Vector3(0, 0, -2.0), EnemyScript.Kind.WOLF)
-	var no_energy := add_enemy(scene, Vector3(2.0, 0, 0), EnemyScript.Kind.GOLEM)
+	var energy := add_enemy(scene, Vector3(0, 0, -2.0), enemy_kinds.WOLF)
+	var no_energy := add_enemy(scene, Vector3(2.0, 0, 0), enemy_kinds.GOLEM)
 	energy.physical_reduction = 0.5
 	no_energy.physical_reduction = 0.5
 	player.facing = Vector3(0, 0, -1)
@@ -78,9 +85,9 @@ func run() -> void:
 	no_energy.queue_free()
 	await process_frame
 	player.reset()
-	var left := add_enemy(scene, Vector3(-2, 0, 0), EnemyScript.Kind.WOLF)
-	var right := add_enemy(scene, Vector3(2, 0, 0), EnemyScript.Kind.BOAR)
-	var far := add_enemy(scene, Vector3(7, 0, 0), EnemyScript.Kind.WOLF)
+	var left := add_enemy(scene, Vector3(-2, 0, 0), enemy_kinds.WOLF)
+	var right := add_enemy(scene, Vector3(2, 0, 0), enemy_kinds.BOAR)
+	var far := add_enemy(scene, Vector3(7, 0, 0), enemy_kinds.WOLF)
 	mp_before = player.mp
 	player._start_ring()
 	check(player.mp == mp_before - Skills.RING_MP_COST and player.ring_cd > 0, "环断扣蓝并进入冷却")

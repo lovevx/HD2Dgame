@@ -2,6 +2,7 @@ extends CanvasLayer
 const SystemUI := preload("res://scripts/ui/system_ui.gd")
 const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
 const Prefs := preload("res://data/prefs.gd")
+const GameAudio := preload("res://data/game_audio.gd")
 ## 常量（分辨率档位、滑条区间）走脚本本身：不依赖自动加载实例，纯静态读取。
 const SettingsScript := preload("res://autoload/game_settings.gd")
 ## 「设置」面板：左侧分页导航（画面 / 声音 / 游玩 / 按键），右侧改这一页的项。
@@ -152,8 +153,12 @@ func _build_page() -> void:
 		_scroll.scroll_vertical = 0
 	for id in _nav_buttons.keys():
 		var button: Button = _nav_buttons[id]
-		# 当前页置灰（禁用态样式更暗，一眼看出位置）。保留可点也没意义，点了只是重画同一页。
-		button.disabled = str(id) == _page
+		# 当前页用金色禁用态标记；不可重复点当前页。
+		var selected := str(id) == _page
+		button.disabled = selected
+		SystemUI.style_button(button)
+		if selected:
+			SystemUI.style_selected_button(button)
 	var desc := ""
 	for entry in NAV:
 		if entry["id"] == _page:
@@ -199,8 +204,9 @@ func _build_audio_page(desc: String) -> void:
 		settings.set_master_volume(int(value)))
 	_slider_row("音效音量", settings.sfx_volume, 0, 100, "%.0f%%", func(value: float):
 		settings.set_sfx_volume(int(value)))
-	_label(_content, "音效走 SFX 总线（res://default_bus_layout.tres），剃的破空声等战斗音都归它管；", 17, SystemUI.TEXT_DIM)
-	_label(_content, "当前版本还没有背景音乐，主音量实际管的是整体输出。", 17, SystemUI.TEXT_DIM)
+	_slider_row("音乐音量", settings.music_volume, 0, 100, "%.0f%%", func(value: float):
+		settings.set_music_volume(int(value)))
+	_label(_content, "冲刺、战斗和界面音效统一走 SFX；场景配乐走 Music。", 17, SystemUI.TEXT_DIM)
 
 func _build_gameplay_page(desc: String) -> void:
 	_page_header("游 玩", desc)
@@ -244,7 +250,7 @@ func _build_keys_page(desc: String) -> void:
 
 # ---------------------------------------------------------------- 行构造
 
-## 单选行：一行选项按钮，当前项置灰当选中标记。
+## 单选行：一行选项按钮，当前项以金色填充标记。
 func _choice_row(title: String, labels: Array, current: int, apply: Callable, enabled := true) -> void:
 	var row := _row_base(title)
 	var options := HBoxContainer.new()
@@ -257,6 +263,8 @@ func _choice_row(title: String, labels: Array, current: int, apply: Callable, en
 		button.add_theme_font_size_override("font_size", 21)
 		SystemUI.style_button(button)
 		button.disabled = index == current or not enabled
+		if index == current:
+			SystemUI.style_selected_button(button)
 		button.pressed.connect(func():
 			apply.call(index)
 			_build_page())
@@ -368,6 +376,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.is_pressed() and not (event as InputEventKey).is_echo() \
 			and (event as InputEventKey).physical_keycode == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
+		GameAudio.play_sfx("ui_back", Vector3.INF, -7.0)
 		close()
 
 func _refresh_status() -> void:

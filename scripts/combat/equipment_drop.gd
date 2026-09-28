@@ -1,4 +1,5 @@
 extends Area3D
+const GameAudio := preload("res://data/game_audio.gd")
 ## 装备掉落物：前期小关击杀概率掉落，携带一件随机装备。
 ## 表现与 coin.gd 同套：品质色发光晶体 + 地面光圈 + 名称标签，靠近磁吸入背包。
 ## 纯距离判定，不依赖物理碰撞；spawn 方负责设置 item_id。
@@ -83,6 +84,7 @@ func _collect() -> void:
 		queue_free()
 		return
 	GameState.give_item(item_id, 1)
+	GameAudio.play_sfx("pickup", global_position, -2.0)
 	# 不落盘：途中拾取属于「本局未提交收益」，死亡重试要跟着回滚。
 	# 提交点是领取战利品 / 开箱 / 检查点等显式 save_game()（见 GameState 出击事务）。
 	var def: Dictionary = Campaign.ITEMS.get(item_id, {})

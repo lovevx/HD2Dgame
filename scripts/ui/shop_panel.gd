@@ -188,11 +188,10 @@ func _refresh_categories() -> void:
 	for cat in _cat_buttons:
 		var btn: Button = _cat_buttons[cat]
 		if cat == _current_cat:
-			btn.add_theme_color_override("font_color", Color("ffd76e"))
-			btn.add_theme_color_override("font_hover_color", Color("ffd76e"))
+			SystemUI.style_selected_button(btn)
 		else:
-			btn.add_theme_color_override("font_color", Color("9fb4c2"))
-			btn.add_theme_color_override("font_hover_color", SystemUI.TEXT)
+			SystemUI.style_button(btn)
+			btn.add_theme_color_override("font_color", SystemUI.TEXT_DIM)
 
 func _goods_for(cat: String) -> Array:
 	if cat == "全部":

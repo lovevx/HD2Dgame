@@ -27,7 +27,7 @@ func run_checks() -> void:
 	var dummies = get_nodes_in_group("targets")
 	check(dummies.size() == 1, "practice ground has exactly one dummy")
 	var dummy = dummies[0]
-	# 场上另有一只游荡野狼，作为「走进遭遇圈 → 切回合战」的引子（2026-09 白盒遭遇战）。
+	# 场上另有一只巡逻野狼，用于练习移动目标追击。
 	# 它按设计进 enemies 组（enemy.gd 只把 DUMMY 放进 targets），所以旧断言
 	# 「enemies 组为空 = 没有波次」在野狼上线那刻就成了假红 —— 改成钉住它的设计约束：
 	# 只有一只、且永不主动攻击。

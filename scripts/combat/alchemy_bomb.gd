@@ -1,4 +1,5 @@
 extends Area3D
+const GameAudio := preload("res://data/game_audio.gd")
 ## 炼金炸弹：扔出去落地后变成预埋陷阱，敌人踩到 → 引信 0.35 秒 → 爆炸。
 ## 只炸敌人不炸苏晓：陷阱是玩家自己布的，踩自家陷阱受伤会让准备阶段变得难受。
 ## 预警做在引信上：红圈收缩 + 闪光，敌人和玩家都有时间离开爆炸范围。
@@ -106,6 +107,7 @@ func _on_body_entered(body: Node3D) -> void:
 func _explode() -> void:
 	exploded = true
 	monitoring = false
+	GameAudio.play_sfx("explosion", global_position, -1.0)
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		if not enemy.has_method("is_alive") or not enemy.is_alive():
 			continue

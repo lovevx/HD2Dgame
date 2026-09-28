@@ -3,9 +3,9 @@
 > 整理日期：**2026-09-22**（上一版 09-19）
 > 性质：**结构与索引文档**。回答「工程里有什么、放在哪、怎么串起来」。
 > **文档本身的清单看 [DOCS_INDEX.md](DOCS_INDEX.md)**（按类型 + 时间分类，含每份的落地状态与效力）。
-> 进度与缺口以 [PROJECT_STATUS_AUDIT.md](PROJECT_STATUS_AUDIT.md) 为准；玩法规则以 [GDD.md](GDD.md) 与 [P1_SCOPE_BASELINE.md](P1_SCOPE_BASELINE.md) 为准；**战斗现状**以 [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) 为准、改版进度以 [COMBAT_REWORK_PLAN.md](COMBAT_REWORK_PLAN.md) 为准；本文不重复裁决，也不改动任何游戏代码。
+> 进度与缺口以 [PROJECT_STATUS_AUDIT.md](PROJECT_STATUS_AUDIT.md) 为准；玩法规则以 [GDD.md](GDD.md) 与 [P1_SCOPE_BASELINE.md](P1_SCOPE_BASELINE.md) 为准；战斗规则和代码入口见 [REALTIME_COMBAT_EXTRACTION.md](REALTIME_COMBAT_EXTRACTION.md)。
 >
-> **本轮（09-20~09-22）增量**：新增 `scripts/battle/` 双形态战斗 P1（回合核心，白盒）、任务档案面板（<kbd>J</kbd>）、面板设计语言 `system_ui.gd`、开场第二幕坐船过场、前景遮挡淡出、港口扩写（南岸码头 / 围墙 / 商街 / 工坊 / 委托所 / 科尔波山远景）、4 个新 shader、`levels/` 试验场景；§14 未提交快照同步重写。
+> **本轮（09-20~09-22）增量**：任务档案面板（<kbd>J</kbd>）、面板设计语言 `system_ui.gd`、开场第二幕坐船过场、前景遮挡淡出、港口扩写（南岸码头 / 围墙 / 商街 / 工坊 / 委托所 / 科尔波山远景）、4 个新 shader、`levels/` 试验场景；§14 未提交快照同步重写。
 
 ---
 
@@ -18,7 +18,7 @@ PC 单人、俯视 **HD2D**、近战技法主导的世界任务制动作 RPG。�
 - 技术形态：**3D 场景与碰撞 + 2D 像素角色 Sprite3D**，真实遮挡（含前景淡出），固定斜俯视镜头 + 可轨道转视角。
 - 主场景：`scenes/main/main_menu.tscn`。
 - 当前可玩范围：**契约开场 → 船上过场 → 五阶段试炼（1.2~1.6）→ 巨虎 Boss → 阶段结算 → 灰潮港主城 → 再次出发**。原著国王主线未完成。
-- **双形态战斗（回合制）现状**：P1 回合核心已实装并跑通回归，但**只接在练习/试炼场**（`scripts/main/main.gd`，靠近游荡野狼触发）；战役关卡（科尔波 / 灰潮港）仍是原实时动作玩法。详见 [COMBAT_REWORK_PLAN.md](COMBAT_REWORK_PLAN.md) 与本文 §5.8。
+- **战斗现状**：战役关卡、普通敌人与 Boss 共用即时战斗；技能、眩晕、处决与 Boss 硬直见 [REALTIME_COMBAT_EXTRACTION.md](REALTIME_COMBAT_EXTRACTION.md)。
 
 ---
 
@@ -28,8 +28,6 @@ PC 单人、俯视 **HD2D**、近战技法主导的世界任务制动作 RPG。�
 |---|---|
 | 正常游玩 | Godot 打开工程，F5（走主菜单） |
 | 直接进战斗试炼 | 运行 `scenes/main/main.tscn`（F6） |
-| 回合战白盒 | 同上进练习/试炼场 → 靠近游荡野狼自动进回合；回归 `tools/validate_battle.gd` |
-| **新手教程训练场** | 选关面板 →「新手教程 · 战斗训练场」，或 F6 直接开 `scenes/main/battle_lab.tscn`（小怪 + 山之主，**都不还手**；R 重开 · H 给山之主叠眩晕） |
 | 关卡调试 | 主菜单 →「关卡调试 · 选关」→ `scenes/main/level_select.tscn` |
 | 跑验收脚本 | `godot --headless --path E:/godotproject/hd-2d --script tools/validate_xxx.gd` |
 | 重新生成预览图 | 去掉 `--headless` 并追加 `-- --capture`（见 `docs/DEMO_STATUS.md`） |
@@ -40,14 +38,15 @@ Godot 可执行文件本机路径：`E:\SteamLibrary\steamapps\common\Godot Engi
 
 ```
 WASD 移动（方向按当前机位算，W 永远朝画面深处走） · 左键 单段斩击（朝鼠标方向） · 右键 副手燧发枪
-Q 猎魔 · E 傲歌护盾 · R 刀芒 · F 环断 · T 影刺 · Space 剃（闪避，耗体力 30）· K 直踢（耗体力 25）· 无键 拼刀
+Q 猎魔 · K 傲歌护盾 · F 环断 · Space 剃（闪避，耗体力 30）· E 直踹（耗体力 25）
 1 炼金炸弹 · 2 药剂 · V 交互 · C 角色面板 · J 任务面板 · F1 键位说明 · Esc 菜单
 Tab 使徒之眼（后置）· 吞噬之核（后置；原中键已改作镜头控制，键位待重新指定）
 中键拖动 转镜头朝向 / 调机位高度 · 滚轮 推拉镜头远近
 ```
 
-> 注：<kbd>K</kbd> 直踢已在 `player.gd` 实装（野战战技，附眩晕），但**尚未进 `key_bindings.gd` 的 `HINT`/`GROUPS`**，所以 F1 面板与底部提示条里看不到它（见 §13）。
-> 「三段连击」为历史文案：现状普攻是**单段斜劈**（`scripts/player/player_visual.gd` 里 `COMBO_CLIPS = ["attack"]`，只有一段）。
+> 注：直踢（`kick`）**已进** `key_bindings.gd` 的 `HINT_ITEMS` / `GROUPS`，底部提示条与 F1 面板都看得到它。
+> **2026-09-23 默认键对调**：直踢由 `K` 改为 **`E`**，原 `E` 的傲歌（`aoge`）改为 `K` —— 正本仍是 `project.godot` 的 `[input]`，本文键位行已同步。
+| `scripts/player/player_visual.gd` | 按方向选择 / 镜像帧、攻击、受击和闪避表现 |
 
 ---
 
@@ -58,7 +57,7 @@ hd-2d/
 ├── project.godot              工程配置：自动加载 / 输入映射（19 动作）/ 渲染 / 编辑器插件
 ├── .mcp.json                  Godot MCP 服务注册（编辑器接管）
 ├── icon.svg
-├── player.gd / player.tscn     玩家根脚本与场景（唯一根级脚本，含回合战门闩）
+├── player.gd / player.tscn     玩家根脚本与场景
 ├── autoload/
 │   └── game_state.gd          唯一自动加载：存档 + 全局状态 + 经济 + 过场
 ├── data/                      静态数值与查表（纯数据，无场景依赖）
@@ -72,10 +71,9 @@ hd-2d/
 │   ├── world/                 港口 / 科尔波山外围 / 决战空地
 │   ├── workshop/              丛林调色台
 │   └── actors/  world_3d/     空目录（预留）
-├── scripts/                   逻辑脚本（.gd，共 35 个）
+├── scripts/                   逻辑脚本（.gd，共 32 个）
 │   ├── main/                  流程编排与菜单（含 cinematic.gd / opening_boat.gd）
-│   ├── battle/                双形态战斗 P1：状态机 / 单位 / 遭遇圈 / 顺序条 / 指令菜单
-│   ├── combat/                敌人 / Boss / 刀气 / 炸弹 / 掉落实体
+│   ├── combat/                敌人 / Boss / 眩晕条 / 刀气 / 炸弹 / 掉落实体
 │   ├── world/                 镜头（轨道 + 遮挡淡出）/ 传送门 / 宝箱 / 波次 / Boss 导演 / 主城服务
 │   ├── ui/                    HUD（最大文件）/ panel 设计语言 / 商店 / 任务 / 键位表
 │   ├── player/                角色表现与剃特效
@@ -129,7 +127,7 @@ main_menu.tscn ──开始新游戏──▶ opening.tscn（2D 剧情 + 登记�
 - `scripts/world/scene_portal.gd`：进圈即传送，门控由 `campaign_can_enter` 回调接管；未清场只显示锁定提示。
 - `scripts/world/wave_spawner.gd`：读场景里 `colpo_spawn` 分组标记（带 `wave` / `kind` 元数据），一波清完再放下一波。
 - `scripts/world/boss_director.gd`：林间空地节奏（剧情 → 15 秒准备发 3 颗炸弹 → 巨虎登场 → 三阶段 → 结算），Boss 本体在 `scripts/combat/boss_colpo.gd`。
-- `scripts/main/main.gd`（`practice`）：练习/试炼场，**同时也是回合战 P1 的白盒场地** —— `_try_trigger_battle()` 发现玩家靠近游荡野狼即 `start_battle()`，由 `_battle_controller` 接管输入，直到 `_end_battle()` 还原。**战役关卡不经过这条路径**。
+- `scripts/main/main.gd`（`practice`）：自由练习场，包含练功木桩和使用实时 AI 的训练敌人。
 
 ---
 
@@ -167,17 +165,15 @@ main_menu.tscn ──开始新游戏──▶ opening.tscn（2D 剧情 + 登记�
 
 | 文件 | 职责 |
 |---|---|
-| `player.gd` | 普攻（**单段斜劈**）时间轴与命中帧、输入缓冲、剃（三段速度曲线 + 无敌帧，**耗体力 30**）、拼刀、右键燧发枪、Q 猎魔 / E 傲歌 / R 刀芒 / F 环断 / T 影刺、K 直踢（**耗体力 25**，命中叠眩晕、眩晕态处决）、炸弹投掷、药剂、伤害区间双 roll、护甲减免与耐久扣减、`mouse_ground_point()` 供攻击方向与落点共用；**体力**（上限 `60+体力×12`、每秒回 20） |
-| `player.gd`（回合战部分，09-21 新增） | `battle_mode` 门闩（为 true 时实时输入与被动回蓝让位）、`battle_turn_dir` 行动朝向、`battle_execute_move/attack/skill()` 三个回合执行入口；K 直踢目前以此文件内的硬编码按键监听实现 |
-| `scripts/player/player_visual.gd` | 按方向选择/镜像帧、攻击与受击表现、拼刀停帧 |
+| `player.gd` | 普攻（单段斜劈）、输入缓冲、剃、右键燧发枪、Q 猎魔 / K 傲歌 / F 环断、E 直踹（眩晕与处决）、炸弹和药剂，以及伤害、护盾、耐久与体力管理 |
+| `scripts/player/player_visual.gd` | 按方向选择 / 镜像帧、攻击、受击和闪避表现 |
 | `scripts/player/dash_fx.gd` | 剃的残影、尘土、气流与三段音效 |
 
 ### 5.4 战斗 `scripts/combat/`
 
 | 文件 | 职责 |
 |---|---|
-| `enemy.gd` | `Kind = CUSTOM/WOLF/BOAR/GOLEM/DUMMY/HUMAN`；`PROFILES` 数值表；预警圈 + 前摇后结算；`has_energy` 区分能量型；拼刀接口（`can_be_clashed` / `is_strike_imminent` / `on_clash`）；`kill_tier` 决定武器扣耐档；`DUMMY` 进 `targets` 组不参与清场判定 |
-| `enemy.gd`（回合战部分，09-21 新增） | `battle_driven` 门闩（开时实时 AI 让位给 controller）；`battle_advance(target)` 返回「接近 / 攻击」意图文本。**尚无眩晕值字段与 `add_stun()`**（P2 待做） |
+| `enemy.gd` | 敌人类型与实时 AI、预警攻击、能量属性、眩晕 / 处决、耐久档和练功木桩 |
 | `boss_colpo.gd` | 巨虎本体与三阶段（狂暴/诈死/破腿）AI |
 | `sword_wave.gd` / `alchemy_bomb.gd` / `coin.gd` | 飞行刀气（可被墙挡）/ 投掷炸弹（可预埋）/ 掉落币 |
 | `equipment_drop.gd` | 世界内可拾取装备实体 |
@@ -202,10 +198,10 @@ main_menu.tscn ──开始新游戏──▶ opening.tscn（2D 剧情 + 登记�
 | 文件 | 职责 |
 |---|---|
 | `hud.gd`（40KB / 853 行，最大文件） | **HP / MP / 体力 三条**、目标、消息、底部提示、剧情条、Boss 条、按键说明面板、`show_panel`+`add_choice` 的 modal 系统、**C 角色面板**（11 槽穿戴环 + 64 格背包 + 六维与属性点 + tooltip）、**J 任务面板**（挂 `quest_panel.gd`）、商店（挂 `shop_panel.gd`）、剑刃光标 |
-| `system_ui.gd`（09-21 新增） | **面板设计语言唯一数据源**：深蓝灰底 + 电光青边 + 四角铆钉的 `card()` / `style_button()` 与配色常量；商店、任务档案、回合战指令菜单与 AT 顺序条共用同一套外观 |
+| `system_ui.gd`（09-21 新增） | **面板设计语言唯一数据源**：深蓝灰底 + 电光青边 + 四角铆钉的 `card()` / `style_button()` 与配色常量；商店和任务档案共用同一套外观 |
 | `shop_panel.gd`（09-21 新增） | 「轮回商店」面板（CanvasLayer 模态）：陈设、价格、购买与余额显示 |
 | `quest_panel.gd`（09-22 新增） | 「任务档案」面板（CanvasLayer 模态）：左任务名列表（分章 + 状态方块），右选中任务的目标 / 说明 / 奖励 / 记录；底栏进度与可选动作按钮。数据只读，来自 `data/quest_log.gd`，详见 [QUEST_PANEL.md](QUEST_PANEL.md) |
-| `key_bindings.gd` | 键位唯一数据源：`HINT` 底部提示 + `GROUPS` F1 面板（READY/PLANNED/DEFERRED 状态）。**注意：K 直踢尚未收录**（见 §13） |
+| `key_bindings.gd` | 键位唯一数据源：`HINT` 底部提示 + `GROUPS` F1 面板（READY/PLANNED/DEFERRED 状态）。直踢（`kick`）与傲歌（`aoge`）均已收录；2026-09-23 起两者默认键为 **E / K**（对调过） |
 | `hud.tscn` | HUD 场景壳（位于 `scripts/ui/`，不在 `scenes/`） |
 
 ### 5.7 流程 `scripts/main/`
@@ -213,38 +209,12 @@ main_menu.tscn ──开始新游戏──▶ opening.tscn（2D 剧情 + 登记�
 | 文件 | 职责 |
 |---|---|
 | `campaign.gd`（696 行） | 跨场景进度、加载世界、交互接线、工坊（强化/修复/分解/出售/吞噬/属性与刀术）、商店、委托面板、结算与再出发 |
-| `main.gd`（568 行） | 自由练习场 + 1.2~1.5 试炼场：按 `stage` 程序化布景（`_dress_junk_station` / `_city_gate` / `_guard_hq` / `_pleasure_street`）、地面与环境差异化、传送门、练功木桩；**并承载回合战白盒**（`_try_trigger_battle` / `start_battle` / `_run_battle` / `_end_battle` + 指令菜单与顺序条挂载） |
+| `main.gd` | 自由练习场 + 1.2~1.5 试炼场：按 `stage` 程序化布景、地面与环境差异化、传送门、练功木桩和实时训练敌人 |
 | `opening_boat.gd`（607 行，09-21 新增） | 开场第二幕：3D 坐船过场（船上醒来 → 靠灰潮港），结束后进战役 |
 | `cinematic.gd`（399 行，09-21 新增） | 程序化「2D 电影镜头」：黑边、推拉、字幕节拍；供 `opening.gd` 与坐船段复用 |
 | `main_menu.gd` | 主菜单（继续/新游戏/选关/退出），有档才显示「继续游戏」 |
 | `opening.gd` | 开场第一幕：剧情与契约者取名，取名后切 `opening_boat.tscn` |
 | `level_select.gd` | 白盒选关入口 |
-
-### 5.8 双形态战斗 `scripts/battle/`（09-21 新增，P1 回合核心）
-
-「即时战斗 + 回合制战斗」两形态里的**回合半侧**。**设计意图见 [COMBAT_DESIGN.md](COMBAT_DESIGN.md) 第二部**，设计定案见 [COMBAT_REWORK_PLAN.md](COMBAT_REWORK_PLAN.md) 的 D1~D5；当前只实装 P1，且只在练习/试炼场跑通。
-
-| 文件 | 职责 |
-|---|---|
-| `battle_unit.gd`（64 行） | 玩家/敌人统一作战封装（纯数据 + 纯函数，不碰场景树）：HP/MP/移动力/眩晕/先攻；`round_mp_regen()` = 每整轮 5% 最大 MP（至少 1）；`from_player()` / `from_enemy()` 从既有实体取数 |
-| `battle_controller.gd`（136 行） | 回合状态机 `Phase.{IDLE,ORDER,ACTION,CHECK,VICTORY,DEFEAT}`：AT 按敏捷降序、`finish_turn()` 走完一轮重排并结算回蓝、`force_win()` 收口胜负；`begin_battle_with_player_first()` = **进入回合制的首轮先手权**（09-22 新增） |
-| `stun_gauge.gd`（09-22 新增） | 敌人 / 山之主头顶的**眩晕黄条**（程序化网格，0~100，满值加亮）；只做管线，不含美术 |
-| `encounter_zone.gd`（54 行） | 遭遇区：半径 8m 判定（`in_radius`）+ 程序化青白结界网格 + `try_trigger()`。只被 `tools/validate_battle.gd` 引用，未挂进任何场景 —— ⚠️ **设计已取消"圈内入战"（09-22），本文件作废**（见 [COMBAT_DESIGN.md](COMBAT_DESIGN.md) §2.2） |
-| `order_bar.gd`（30 行） | AT 顺序条（HBoxContainer，SystemUI 配色），`rebuild()` 按单位数渲染条目 |
-| `battle_menu.gd`（61 行） | 我方回合指令面板，`confirmed` / `canceled` 信号 |
-
-**接线方式**：回合战的入口不在 `scripts/battle/` 内部。现有两处：
-1. `scripts/main/main.gd`（练习场，**五指令**，待收敛）——`start_battle()` 组装 `BattleUnit` → `_run_battle()` 循环；
-2. `scripts/main/battle_lab.gd`（**新手教程 · 战斗训练场**，09-22 新增，**三指令**按设计）——由「山之主眩晕 + 再次攻击命中」触发。
-两者都靠 `player.battle_mode` 与 `enemy.battle_driven` 两个门闩冻结各自的实时逻辑。
-
-**尚未实装（P2/P3）**：进入演出（拉近镜头 + 复用现有攻击动画）、战斗运镜、拼刀残留清理（`CLASH_*`）、影刺/傲歌/青钢影回合化、猎魔被动化、意图预告、战役关卡接入、山之主回合化（阶段/招式意图）。
-**已完成（09-22）**：野战眩晕条（`stun_gauge.gd`）、`enemy/boss.add_stun`、**小怪眩晕"停止移动" + 直踹处决**、**山之主眩晕 + 再次攻击触发回合**、**首轮先手权**、山之主接入回合战的最小接口（`battle_driven` / `battle_advance` / 眩晕）、**新手教程训练场**。
-**已完成（09-23）**：**回合指令集统一为五条**（攻击 / 战技 / 防御 / 道具 / 逃跑 —— 作者改回，原先"收敛为三条"的计划作废；两套场景共用 `BattleMenu.COMMANDS`）、**五处状态缺陷修复**（回合耗蓝被退回、环断不扣蓝、回合战技不结算、侧/背击恒判正面、回合移位穿墙）。
-**已按设计取消**：`encounter_zone` 圈内入战 / 结界 / 禁出、"Boss 场强制回合"、拼刀及其弹反、单方向 `battle_idle` / `cast` 新帧（改用现有 `idle` / `attack`）。**注**：原列于此处取消的"回合内防御与逃跑"已于 09-23 恢复为在用指令。
-**口径修订**："Boss" 是专属称号——只有**科尔波山之主**叫 Boss，其余敌人（含具名强敌）统称小怪。
-
----
 
 ## 6. 数据流（关键链路）
 
@@ -252,7 +222,7 @@ main_menu.tscn ──开始新游戏──▶ opening.tscn（2D 剧情 + 登记�
 ```
 左键点击 → 记录鼠标地面方向到输入缓冲(0.15s)
 → attack_cd 就绪 → _start_attack(段位) → 到达命中帧
-→ _hurt_in_cone(射程, 弧) → 拼刀判定 → _damage_target
+→ _hurt_in_cone(射程, 弧) → _damage_target
 → enemy.take_damage(物理, 击退, 源, 真伤)
 → 物理按 enemy.physical_reduction 减免；真伤跳过减免
 → 命中回蓝 1%；击杀则按 kill_tier 扣主/副手武器耐久
@@ -281,20 +251,6 @@ enemy 结算命中 → player.take_damage
 → stage==4 时 settle_trial()：评级 → 属性点 + 乐园币，清理本土(export=false)物品，hub=true
 → 港口整备 → begin_next_trial() 重开一轮
 ```
-
-**回合战（P1 白盒，仅练习/试炼场）**
-```
-练习场 _physics_process → _try_trigger_battle()（practice && 未开战 && 野狼在触发距离）
-→ start_battle()：player.battle_mode = true；野狼 battle_driven = true
-→ BattleUnit.from_player(player, 敏捷) / from_enemy(野狼) → battle_controller.begin_battle()（AT 敏捷降序）
-→ _run_battle() 循环：
-     轮到玩家 → 开 BattleMenu 等指令 → battle_execute_move / attack / skill / item
-     轮到敌人 → enemy.battle_advance(player) 返回「接近 / 攻击」→ 命中走 take_damage
-→ finish_turn() → 走完一轮则各单位 take_regen_mp()（+5% 最大 MP）并重排 AT
-→ 敌方全灭 → _end_battle(true)：还原两个门闩，退出回合
-```
-
----
 
 ## 7. 存档
 
@@ -375,13 +331,12 @@ enemy 结算命中 → player.take_damage
 **预置库与角色**
 `preset_catalog.gd`、`import_presets.gd`、`apply_face_player.gd`、`apply_guard_frames.gd`、`apply_jungle_camera.gd`、`build_new_player_frames.gd`、`build_video_player_frames.gd`
 
-**验证（17 个）**
+**验证（19 个）**
 
 `2026-09-22 实跑结果` —— 以下 8 个脚本在本机（Godot 4.7.2 + `--headless`）逐个跑过且全部通过：
 
 | 脚本 | 通过标志 |
 |---|---|
-| `validate_battle.gd` | `BATTLE_FAILURES=0`（**36 项**：回蓝 / AT 降序 / 轮转 / 门闩 / 敌人步进 / KICK 常量 / 遭遇圈 / **眩晕与处决链** / **山之主回合接口** / **首轮先手权** / 验证场装载） |
 | `validate_combo_skills.gd` | `COMBO_SKILLS_FAILURES=0` |
 | `validate_combat_skills.gd` | `COMBAT_SKILLS_FAILURES=0` |
 | `validate_core_loop.gd` | `CORE_LOOP_FAILURES=0` |
@@ -393,7 +348,7 @@ enemy 结算命中 → player.take_damage
 未在本次跑过（沿用 `*_FAILURES=0` 约定）：`validate_demo.gd`、`validate_six_attrs.gd`、`validate_colpo.gd`、`validate_level_refine.gd`、`validate_jungle_art.gd`、`validate_jungle_camera.gd`、`validate_world_drops.gd`、`validate_player_anim.gd`、`validate_new_player_frames.gd`。
 
 **截图 / 实机检查**
-`capture_harbor.gd`、`capture_jungle.gd`、`capture_menu.gd`、`capture_ui.gd`、`capture_quest.gd`、`capture_south_port.gd`、`capture_mountain_preview.gd`、`capture_hub_districts.gd`、`capture_dressing.gd`、`capture_occlusion_demo.gd`、`capture_opening_boat.gd`、`capture_opening_shots.gd`、**`capture_battle_lab.gd`（训练场三连拍）**；`check_harbor_hub.gd`、`check_harbor_port.gd`、`check_occlusion_fade.gd`、`check_presets.gd`；`compare_jungle_cameras.gd`、`compare_sword_cameras.gd`、`compare_attack_runtime.gd`
+`capture_harbor.gd`、`capture_jungle.gd`、`capture_menu.gd`、`capture_ui.gd`、`capture_quest.gd`、`capture_south_port.gd`、`capture_mountain_preview.gd`、`capture_hub_districts.gd`、`capture_dressing.gd`、`capture_occlusion_demo.gd`、`capture_opening_boat.gd`、`capture_opening_shots.gd`；`check_harbor_hub.gd`、`check_harbor_port.gd`、`check_occlusion_fade.gd`、`check_presets.gd`；`compare_jungle_cameras.gd`、`compare_sword_cameras.gd`、`compare_attack_runtime.gd`
 
 **探针（临时排查用，`probe_*` 17 个）**
 `probe_dock_deck` / `probe_dock_presets` / `probe_dressing_presets` / `probe_layout` / `probe_mountain_presets` / `probe_quest_forge_presets` / `probe_occlusion_cost` / `probe_occlusion_coverage` / `probe_save` / `probe_frame_duration` / `probe_new_moves_sheet` 等，另有 `dump_opening_boat.gd` / `dump_opening_frame.gd` / `render_attack_offscreen.gd`
@@ -435,9 +390,8 @@ enemy 结算命中 → player.take_damage
 7. **改动前先看 `git diff`**：工作区常有多轮未提交改动，不要覆盖他人工作，也不要重跑会覆盖场景的生成脚本。
 8. **验证脚本各有通过标志**（`*_FAILURES=0` / `*_CHECKS: PASS` / 中文「全部 PASS」，见 §10 表），跑绿才算通过；但脚本只验流程与状态，不替代真人手感测试。
 9. **色彩语言**：蓝色 = 系统、红色 = 危险、金色 = 高价值；同时配文字与形状，不只靠颜色。
-10. **面板外观只改 `system_ui.gd`**：商店、任务档案、回合战指令菜单与 AT 顺序条共用同一套 `card()` / `style_button()` 设计语言，避免各面板各写一套。
+10. **面板外观只改 `system_ui.gd`**：商店、任务档案共用同一套 `card()` / `style_button()` 设计语言，避免各面板各写一套。
 11. **任务文案只改 `data/quest_log.gd`**：任务档案是存档进度的只读映射，不新增存档字段、不在面板里写业务规则；加地区/支线只动这一个文件。
-12. **双形态战斗保持两套门闩对等**：新增/修改回合行为时，`player.battle_mode` 与 `enemy.battle_driven` 必须成对开关（`start_battle` / `_end_battle` 里还原），否则实时 AI 会和 controller 抢同一个单位。
 
 ---
 
@@ -445,9 +399,7 @@ enemy 结算命中 → player.take_damage
 
 | 项 | 状态 |
 |---|---|
-| **双形态战斗 P2/P3** | **09-22 已完成**：眩晕条 + 小怪停止移动 + 直踹处决、山之主眩晕 + 补刀触发回合、首轮先手权、山之主接入回合战、新手教程训练场（两个训练靶都不还手）。**09-23 已完成**：回合指令统一为五条（两套场景共用 `BattleMenu.COMMANDS`）+ 五处状态缺陷修复。**待做**：进入演出（拉近镜头 + 复用攻击动画）、战斗运镜、影刺/傲歌/青钢影回合化、猎魔被动化、意图预告、战役关卡接入、山之主阶段/招式意图 | 部分完成，见 [COMBAT_REWORK_PLAN.md](COMBAT_REWORK_PLAN.md) |
-| `encounter_zone.gd` 未挂进任何场景 | 只被 `tools/validate_battle.gd` 引用；设计已取消"圈内入战"，本文件作废待删（`main.gd` 仍引用它，需一并收敛） |
-| <kbd>K</kbd> 直踢未进键位表 | `key_bindings.gd` 的 `HINT` / `GROUPS` 无此项，F1 面板与底部提示条看不到它（功能本身已实装，含眩晕与处决） |
+| ~~<kbd>K</kbd> 直踢未进键位表~~ **✅ 2026-09-23 已修** | `key_bindings.gd` 的 `HINT_ITEMS` / `GROUPS` 已收录直踢，F1 面板与底部提示条都能看到（功能含眩晕与处决）。同日默认键由 `K` 对调为 **`E`**（傲歌改 `K`），正本在 `project.godot` |
 | 角色帧表依赖**未提交**资源 | `player.tscn` → `player_frames_video.tres` → `black_swordsman_video/`，三者需一起入库，否则角色动画失效 |
 | 防具/首饰类 **乐园公证（export）** 装备内容缺失，11 槽中多槽无物可填 | 未做 |
 | 成长吞噬**供给不足**（掉落池无刀类武器可喂斩龙闪） | 未做 |
@@ -473,7 +425,7 @@ enemy 结算命中 → player.take_damage
 | 根级与配置 | `.gitignore`、`project.godot`、`player.gd`、`player.tscn` |
 | 数据层 | `autoload/game_state.gd`、`data/campaign.gd`、`data/combat_skills.gd` |
 | 战斗 | `scripts/combat/enemy.gd`、`scripts/world/{boss_director,wave_spawner}.gd` |
-| 玩家 | `scripts/player/player_visual.gd` |
+| `scripts/player/player_visual.gd` | 按方向选择 / 镜像帧、攻击、受击和闪避表现 |
 | 流程与 UI | `scripts/main/{main,campaign,main_menu,opening,level_select}.gd`、`scripts/ui/{hud,key_bindings}.gd` |
 | 世界与镜头 | `scripts/world/{harbor,harbor_service,colpo_level,jungle_camera_style}.gd` |
 | 场景 | `scenes/main/{campaign,main_menu}.tscn`、`scenes/world/{harbor,colpo_forest_outer,colpo_forest_clearing}.tscn` |
@@ -484,18 +436,14 @@ enemy 结算命中 → player.take_damage
 **已删除（5 个）**
 
 ```
-docs/COMBAT_SPEC_SUXIAO.md                ┐
-docs/SKILL_NUMERICS_SUXIAO.md             ├ 三份合并进 docs/COMBAT_SYSTEM.md
-docs/COMBAT_SYSTEM_HANDOFF_20260918.md    ┘
+旧战斗规格文档已移除；当前即时战斗规则与数值见 docs/REALTIME_COMBAT_EXTRACTION.md
 scripts/world/camera_mouse_lead.gd (+uid)   被 camera_orbit_controls.gd 取代
 ```
 
 **未跟踪（173 项，按性质分组）**
 
 ```
-scripts/battle/                   双形态战斗：P1 五个 .gd + stun_gauge.gd（眩晕黄条）
-scripts/main/battle_lab.gd + scenes/main/battle_lab.tscn   新手教程 · 战斗训练场（小怪 + 山之主，不还手）
-tools/capture_battle_lab.gd      训练场三连拍（docs/battle_lab*.png）
+scripts/combat/stun_gauge.gd      即时眩晕状态条
 data/quest_log.gd                 任务档案数据源
 scripts/ui/{quest_panel,shop_panel,system_ui}.gd
 scripts/main/{cinematic,opening_boat}.gd + scenes/main/opening_boat.tscn
@@ -506,13 +454,13 @@ assets/characters/player_frames_video.tres   ← player.tscn 现在依赖它
 assets/characters/black_swordsman/{新版动作,最新版动作}/
 levels/                           FreeWalk.tscn + terrain（未接入主流程）
 tools/                            约 40 个新脚本（harbor_* / apply_* / capture_* / probe_* / validate_* / package_* / normalize_*）
-docs/{COMBAT_SYSTEM,COMBAT_REWORK_PLAN,TURNBASED_COMBAT_PLAN,QUEST_PANEL,PROJECT_OVERVIEW}.md + docs/camera_sword/
+docs/{REALTIME_COMBAT_EXTRACTION,COMBAT_DESIGN,COMBAT_SYSTEM,QUEST_PANEL,PROJECT_OVERVIEW}.md + docs/camera_sword/
 .mcp.json                         Godot MCP 注册
 .zcode/  .codebuddy/  .workbuddy/  .trae/     各 AI 工具的工作与记忆目录
 probe_out.txt  scenes/world/_probe_save_test.tscn
 ```
 
-> ⚠️ 这批改动横跨 **09-19 ~ 09-22 四天**，包含港口三次扩写（南岸码头 / 围墙 / 商街 / 工坊 / 委托所 / 科尔波山远景）、镜头与遮挡系统重做、开场第二幕、面板体系、双形态战斗 P1、角色动作重制等多个**独立主题**。动手前先确认作者与意图。
+> ⚠️ 这批改动横跨 **09-19 ~ 09-22 四天**，包含港口三次扩写（南岸码头 / 围墙 / 商街 / 工坊 / 委托所 / 科尔波山远景）、镜头与遮挡系统重做、开场第二幕、面板体系、即时战斗技能和角色动作重制等多个**独立主题**。动手前先确认作者与意图。
 > ⚠️ **不要重跑** `build_harbor.gd` / `build_colpo.gd` / `harbor_*.gd` 这些会覆盖场景的生成脚本。
 > ⚠️ `player.tscn` 已指向未跟踪的 `player_frames_video.tres`：提交时 `player.tscn` + `.tres` + `black_swordsman_video/` 三者必须一起入库，否则角色动画失效。
 
@@ -530,10 +478,8 @@ probe_out.txt  scenes/world/_probe_save_test.tscn
 | `IMPLEMENTATION_PLAN.md` | A01~E04 工作包与验收 |
 | `NOVEL_CORE_SYSTEMS.md` | 原著规则考据与游戏化取舍 |
 | `NOVEL_VOL1_LEVELS.md` | 当前剧情范围（止于猎虎） |
-| `COMBAT_DESIGN.md` | **战斗系统设计文档 v0.4 草稿（待评审）**：按「**即时战斗**」「**回合制战斗**」两部分分别描述（各自的动作集 / 规则 / 资源口径 / 表现 / 待定项），另设「两形态共用基础」（技能归属、伤害链、道具、山之主、调参面）与「风险与待拍板」；含 **13 条待拍板问题**（以 `Qn` 引用） |
-| `COMBAT_SYSTEM.md` | 战斗系统现状整合：按键表、普攻/技能数值、结算链、敌人侧、**回合制现状**（2026-09-21 合并三份旧文档，09-22 补回合章节） |
-| `COMBAT_REWORK_PLAN.md` | 双形态战斗改版实施计划（P1 回合核心 / P2 野战联动 / P3 战役接入，2026-09-21 定案，09-22 标注实施状态） |
-| `TURNBASED_COMBAT_PLAN.md` | 双形态改版设计提案原文（D1~D5 决策定案稿；实施以 COMBAT_REWORK_PLAN 为准） |
+| `REALTIME_COMBAT_EXTRACTION.md` | 即时战斗规则、数值、运行入口和素材清单 |
+| `COMBAT_DESIGN.md` / `COMBAT_SYSTEM.md` | 即时战斗设计与实现入口，指向上表 |
 | `QUEST_PANEL.md` | 任务档案面板（<kbd>J</kbd>）：三个入口、文件地图、为什么这么做（2026-09-22） |
 | `EQUIPMENT_SYSTEM.md` | 装备系统 v0.2（槽位/品质/评分/强化/耐久/吞噬） |
 | `HARBOR_MAP.md` | 灰潮港**逐轮施工日志**（383 行，09-17 ~ 09-20）：正式核心循环接入、场景优化、植被清空、围墙、南岸码头、前景遮挡淡出、镜头操控、商街、铸潮工坊、港务委托所、装饰景观层、科尔波山远景 |

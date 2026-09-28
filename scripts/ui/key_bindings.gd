@@ -8,7 +8,7 @@ extends RefCounted
 ##   keys         = 写死的键名（鼠标手势、后置功能）或「无按键」；
 ##   desc         = 这个键干什么（唯一的文案正本）。
 ##
-## 键位依据 docs/COMBAT_SPEC_SUXIAO.md v1.1 的按键表；status 反映当前工程实际进度。
+## 键位依据 docs/REALTIME_COMBAT_EXTRACTION.md；status 反映当前工程实际进度。
 ## 默认键位本身的正本是 project.godot 的 [input]，这里不抄副本。
 
 const READY := 1     # 已实装：当前版本按键有效
@@ -38,8 +38,8 @@ const HINT_ITEMS := [
 	{"bind": "shoot", "desc": "枪"},
 	{"bind": "hunter_toggle", "desc": "猎魔"},
 	{"bind": "aoge", "desc": "护盾"},
-	{"bind": "sword_wave", "desc": "刀芒"},
 	{"bind": "huanduan", "desc": "环断"},
+	{"bind": "sword_wave", "desc": "刀芒"},
 	{"bind": "shadow_stab", "desc": "影刺"},
 	{"bind": "bomb", "desc": "陷阱"},
 	{"bind": "potion", "desc": "药剂"},
@@ -63,8 +63,8 @@ const REBINDABLE := [
 	{"group": "近战与道具", "bind": "shoot", "label": "燧发枪（副手）"},
 	{"group": "近战与道具", "bind": "bomb", "label": "炼金炸弹 / 陷阱"},
 	{"group": "近战与道具", "bind": "potion", "label": "饮用药剂"},
-	{"group": "刀术与青钢影", "bind": "sword_wave", "label": "刀芒"},
 	{"group": "刀术与青钢影", "bind": "huanduan", "label": "环断"},
+	{"group": "刀术与青钢影", "bind": "sword_wave", "label": "刀芒"},
 	{"group": "刀术与青钢影", "bind": "shadow_stab", "label": "影刺"},
 	{"group": "刀术与青钢影", "bind": "hunter_toggle", "label": "猎魔（开关）"},
 	{"group": "刀术与青钢影", "bind": "aoge", "label": "傲歌（护盾）"},
@@ -92,9 +92,9 @@ const CAMPAIGN_GUIDE_LINES := [
 	[
 		{"bind": "hunter_toggle", "desc": "猎魔"},
 		{"bind": "aoge", "desc": "傲歌"},
-		{"bind": "sword_wave", "desc": "刀芒"},
 		{"bind": "huanduan", "desc": "环断"},
-		{"bind": "shadow_stab", "desc": "影刺（第二段前刺命中后）"},
+		{"bind": "sword_wave", "desc": "刀芒"},
+		{"bind": "shadow_stab", "desc": "影刺"},
 	],
 	[
 		{"bind": "interact", "desc": "遭遇 / 拾取 / 港口服务"},
@@ -119,15 +119,14 @@ const GROUPS := [
 		"entries": [
 			{"bind": "attack", "desc": "单段斩击，朝鼠标所指方向出手；命中留下影缝标记", "status": READY},
 			{"bind": "kick", "desc": "直踹：高眩晕值技，负责把敌人打进眩晕，也是小怪眩晕态的处决手段", "status": READY},
-			{"keys": "无按键", "desc": "拼刀格挡：双方近战有效帧重叠时自动触发，双方都不结算伤害", "status": READY},
 		],
 	},
 	{
 		"title": "刀术",
 		"entries": [
-			{"bind": "sword_wave", "desc": "刀芒：中距离远程刀气，只打物理伤害", "status": READY},
 			{"bind": "huanduan", "desc": "环断：原地环形刀芒，清包围的复数敌人，耗蓝更高", "status": READY},
-			{"bind": "shadow_stab", "desc": "影刺：斩击命中留下影缝标记后，对该目标引爆能量", "status": READY},
+			{"bind": "sword_wave", "desc": "刀芒：朝鼠标方向发射直线刀波，耗蓝并有冷却", "status": READY},
+			{"bind": "shadow_stab", "desc": "影刺：斩击留下影缝标记后，贴近目标突刺并造成真实伤害", "status": READY},
 		],
 	},
 	{
@@ -150,7 +149,7 @@ const GROUPS := [
 		"entries": [
 			{"keys": "Tab", "desc": "使徒之眼：侦查敌人威胁等级（黑色 = 极高威胁）", "status": DEFERRED},
 			{"keys": "待重新指定", "desc": "吞噬之核：贴脸读条吸收敌人高等能量（原鼠标中键，已改作轨道镜头）", "status": DEFERRED},
-			{"bind": "interact", "desc": "交互：传送门、NPC、撤离信标与可交互物", "status": READY},
+			{"bind": "interact", "desc": "交互：NPC、港口服务、场景宝箱与撤离信标（传送门走进即触发，不用按键）", "status": READY},
 			{"bind": "character_panel", "desc": "角色面板：左侧人物形象 + 装备栏，右侧六维属性与可用属性点", "status": READY},
 			{"bind": "quest_log", "desc": "任务面板：左侧任务名列表（分章 + 状态），右侧选中任务的目标 / 说明 / 奖励", "status": READY},
 			{"bind": "open_menu", "desc": "面板 / 菜单：返回选关", "status": READY},

@@ -10,11 +10,14 @@ const MP_REGEN_PER_SECOND := 0.002
 ## 攻击冷却 0.6s：12 帧 @15fps 剪辑时长 0.8s，播放倍率 = 0.8/0.6 ≈ 1.33×，整段动画正好铺满冷却
 ## （2026-09-21 用户反馈"动作慢吞吞、不符合攻击风格"，从 0.8s / 1.0× 提速）。
 ## 冷却同时是"出手间隔"，所以提速后连击节奏也更跟手。
-const COMBO_HIT_TIMES := [0.12]
+## 竖斩与横斩的刀刃接触都排在第 5 帧附近；12 帧剪辑压入 0.6s 冷却后于 0.24s 结算。
+const COMBO_HIT_TIMES := [0.24]
 const COMBO_COOLDOWNS := [0.6]
 const COMBO_MULTIPLIERS := [1.3]
 const COMBO_REACH_BONUS := [0.0]
 const COMBO_ARC_HALF := [1.0]
+## 横斩动画的刀刃接触约在第 5 帧；单独延后伤害帧与画面同步。
+const HORIZONTAL_ATTACK_HIT_TIME := 0.24
 const SHIELD_MP_COST := 14.0
 const SHIELD_DURATION := 5.0
 const SHIELD_COOLDOWN := 8.0
@@ -45,6 +48,7 @@ const SHADOW_TRUE_DAMAGE := 16.0
 const KICK_STUN := 25.0
 const KICK_MULTIPLIER := 1.0
 const KICK_COOLDOWN := 0.9
+const KICK_HIT_TIME := 0.16  # 脚真正踢出的有效帧；按键时只起手，不提前结算
 
 ## ---------- 体力（闪避 / 直踹的能量，2026-09-22 定） ----------
 ## 体力条：上限由「体力」属性派生（attributes.gd 的 max_stamina），这里是消耗与回复。
@@ -53,9 +57,9 @@ const STAMINA_REGEN_PER_SECOND := 20.0
 const DODGE_STAMINA_COST := 30.0
 const KICK_STAMINA_COST := 25.0
 
-## ---------- 眩晕条（即时战斗的破绽资源，见 docs/COMBAT_DESIGN.md §1.4） ----------
-## 小怪打满 → 停止移动，可用直踹处决；山之主打满 → 再次攻击命中即进入回合制。
-## **不衰减**（作者 2026-09-22 定）：打满就一直保持，直到被处决（山之主则是进回合时清零）。
+## ---------- 眩晕条（即时战斗的破绽资源，见 docs/REALTIME_COMBAT_EXTRACTION.md） ----------
+## 小怪打满 → 停止移动，可用直踹处决；山之主打满 → 短暂硬直后恢复行动。
+## **不衰减**：小怪满值保持到处决；山之主硬直结束后清零。
 ## 早先版本的"每秒衰减 20"会让平A（+8 / 0.6s）净亏 4 点，眩晕条永远打不满，已废弃。
 const STUN_MAX := 100.0
 const STUN_ON_ATTACK := 8.0            # 平A 每命中

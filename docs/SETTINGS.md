@@ -19,7 +19,7 @@
 
 写盘策略比存档简单：偏好档损坏最多回到内置默认，不会丢进度，所以**不做**「临时档 + rename + `.bak`」
 那套原子替换，直接写并在失败时 `push_error`。逐项**读时校验**：手改过的档、旧版本残留、
-超范围的值都会被夹回合法区间或退回内置默认（`load_settings()` 里逐项 `clampi` / `clampf` / 档位白名单）。
+超范围的值都会被夹到有效区间或退回内置默认（`load_settings()` 里逐项 `clampi` / `clampf` / 档位白名单）。
 
 ---
 
@@ -72,7 +72,7 @@
   F1 说明面板里如实标注为手势，不进改键表。
 - 本轮顺带把两个**玩家会按、却不是 InputMap 动作**的键补成了动作，否则改键表会有洞：
   `shoot`（燧发枪，默认鼠标右键，原 `player.gd` 里硬判 `MOUSE_BUTTON_RIGHT`）、
-  `kick`（直踹，默认 `K`，原 `player.gd` 里硬判 `KEY_K`，且此前连 F1 说明都没列）。
+  `kick`（直踹，默认 **`E`** —— 2026-09-23 由 `K` 改为 `E`，原 `E` 的傲歌对调为 `K`；此前原 `player.gd` 里硬判 `KEY_K`，且连 F1 说明都没列）。
 
 ---
 
@@ -85,6 +85,9 @@
   键名一律由 `keys_of()` / `key_text()` 从 `InputMap` 现读。
 - `GameSettings.changed("keys")` → `hud._on_settings_changed()` 重算底部提示条与 F1 说明的键名列。
 - 顺带修掉了旧文案里的两处失实：「左键三连击」（早已是单段斜劈）、「Shift 闪避」（剃是空格，Shift 是废弃的 `run`）。
+- **范围扩大（09-23）**：不止上面两张表 —— 教程目标（`data/quest_log.gd`）、向导对话与关卡目标（`campaign.gd`）、
+  Boss 提示（`boss_director.gd`）、战斗状态栏（`hud.gd`）、服务点与宝箱的贴底提示（`harbor_service.gd` / `scene_chest.gd`）、
+  眩晕处决提示（`player.gd`）、选关操作说明（`level_select.gd`）里的键名也一律改成现读，写死的键名已经没有了。
 
 ---
 

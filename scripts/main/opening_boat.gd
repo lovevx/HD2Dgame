@@ -8,6 +8,7 @@ const WATER_SHADER := preload("res://shaders/harbor_water.gdshader")
 const PAVING_SHADER := preload("res://shaders/harbor_paving.gdshader")
 const SKY_SHADER := preload("res://shaders/boat_sky.gdshader")
 const PLAYER_FRAMES := preload("res://assets/characters/player_frames_video.tres")
+const DialogueBoxScript := preload("res://scripts/ui/dialogue_box.gd")
 const CHAR_INTERVAL := 0.045
 const SUN_DIR := Vector3(0.38, 0.34, -0.86)   # 与太阳光/天空盘一致（近单位长度）
 
@@ -16,7 +17,7 @@ const SHIP_LINES: Array[String] = [
  "意识在黑暗中沉浮。不知过了多久，身下传来微微的起伏——",
  "你睁开眼，正躺在一艘船的甲板上，海风裹着咸腥味灌进鼻腔。",
  "船身缓缓靠上灰潮港的码头，缆绳落定，水手吆喝着搭好跳板。",
- "一名穿着旧皮甲的向导迎了上来：",
+	"一名穿着旧皮甲的向导迎了上来。",
  "港口向导：「新人，快去东侧的试炼场地熟悉一下身手吧！」",
 ]
 
@@ -59,6 +60,12 @@ var _port_pts: Array[Vector3] = []
 var speaker_label: Label
 var text_label: Label
 var hint_label: Label
+var subtitle_speaker_label: Label
+var subtitle_text_label: Label
+var subtitle_hint_label: Label
+var subtitle_band: ColorRect
+var subtitle_box: VBoxContainer
+var dialogue_box
 var title_label: Label
 var fade_rect: ColorRect
 
@@ -325,27 +332,32 @@ func _build_ui() -> void:
 	band.offset_bottom = 96
 	band.color = Color(0, 0, 0, 0.9)
 	layer.add_child(band)
-	var band_b := ColorRect.new()
-	band_b.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	band_b.offset_top = -172
-	band_b.color = Color(0, 0, 0, 0.42)
-	layer.add_child(band_b)
-	var box := VBoxContainer.new()
-	box.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	box.offset_left = 240
-	box.offset_right = -240
-	box.offset_top = -150
-	box.offset_bottom = -34
-	box.alignment = BoxContainer.ALIGNMENT_END
-	box.add_theme_constant_override("separation", 8)
-	layer.add_child(box)
-	speaker_label = _label(box, "", 26, Color("ebd6a2"))
-	speaker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	text_label = _label(box, "", 31, Color("e8f1f6"))
-	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint_label = _label(box, "", 18, Color("7d94a8"))
-	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle_band = ColorRect.new()
+	subtitle_band.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	subtitle_band.offset_top = -172
+	subtitle_band.color = Color(0, 0, 0, 0.42)
+	layer.add_child(subtitle_band)
+	subtitle_box = VBoxContainer.new()
+	subtitle_box.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	subtitle_box.offset_left = 240
+	subtitle_box.offset_right = -240
+	subtitle_box.offset_top = -150
+	subtitle_box.offset_bottom = -34
+	subtitle_box.alignment = BoxContainer.ALIGNMENT_END
+	subtitle_box.add_theme_constant_override("separation", 8)
+	layer.add_child(subtitle_box)
+	subtitle_speaker_label = _label(subtitle_box, "", 26, Color("ebd6a2"))
+	subtitle_speaker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle_text_label = _label(subtitle_box, "", 31, Color("e8f1f6"))
+	subtitle_text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle_text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle_hint_label = _label(subtitle_box, "", 18, Color("7d94a8"))
+	subtitle_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dialogue_box = DialogueBoxScript.new()
+	dialogue_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(dialogue_box)
+	dialogue_box.call("set_panel_top_ratio", 0.56)
+	_set_dialogue_mode(false)
 	title_label = _label(layer, "", 48, Color("f2dc9b"))
 	title_label.position = Vector2(0, 268)
 	title_label.size = Vector2(1920, 90)
@@ -368,6 +380,19 @@ func _label(parent: Node, text: String, font_size: int, color: Color) -> Label:
 	label.add_theme_constant_override("outline_size", 6)
 	parent.add_child(label)
 	return label
+
+func _set_dialogue_mode(show_dialogue: bool) -> void:
+	dialogue_box.visible = show_dialogue
+	subtitle_band.visible = not show_dialogue
+	subtitle_box.visible = not show_dialogue
+	if show_dialogue:
+		speaker_label = dialogue_box.get("speaker_label") as Label
+		text_label = dialogue_box.get("text_label") as Label
+		hint_label = dialogue_box.get("hint_label") as Label
+	else:
+		speaker_label = subtitle_speaker_label
+		text_label = subtitle_text_label
+		hint_label = subtitle_hint_label
 
 # ---------------------------------------------------------------- 主循环
 
@@ -502,6 +527,7 @@ func _advance_line() -> void:
 	_char_index = 0
 	_type_timer = 0.0
 	_finished = false
+	_set_dialogue_mode(_speaker_of(SHIP_LINES[_line_index]) != "")
 	text_label.text = ""
 	speaker_label.text = ""
 	speaker_label.hide()
@@ -583,6 +609,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func capture_pose(i: int) -> void:
 	_capture_static = true
 	_line_index = i
+	_set_dialogue_mode(_speaker_of(SHIP_LINES[i]) != "")
 	var b: Dictionary = BEATS[i]
 	_t = float(b["cap"])
 	_hold_t = 0.0

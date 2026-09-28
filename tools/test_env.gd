@@ -10,7 +10,7 @@ extends RefCounted
 ##      进度漂移，断言就成了「装了这台的存档才过」。这里统一走 reset_progress()，
 ##      把六维钉回 Campaign.BASE_STATS（str6/agi7/con5/int6/cha3/luk1），
 ##      于是 max_hp=100、max_mp=60、max_stamina=120 —— 校验脚本可以放心断言具体数值，
-##      但仍然推荐写派生公式而不是字面量（见 validate_battle 的体力上限断言）。
+##      但仍然推荐写派生公式而不是字面量（见 validate_six_attrs 的体力上限断言）。
 ##
 ## 用法（必须在 call_deferred 的 run() 里、且 GameState 已就绪之后调用）：
 ##   const TestEnv := preload("res://tools/test_env.gd")

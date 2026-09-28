@@ -10,9 +10,9 @@ const STAGES := [
 	 "story": "伪装成商人的苏晓混进了王都入口。城门口的黑市商人卡洛斯眯起眼——这面孔太陌生了。\n\n他拔出了腰间的匕首。要进城，先过这一关。"},
 	{"name": "1.4 侍卫总部", "brief": "持引荐信完成入队实战考核，领取并装备斩龙闪。", "enemies": [["考核教官（切磋）", 100, 10, "instructor"]], "loot": {"dragon": 1, "guard_badge": 1}, "source": 2.1,
 	 "story": "引荐信递到侍卫长手里，换来一句冷笑：\n\n“入队前先过实战考核。”操场上，考核教官提着佩刀，缓步走进演武圈。"},
-	{"name": "1.5 欢乐街", "brief": "击败欧卡与护卫，开启白色宝箱，准备猎虎。", "enemies": [["布兰登·欧卡", 170, 17, "oka"], ["欧卡护卫", 55, 10, "guard"]], "loot": {"oka_chest": 1, "trap": 3, "potion": 2, "catnip": 1}, "source": 3.6,
+	{"name": "1.5 欢乐街", "brief": "击败欧卡与护卫，开启白色宝箱，整备后前往科尔波山。", "enemies": [["布兰登·欧卡", 170, 17, "oka"], ["欧卡护卫", 55, 10, "guard"]], "loot": {"oka_chest": 1, "trap": 3, "potion": 2, "catnip": 1}, "source": 3.6,
 	 "story": "欢乐街的灯笼还没点完，前侍卫首领布兰登·欧卡正带着护卫巡视夜市。\n\n在他身后，是一口封好的白色宝箱。苏晓压低斗笠，踏入红灯下的街巷。"},
-	{"name": "1.6 科尔波山", "brief": "先用 1 预埋火药陷阱，V 引诱巨虎。注意狂暴和诈死。", "enemies": [], "loot": {"tiger_chest": 1, "tiger_tooth": 1}, "source": 3.2,
+	{"name": "1.6 科尔波山", "brief": "先预埋火药陷阱，再把巨虎引出来。注意狂暴和诈死。", "enemies": [], "loot": {"tiger_chest": 1, "tiger_tooth": 1}, "source": 3.2,
 	 "story": "科尔波山的虎啸在林间回荡。山民说，一头小山般的巨虎盘踞山顶，噬人无数。\n\n苏晓掂了掂怀里的火药陷阱——猎杀这头山林之主的时候到了。"},
 ]
 ## 装备位（原著 11 位，见策划案 §3.3）：主武器/副武器/头部/躯干/护臂左/护臂右/足部/披风/项链/戒指/戒指2
@@ -134,7 +134,8 @@ static func fresh() -> Dictionary:
 		"item_dura": {}, "item_enhance": {}, "item_fury": {},
 		"hp_ratio": 1.0, "mp_ratio": 1.0, "bullets": 6, "settled": false, "training": 0, "report": "", "colpo_outer_cleared": false,
 		# 新手流程阶段：ship=船到港引导 / training=试炼场教学 / equipped=已发装备待接任务 / quested=已接任务 / ""=正式循环
-		"flow": "", "training_done": false}
+		"flow": "", "training_done": false, "tutorial_steps": {},
+		"hub_guide_done": {}, "settlement_intro_seen": false}
 
 ## 该物品是否为可穿戴装备（有 slot）
 static func is_equippable(id: String) -> bool:

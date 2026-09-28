@@ -12,7 +12,7 @@ extends SceneTree
 
 const FRAMES_PATH := "res://assets/characters/player_frames_video.tres"
 const VISUAL_SCRIPT := "res://scripts/player/player_visual.gd"
-const ACTIONS: Array[String] = ["attack", "death", "dodge", "hit", "idle", "kick", "run", "walk"]
+const ACTIONS: Array[String] = ["attack", "attack_horizontal", "death", "dodge", "hit", "idle", "kick", "ring_break", "run", "sword_wave", "walk"]
 const LOOP_ACTIONS: Array[String] = ["idle", "walk", "run"]
 const DIRS: Array[String] = [
 	"down", "down_left", "down_right", "left", "right", "up", "up_left", "up_right",
@@ -23,7 +23,7 @@ const FPS_IDLE := 4.0
 const IDLE_CYCLE_SECONDS := 5.25
 const FPS_DEATH := 12.0
 const FPS_DEFAULT := 15.0
-## 2026-09-21 起全部 8 个动作都来自最新版 sheet 按块切出的 12 帧序列（6×2 格）。
+## 当前 11 个动作均为每方向 12 帧序列（6×2 格）。
 const FRAMES_PER_ANIM := 12
 ## 格子尺寸：全部动作统一 224×192（给挥砍刀光弧/悬垂尾留余量，地面线在格底往上 16px）。
 const CELL := Vector2i(224, 192)

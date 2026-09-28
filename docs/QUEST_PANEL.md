@@ -47,12 +47,12 @@
 
 序章档位由 `campaign.flow` 推出：`ship(0) → training(1) → equipped(2) → quested(3) → trial/空(4)`；
 主线的每个地区目标直接读存档标志：`kills`（`"{地区}_{序号}"`，巨虎是 `"tiger"`）、`bag`（引荐信 / 斩龙闪 / 项坠 / 虎齿 / 虎爪）、
-`equipment`（是否装上斩龙闪）、`opened_chests`、`colpo_outer_cleared`、`settled`。
+`equipment`（是否装上斩龙闪）、`tutorial_steps`（燧发枪 / 战斗技能 / 猎虎准备动作）、`opened_chests`、`colpo_outer_cleared`、`settled`。
 
 四章：
 
 1. **序章 · 乐园契约**：码头对话 / 演武场教学 / 委托所接取。木桩与剃的过程计数不落档，教学一完成三项一起打勾，不假装有分步进度。
-2. **主线 · 第一轮试炼**：`Data.STAGES` 1.2~1.6 五条，奖励按 `loot` 与 `source` 生成。
+2. **主线 · 第一轮试炼**：`Data.STAGES` 1.2~1.6 五条；枪械、教官技能、范围技能和猎虎准备动作分别解锁后续目标；地区奖励按 `loot` 与 `source` 生成。
 3. **支线 · 港务委托**：左大臣的藏品（虎齿，交付后续版本开放）、沿途补给箱（6 口场景宝箱，读 `opened_chests`）。
 4. **轮回记录**：`campaign.report` 非空时出现「阶段试炼结算」条，报告按行展示（原 <kbd>Esc</kbd> 菜单里的阶段记录内容都在这里）。
 

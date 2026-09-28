@@ -4,7 +4,7 @@
 ## 用法：
 ##   tools/run_regressions.sh                    # 跑默认套件（见下面 SUITE）
 ##   tools/run_regressions.sh --list             # 只列套件内容，不跑
-##   tools/run_regressions.sh validate_battle    # 只跑指定几支（名字不带 .gd）
+##   tools/run_regressions.sh validate_demo       # 只跑指定几支（名字不带 .gd）
 ##
 ## Godot 可执行文件按序取：$GODOT_BIN → 本机 Steam 安装位置 → PATH 里的 godot。
 ## 单支超时默认 420 秒，用 RG_TIMEOUT 覆盖。
@@ -18,7 +18,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ## 默认套件（全部已验证为绿，2026-09-23）。
 SUITE=(
   validate_demo              # 自由练习场冒烟：木桩/野狼、伤害结算、倒下重开、不动正式资源
-  validate_battle            # 双形态战斗：回合核心 + 眩晕处决链 + 侧背击 + 教学场 + 集成回蓝
   validate_save_transaction  # 出击结算事务 + 存档原子写/版本/坏档回退
   validate_six_attrs         # 六维派生公式 + 属性点接口 + 试炼场集成
   validate_world_drops       # 掉落池 / 场景宝箱 / 决战全回复 / 阶段结算清装备

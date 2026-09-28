@@ -1,8 +1,7 @@
 # 轮回乐园 · HD-2D
 
 Godot 4.7 的 HD-2D 动作 RPG（2D 精灵 + 3D 场景），题材取自《轮回乐园》。
-战斗是**双形态**：平时即时动作（攻击 / 剃 / 直踢 / 拼刀），打满敌人眩晕后补一刀，
-切进**回合制**（AT 顺序 + 五条指令：攻击 / 战技 / 防御 / 道具 / 逃跑）。
+战斗采用**即时动作**：移动、读招、斩击、闪避、技能与处决都在探索场景中实时结算。
 
 ## 环境
 
@@ -34,7 +33,7 @@ GODOT="E:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.
 ```bash
 tools/run_regressions.sh              # 跑默认套件，逐条报 PASS/FAIL/耗时
 tools/run_regressions.sh --list       # 只列套件内容
-tools/run_regressions.sh validate_battle validate_demo   # 只跑指定几支
+tools/run_regressions.sh validate_demo                  # 只跑指定几支
 GODOT_BIN=/path/to/godot tools/run_regressions.sh        # 指定 Godot
 RG_TIMEOUT=600 tools/run_regressions.sh                  # 改单支超时（默认 420s）
 ```
@@ -42,7 +41,7 @@ RG_TIMEOUT=600 tools/run_regressions.sh                  # 改单支超时（默
 单支脚本也可以直接跑：
 
 ```bash
-"$GODOT" --headless --path . --script res://tools/validate_battle.gd
+"$GODOT" --headless --path . --script res://tools/validate_demo.gd
 ```
 
 日志落在 `.tmp_preview/regressions/`（已 gitignore），失败时脚本会打印各失败日志的尾部。
@@ -56,7 +55,7 @@ RG_TIMEOUT=600 tools/run_regressions.sh                  # 改单支超时（默
    const TestEnv := preload("res://tools/test_env.gd")
    func run() -> void:
        var gs: Node = root.get_node("GameState")
-       TestEnv.isolate(gs, "battle")   # 独立存档 + 固定六维（Campaign.BASE_STATS）
+       TestEnv.isolate(gs, "realtime")   # 独立存档 + 固定六维（Campaign.BASE_STATS）
        ...
        TestEnv.cleanup(gs)             # 退出前删掉隔离档（含 .bak/.tmp）
    ```
@@ -119,7 +118,7 @@ RG_TIMEOUT=600 tools/run_regressions.sh                  # 改单支超时（默
 | `player.gd` · `player.tscn` | 玩家本体（在仓库根，不在 `scripts/player/`） |
 | `scripts/main/` | 主菜单、开场、港口战役流程、选关、练习场、教学战斗场 |
 | `scripts/combat/` | 敌人、Boss、技能弹道、掉落 |
-| `scripts/battle/` | 回合制：状态机、作战单位、指令面板、AT 条、眩晕条 |
+| `scripts/combat/` | 玩家技能弹体、敌人、Boss、眩晕状态与掉落 |
 | `scripts/ui/` · `scripts/world/` | HUD / 面板 / 按键说明；相机、传送门、宝箱、港口布景 |
 | `data/` | 纯数据表：六维公式、技能数值、装备、战役表 |
 | `tools/` | 构建脚本（`build_*`）、校验脚本（`validate_*` / `check_*`）、回归流程 |
@@ -136,8 +135,7 @@ RG_TIMEOUT=600 tools/run_regressions.sh                  # 改单支超时（默
 改代码前再按下面找到对应的那份：
 
 - `docs/GDD.md` · `docs/PROJECT_OVERVIEW.md` — 玩法总览 / 代码结构索引
-- `docs/COMBAT_DESIGN.md` · `COMBAT_SYSTEM.md` · `TURNBASED_COMBAT_PLAN.md` · `COMBAT_REWORK_PLAN.md`
-  — 战斗四份，各有分工，改战斗前先确认该看哪份
+- `docs/REALTIME_COMBAT_EXTRACTION.md` — 即时战斗规则、实现入口与资源清单
 - `docs/EQUIPMENT_SYSTEM.md` · `docs/QUEST_PANEL.md` · `docs/HARBOR_MAP.md` — 子系统
 - `docs/DEMO_STATUS.md` · `docs/P1_SCOPE_BASELINE.md` — 当前范围与状态
 - `docs/PROJECT_STATUS_AUDIT.md` — 进度与缺口权威（哪些做了、哪些没做）

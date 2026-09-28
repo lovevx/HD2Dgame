@@ -19,8 +19,8 @@ func run() -> void:
 	current_scene = open
 	await process_frame
 	await process_frame
-	# ---------- 第一幕（2D）：SHOTS_0 十镜 ----------
-	for i in 10:
+	# ---------- 第一幕（2D）：现实车祸六镜 ----------
+	for i in open.shot_count_phase(0):
 		open.capture_pose(i, 0)
 		await create_timer(0.28).timeout
 		await RenderingServer.frame_post_draw

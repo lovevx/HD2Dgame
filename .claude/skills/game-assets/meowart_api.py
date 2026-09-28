@@ -8,6 +8,7 @@ from datetime import date, datetime
 import hashlib
 import io
 import json
+import math
 import mimetypes
 import os
 import re
@@ -27,7 +28,7 @@ try:
 except ImportError:  # Pillow is required for local image validation and animation routing.
     Image = None
 
-MEOWART_API_CLI_VERSION = "2026.09.16.1"
+MEOWART_API_CLI_VERSION = "2026.09.26.1"
 DEFAULT_API_BASE = "https://api.meowa.ai"
 GAME_ASSETS_SKILL_NAME = "game-assets"
 GAME_ASSETS_SKILL_NAME_HEADER = "X-Meowa-Skill-Name"
@@ -83,6 +84,7 @@ NANO_BANANA_MODELS = (
     "gemini-3-pro-image",
 )
 GENERATION_MODEL_CHOICES = ("nano-banana", "image-2")
+UI_GENERATION_MODEL_CHOICES = (*GENERATION_MODEL_CHOICES, "image-2.5")
 GENERATION_SPEED_CHOICES = ("normal", "fast")
 IMAGE2_QUALITY_CHOICES = ("standard", "detailed", "ultimate")
 SPINE_AGENT_DEFAULT_TEMPLATE_NAME = (
@@ -95,7 +97,7 @@ VIDEO_MOTION_MODE_TO_MODEL = {
 MAP_PRESET_CATALOG_MAX_BYTES = 10 * 1024 * 1024
 TEXTURE_REFERENCE_CATALOG_MAX_BYTES = 2 * 1024 * 1024
 STANDARD_TEXTURE_SIZE = 64
-SPINE_PACKAGE_MAX_BYTES = 25 * 1024 * 1024
+SPINE_PACKAGE_MAX_BYTES = 50 * 1024 * 1024
 SPINE_PACKAGE_MAX_ENTRIES = 512
 SPINE_PACKAGE_MAX_UNCOMPRESSED_BYTES = 128 * 1024 * 1024
 SPINE_SKELETON_MAX_BYTES = 16 * 1024 * 1024
@@ -193,8 +195,11 @@ CHARACTER_MULTI_VIEW_POLL_COMMANDS = {
     "character-eight-direction-poll",
 }
 MEOWA_TTS_ENDPOINT = "/api/workflows/meowa_tts/jobs"
+# Web "AI polish" button: free, punctuation-only text polish plus an expanded voice description.
+MEOWA_TTS_PROMPT_ENDPOINT = "/api/workflows/meowa_tts/prompts"
 # Mirrors the web TTS tab: services/soundEffectWorkflowConfig.ts and
-# app/workflows/meowa_tts/{backend,pricing}.py. 5 credits per 50 characters, up to 200.
+# app/workflows/meowa_tts/{backend,pricing}.py. 1 credit per 10 characters, 2 credit minimum;
+# English/EN billed per word, up to 200 characters.
 MEOWA_TTS_MAX_TEXT_CHARACTERS = 200
 MEOWA_TTS_DEFAULT_VOICE_DESCRIPTION = "可爱的小女孩，明亮欢快"
 MEOWA_TTS_DEFAULT_LANGUAGE = "Chinese"
@@ -207,6 +212,11 @@ MEOWA_VOICE_CLONE_ENDPOINT = "/api/workflows/meowa_tts/clone/jobs"
 # app/workflows/meowa_tts/{backend,reference_audio}.py. Same character pricing as TTS.
 MEOWA_VOICE_CLONE_DEFAULT_LANGUAGE = "ZH"
 MEOWA_VOICE_CLONE_LANGUAGE_CHOICES = ["ZH", "EN", "JA", "ES", "AR"]
+MEOWA_VOICE_CLONE_DEFAULT_EMOTION = ""
+MEOWA_VOICE_CLONE_DEFAULT_EMOTION_INTENSITY = 0.5
+MEOWA_VOICE_CLONE_EMOTION_INTENSITY_MIN = 0.0
+MEOWA_VOICE_CLONE_EMOTION_INTENSITY_MAX = 1.0
+MEOWA_VOICE_CLONE_MAX_EMOTION_CHARACTERS = 200
 MEOWA_VOICE_CLONE_MAX_REFERENCE_FILES = 5
 MEOWA_VOICE_CLONE_MAX_REFERENCE_BYTES = 25 * 1024 * 1024
 MEOWA_VOICE_CLONE_REFERENCE_SUFFIXES = frozenset(
@@ -238,6 +248,37 @@ def resolve_meowa_tts_language(language: str, *, clone: bool) -> str:
             "--language without --reference-audio must be one of: " + ", ".join(MEOWA_TTS_LANGUAGE_CHOICES)
         )
     return name
+
+
+def normalize_meowa_voice_clone_emotion(value: object) -> str:
+    emotion = str(value or "").strip()
+    if len(emotion) > MEOWA_VOICE_CLONE_MAX_EMOTION_CHARACTERS:
+        raise ValueError(
+            f"--emotion must not exceed {MEOWA_VOICE_CLONE_MAX_EMOTION_CHARACTERS} characters "
+            f"(got {len(emotion)})"
+        )
+    return emotion
+
+
+def normalize_meowa_voice_clone_emotion_intensity(value: object) -> float:
+    if value is None or str(value).strip() == "":
+        return MEOWA_VOICE_CLONE_DEFAULT_EMOTION_INTENSITY
+    try:
+        intensity = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("--emotion-intensity must be a number") from exc
+    if not math.isfinite(intensity):
+        raise ValueError("--emotion-intensity must be a number")
+    if intensity < MEOWA_VOICE_CLONE_EMOTION_INTENSITY_MIN or intensity > MEOWA_VOICE_CLONE_EMOTION_INTENSITY_MAX:
+        raise ValueError(
+            "--emotion-intensity must be between "
+            f"{MEOWA_VOICE_CLONE_EMOTION_INTENSITY_MIN:g} and {MEOWA_VOICE_CLONE_EMOTION_INTENSITY_MAX:g}"
+        )
+    return round(intensity, 2)
+
+
+def format_meowa_voice_clone_emotion_intensity(value: float) -> str:
+    return format(value, "g")
 
 
 UI_GEN_ENDPOINT = "/api/workflows/general_ui_gen/run"
@@ -1981,7 +2022,7 @@ def resolve_animate_is_pixel(
     except Exception as exc:
         raise ValueError(f"animation source must be a valid image: {path}") from exc
 
-    return image_format == "PNG" and width <= 256 and height <= 256
+    return image_format in {"PNG", "WEBP"} and width <= 256 and height <= 256
 
 
 def build_animate_source_controls(
@@ -1993,6 +2034,7 @@ def build_animate_source_controls(
     padding_left: int,
     padding_right: int,
     requested_is_pixel: bool | None = None,
+    pixel_max_size: int = 256,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     if Image is None:
         raise RuntimeError("Pillow is required for animation controls; run: python3 -m pip install Pillow")
@@ -2016,17 +2058,17 @@ def build_animate_source_controls(
     is_pixel = (
         requested_is_pixel
         if requested_is_pixel is not None
-        else image_format == "PNG" and width <= 256 and height <= 256
+        else image_format in {"PNG", "WEBP"} and width <= 256 and height <= 256
     )
     if color_count is not None and not is_pixel:
-        raise ValueError("color_count is available only for pixel animation inputs up to 256x256")
+        raise ValueError("color_count is available only for pixel animation mode")
 
     padded_width = width + padding_left + padding_right
     padded_height = height + padding_top + padding_down
-    if is_pixel and (padded_width > 256 or padded_height > 256):
+    if is_pixel and (padded_width > pixel_max_size or padded_height > pixel_max_size):
         raise ValueError(
             f"padded pixel animation canvas would be {padded_width}x{padded_height}; "
-            "pixel animation cannot exceed 256x256"
+            f"pixel animation cannot exceed {pixel_max_size}x{pixel_max_size}"
         )
     if is_pixel and max(width, height) <= 64 and max(padded_width, padded_height) > 128:
         print(
@@ -2392,6 +2434,145 @@ def _create_game_design_thread(
     return thread_id
 
 
+def _create_spine_project_context(
+    *,
+    api_base: str,
+    api_key: str,
+    timeout: int,
+    verify: bool,
+) -> tuple[str, str]:
+    payload = _game_design_api_request(
+        method="POST",
+        api_base=api_base,
+        api_key=api_key,
+        endpoint="/api/projects",
+        timeout=timeout,
+        verify=verify,
+        json_body={"title": "Spine Agent", "projectTitleSource": "manual"},
+    )
+    project_id = str(payload.get("id") or "").strip()
+    thread_id = str(payload.get("activeThreadId") or "").strip()
+    if not thread_id:
+        threads = payload.get("threads")
+        if isinstance(threads, list):
+            thread_id = next(
+                (
+                    str(item.get("id") or "").strip()
+                    for item in threads
+                    if isinstance(item, dict) and str(item.get("id") or "").strip()
+                ),
+                "",
+            )
+    if not project_id or not thread_id:
+        raise SkillCompatibilityError("project create response is missing Spine project context")
+    return project_id, thread_id
+
+
+def _create_spine_thread(
+    *,
+    api_base: str,
+    api_key: str,
+    project_id: str,
+    timeout: int,
+    verify: bool,
+) -> str:
+    payload = _game_design_api_request(
+        method="POST",
+        api_base=api_base,
+        api_key=api_key,
+        endpoint=f"/api/projects/{quote(project_id, safe='')}/threads",
+        timeout=timeout,
+        verify=verify,
+        json_body={"title": "Spine Agent", "kind": "global"},
+    )
+    thread_id = str(payload.get("id") or "").strip()
+    if not thread_id:
+        raise SkillCompatibilityError("thread create response is missing id")
+    return thread_id
+
+
+def _create_spine_source_message(
+    *,
+    api_base: str,
+    api_key: str,
+    project_id: str,
+    thread_id: str,
+    prompt: str,
+    timeout: int,
+    verify: bool,
+) -> str:
+    cleaned_prompt = str(prompt or "").strip()
+    client_id = f"skill_spine_{uuid.uuid4().hex}"
+    payload = _game_design_api_request(
+        method="POST",
+        api_base=api_base,
+        api_key=api_key,
+        endpoint=(
+            f"/api/projects/{quote(project_id, safe='')}/threads/"
+            f"{quote(thread_id, safe='')}/messages"
+        ),
+        timeout=timeout,
+        verify=verify,
+        json_body={
+            "clientId": client_id,
+            "idempotencyKey": client_id,
+            "role": "user",
+            "parts": [{"type": "text", "content": cleaned_prompt}],
+            "status": "completed",
+        },
+    )
+    message_id = str(payload.get("id") or "").strip()
+    if not message_id:
+        raise SkillCompatibilityError("message create response is missing id")
+    return message_id
+
+
+def prepare_spine_submission_context(
+    *,
+    api_base: str,
+    api_key: str,
+    prompt: str,
+    project_id: str = "",
+    thread_id: str = "",
+    source_message_id: str = "",
+    timeout: int = DEFAULT_TIMEOUT,
+    verify: bool = True,
+) -> tuple[str, str, str]:
+    resolved_project_id = str(project_id or "").strip()
+    resolved_thread_id = str(thread_id or "").strip()
+    resolved_message_id = str(source_message_id or "").strip()
+    if resolved_thread_id and not resolved_project_id:
+        raise ValueError("--thread-id requires --project-id")
+    if resolved_message_id and (not resolved_project_id or not resolved_thread_id):
+        raise ValueError("--source-message-id requires --project-id and --thread-id")
+    if not resolved_project_id:
+        resolved_project_id, resolved_thread_id = _create_spine_project_context(
+            api_base=api_base,
+            api_key=api_key,
+            timeout=timeout,
+            verify=verify,
+        )
+    elif not resolved_thread_id:
+        resolved_thread_id = _create_spine_thread(
+            api_base=api_base,
+            api_key=api_key,
+            project_id=resolved_project_id,
+            timeout=timeout,
+            verify=verify,
+        )
+    if not resolved_message_id:
+        resolved_message_id = _create_spine_source_message(
+            api_base=api_base,
+            api_key=api_key,
+            project_id=resolved_project_id,
+            thread_id=resolved_thread_id,
+            prompt=prompt,
+            timeout=timeout,
+            verify=verify,
+        )
+    return resolved_project_id, resolved_thread_id, resolved_message_id
+
+
 def submit_game_design_message(
     *,
     api_base: str,
@@ -2692,6 +2873,7 @@ def save_game_design_outputs(
         if billing.get("serverFailureRefunded") is True:
             safe_billing["server_failure_refunded"] = True
         for public_key, api_key in (
+            ("monthly_free_plan_id", "monthlyFreePlanId"),
             ("monthly_free_period_start", "monthlyFreePeriodStart"),
             ("monthly_free_reset_at", "monthlyFreeResetAt"),
             ("monthly_reset_timezone", "monthlyResetTimezone"),
@@ -3419,6 +3601,7 @@ def submit_animate(
     output_format: str = "spritesheet",
     animation_type: str = "other",
     animation_model: str = "pixel-engine-v1.1",
+    intelligence: str = "standard",
     optimize_prompt: bool = True,
     remove_bg_method: str = "advanced",
     pixel_config: dict[str, Any] | None = None,
@@ -3427,11 +3610,15 @@ def submit_animate(
     verify: bool = True,
 ) -> dict[str, Any]:
     url = _normalize_base_url(api_base, "/api/animate")
+    render_mode = "pixel" if animation_model == "pixel-engine-v1.1" else "detailed"
+    request_model = "pixel-engine-v1.5" if intelligence == "advanced" else animation_model
     payload: dict[str, Any] = {
         "image": image_data_url,
         "prompt": prompt,
         "is_pixel": is_pixel,
-        "model": animation_model,
+        "model": request_model,
+        "render_mode": render_mode,
+        "intelligence": intelligence,
         "optimize_prompt": optimize_prompt,
         "output_frames": output_frames,
         "output_format": output_format,
@@ -3525,6 +3712,7 @@ def submit_meowa_animation(
     remove_bg_method: str,
     remove_bg_batch_size: str = "16",
     background_color: str,
+    high_frame_rate: bool = False,
     source_padding: dict[str, Any],
     timeout: int = DEFAULT_TIMEOUT,
     verify: bool = True,
@@ -3546,6 +3734,7 @@ def submit_meowa_animation(
             "remove_bg_method": remove_bg_method,
             "remove_bg_batch_size": remove_bg_batch_size,
             "background_color": background_color,
+            "high_frame_rate": "true" if high_frame_rate else "false",
             "source_padding": json.dumps(source_padding),
         },
         files={
@@ -3691,8 +3880,8 @@ def submit_remove_background(
     normalized_source_color = str(source_background_color or "#ffffff").strip().lower()
     if not re.fullmatch(r"#[0-9a-f]{6}", normalized_source_color):
         raise ValueError("source_background_color must be a six-digit HEX color")
-    if remove_bg_batch_size not in {"1", "4", "8", "16", "all"}:
-        raise ValueError("remove_bg_batch_size must be one of: 1, 4, 8, 16, all")
+    if remove_bg_batch_size not in {"2", "4", "8", "16"}:
+        raise ValueError("remove_bg_batch_size must be one of: 2, 4, 8, 16")
     data = {
         "method": normalized_mode,
         "remove_bg_method": normalized_quality,
@@ -4458,7 +4647,7 @@ def _validate_spine_runtime_zip(
     expected_version_minor: str = "4.2",
 ) -> list[dict[str, Any]]:
     if not data or len(data) > SPINE_PACKAGE_MAX_BYTES:
-        raise ValueError("Spine package must be 25MB or smaller")
+        raise ValueError("Spine package must be 50MB or smaller")
     try:
         with zipfile.ZipFile(io.BytesIO(data), "r") as archive:
             infos = [info for info in archive.infolist() if not info.is_dir()]
@@ -4510,10 +4699,15 @@ def _validate_spine_runtime_zip(
                 )
                 version_match = re.search(version_pattern, skeleton_data[:4096])
                 spine_version = version_match.group(0).decode("ascii") if version_match else ""
-            if re.fullmatch(
-                rf"{re.escape(expected_version_minor)}\.\d+",
-                spine_version,
-            ) is None:
+            expected_matches = (
+                spine_version == expected_version_minor
+                if expected_version_minor.count(".") == 2
+                else re.fullmatch(
+                    rf"{re.escape(expected_version_minor)}\.\d+",
+                    spine_version,
+                ) is not None
+            )
+            if not expected_matches:
                 raise ValueError(
                     f"Spine package must use Spine {expected_version_minor} runtime data"
                 )
@@ -4765,6 +4959,52 @@ def submit_spine_part_replace(
     return body
 
 
+def submit_spine_frame_cleanup(
+    *,
+    api_base: str,
+    api_key: str,
+    project_id: str,
+    thread_id: str,
+    package_path: str,
+    client_operation_id: str = "",
+    display_name: str = "Spine",
+    skin_name: str = "",
+    timeout: int = DEFAULT_TIMEOUT,
+    verify: bool = True,
+) -> dict[str, Any]:
+    uploaded = upload_project_spine_package(
+        api_base=api_base,
+        api_key=api_key,
+        project_id=project_id,
+        package_path=package_path,
+        timeout=timeout,
+        verify=verify,
+    )
+    operation_id = str(client_operation_id or "").strip()
+    if not operation_id:
+        seed = f"{project_id}:{thread_id}:{uploaded['asset_id']}:frame-cleanup"
+        operation_id = f"spine-cleanup:{hashlib.sha256(seed.encode('utf-8')).hexdigest()[:32]}"
+    payload = {
+        "project_id": project_id,
+        "thread_id": thread_id,
+        "client_operation_id": operation_id,
+        "spine_asset_id": uploaded["asset_id"],
+        "display_name": display_name,
+        "skin_name": str(skin_name or "").strip() or None,
+    }
+    response, body = _request_json(
+        method="POST",
+        url=_normalize_base_url(api_base, "/api/spine-agent/frame-cleanup/jobs"),
+        headers={**_base_headers(api_key), "Content-Type": "application/json"},
+        json_body=payload,
+        timeout=timeout,
+        verify=verify,
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(_format_json_for_display(body))
+    return body
+
+
 def submit_spine_full_reskin(
     *,
     api_base: str,
@@ -4856,8 +5096,8 @@ def save_spine_final_package(
     export_version: str = "4.2",
 ) -> tuple[Path, list[dict[str, Any]]]:
     normalized_export_version = str(export_version or "").strip()
-    if normalized_export_version not in {"4.2", "3.8"}:
-        raise ValueError("Spine export version must be 4.2 or 3.8")
+    if normalized_export_version not in {"4.2", "3.8.99", "3.8.75"}:
+        raise ValueError("Spine export version must be 4.2, 3.8.99, or 3.8.75")
     output_dir = _predict_saved_dir(output_root, slug_seed)
     downloads: list[dict[str, Any]] = []
     if not no_download:
@@ -4875,7 +5115,7 @@ def save_spine_final_package(
         if content_type != "application/zip":
             raise ValueError("Spine final package did not return application/zip")
         package_data = response.content
-        if normalized_export_version == "3.8":
+        if normalized_export_version != "4.2":
             export_url = _normalize_base_url(
                 api_base,
                 "/api/spine-agent/runtime-file",
@@ -4914,7 +5154,10 @@ def save_spine_final_package(
             expected_version_minor=normalized_export_version,
         )
         output_dir.mkdir(parents=True, exist_ok=True)
-        version_suffix = "" if normalized_export_version == "4.2" else "-spine-3.8"
+        version_suffix = (
+            "" if normalized_export_version == "4.2"
+            else f"-spine-{normalized_export_version}"
+        )
         target = output_dir / f"{_safe_slug(slug_seed)}{version_suffix}.zip"
         target.write_bytes(package_data)
         downloads.append({"type": "package", "path": str(target), "mime_type": content_type})
@@ -5424,8 +5667,10 @@ def submit_ui_generator(
     normalized_remove_bg_method = str(remove_bg_method or "standard").strip().lower()
     if normalized_remove_bg_method not in {"none", "standard", "advanced"}:
         raise ValueError("remove_bg_method must be one of: none, standard, advanced")
-    if generation_model not in GENERATION_MODEL_CHOICES:
-        raise ValueError("generation_model must be one of: nano-banana, image-2")
+    if generation_model not in UI_GENERATION_MODEL_CHOICES:
+        raise ValueError("generation_model must be one of: nano-banana, image-2, image-2.5")
+    if generation_model == "image-2.5" and normalized_remove_bg_method == "advanced":
+        raise ValueError("Image 2.5 background removal supports only none or standard")
     if generation_speed not in GENERATION_SPEED_CHOICES:
         raise ValueError("generation_speed must be one of: normal, fast")
     effective_remove_bg_method = normalized_remove_bg_method if remove_background else "none"
@@ -5434,7 +5679,13 @@ def submit_ui_generator(
         "resolution": resolution,
         "aspect_ratio": aspect_ratio,
         "image2_quality": quality_map[normalized_quality],
-        "generation_provider": "nanobanana" if generation_model == "nano-banana" else "image2",
+        "generation_provider": (
+            "nanobanana"
+            if generation_model == "nano-banana"
+            else "image2_5"
+            if generation_model == "image-2.5"
+            else "image2"
+        ),
         "generation_speed": generation_speed,
         "background_color": background_color,
         "remove_background": "true" if remove_background else "false",
@@ -5762,6 +6013,43 @@ def run_music_generator(
     return submit_payload, final_payload
 
 
+def prepare_meowa_tts_prompt(
+    *,
+    api_base: str,
+    api_key: str,
+    text: str,
+    voice_hint: str = "",
+    language: str = MEOWA_TTS_DEFAULT_LANGUAGE,
+    timeout: int = DEFAULT_TIMEOUT,
+    verify: bool = True,
+) -> dict[str, Any]:
+    """Mirror the web AI polish button: returns {text, voice_description, language}."""
+    normalized_text = str(text or "").strip()
+    if not normalized_text:
+        raise ValueError("--text is required")
+    if language not in MEOWA_TTS_LANGUAGE_CHOICES:
+        raise ValueError(f"--language must be one of: {', '.join(MEOWA_TTS_LANGUAGE_CHOICES)}")
+    response, body = _request_json(
+        method="POST",
+        url=_normalize_base_url(api_base, MEOWA_TTS_PROMPT_ENDPOINT),
+        headers={**_base_headers(api_key), "Content-Type": "application/json"},
+        json_body={
+            "text": normalized_text,
+            "voice_hint": str(voice_hint or "").strip(),
+            "language": language,
+        },
+        timeout=timeout,
+        verify=verify,
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(_format_json_for_display(body))
+    polished_text = str(body.get("text") or "").strip()
+    voice_description = str(body.get("voice_description") or "").strip()
+    if not polished_text or not voice_description:
+        raise RuntimeError("tts prompt polish response missing text or voice_description")
+    return {"text": polished_text, "voice_description": voice_description, "language": language}
+
+
 def submit_meowa_tts(
     *,
     api_base: str,
@@ -5866,6 +6154,8 @@ def submit_meowa_voice_clone(
     project_id: str,
     thread_id: str = "",
     language: str = MEOWA_VOICE_CLONE_DEFAULT_LANGUAGE,
+    emotion: str = MEOWA_VOICE_CLONE_DEFAULT_EMOTION,
+    emotion_intensity: float = MEOWA_VOICE_CLONE_DEFAULT_EMOTION_INTENSITY,
     client_operation_id: str = "",
     timeout: int = DEFAULT_TIMEOUT,
     verify: bool = True,
@@ -5906,14 +6196,21 @@ def submit_meowa_voice_clone(
     if not normalized_project_id:
         raise ValueError("project_id is required")
     operation_id = str(client_operation_id or "").strip()
+    clone_emotion = normalize_meowa_voice_clone_emotion(emotion)
+    clone_emotion_intensity = normalize_meowa_voice_clone_emotion_intensity(emotion_intensity)
     if not operation_id:
-        operation_seed = f"{normalized_project_id}:{thread_id}:{normalized_text}:{language}:{uuid.uuid4().hex}"
+        operation_seed = (
+            f"{normalized_project_id}:{thread_id}:{normalized_text}:{language}:"
+            f"{clone_emotion}:{clone_emotion_intensity}:{uuid.uuid4().hex}"
+        )
         operation_id = f"voice-clone:{hashlib.sha256(operation_seed.encode('utf-8')).hexdigest()[:32]}"
     data: dict[str, Any] = {
         "project_id": normalized_project_id,
         "client_operation_id": operation_id,
         "text": normalized_text,
         "language": language,
+        "emotion": clone_emotion,
+        "emotion_intensity": format_meowa_voice_clone_emotion_intensity(clone_emotion_intensity),
     }
     normalized_thread_id = str(thread_id or "").strip()
     if normalized_thread_id:
@@ -5941,6 +6238,8 @@ def run_meowa_voice_clone(
     project_id: str,
     thread_id: str = "",
     language: str = MEOWA_VOICE_CLONE_DEFAULT_LANGUAGE,
+    emotion: str = MEOWA_VOICE_CLONE_DEFAULT_EMOTION,
+    emotion_intensity: float = MEOWA_VOICE_CLONE_DEFAULT_EMOTION_INTENSITY,
     timeout: int = DEFAULT_TIMEOUT,
     max_wait: int = DEFAULT_MAX_WAIT,
     poll_interval: float = DEFAULT_POLL_INTERVAL,
@@ -5954,6 +6253,8 @@ def run_meowa_voice_clone(
         project_id=project_id,
         thread_id=thread_id,
         language=language,
+        emotion=emotion,
+        emotion_intensity=emotion_intensity,
         timeout=timeout,
         verify=verify,
     )
@@ -6129,6 +6430,12 @@ class AnimationEditAlphaAction(argparse.Action):
         setattr(namespace, "_edit_alpha_explicit", True)
 
 
+class ImageEditOptionAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+        setattr(namespace, f"_image_edit_{self.dest}_explicit", True)
+
+
 class GameAssetsArgumentParser(argparse.ArgumentParser):
     def parse_args(self, args=None, namespace=None):
         arguments = list(sys.argv[1:] if args is None else args)
@@ -6139,6 +6446,16 @@ class GameAssetsArgumentParser(argparse.ArgumentParser):
         edit_alpha_explicit = vars(parsed).pop("_edit_alpha_explicit", False)
         if parsed.command in {"meowa-animation-edit-run", "meowa-animation-edit-prompts"} and not edit_alpha_explicit:
             parsed.alpha_mode = "sharp" if parsed.style_mode == "pixel" else "soft"
+        model_explicit = vars(parsed).pop("_image_edit_generation_model_explicit", False)
+        resolution_explicit = vars(parsed).pop("_image_edit_resolution_explicit", False)
+        if parsed.command == "image-edit-run" and parsed.mode == "hd":
+            if not model_explicit:
+                parsed.generation_model = "image-2.5"
+            if not resolution_explicit:
+                parsed.resolution = "2K"
+        ui_quality_explicit = vars(parsed).pop("quality_explicit", False)
+        if parsed.command in (UI_GEN_SUBMIT_COMMANDS | UI_GEN_RUN_COMMANDS) and parsed.generation_model == "image-2.5" and not ui_quality_explicit:
+            parsed.quality = "standard"
         return parsed
 
 
@@ -6442,13 +6759,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--generation-model",
         default="nano-banana",
         choices=[*GENERATION_MODEL_CHOICES, "image-2.5"],
-        help="Generation model (default: Nano Banana, matching the web editor)",
+        help="Generation model (pixel default: Nano Banana; HD default: Image2.5)",
+        action=ImageEditOptionAction,
     )
     image_edit_run.add_argument(
         "--resolution",
         default="1K",
         choices=["1K", "2K"],
-        help="Output resolution (default: 1K, matching the web editor)",
+        help="Output resolution (pixel default: 1K; HD default: 2K)",
+        action=ImageEditOptionAction,
     )
     image_edit_run.add_argument(
         "--quality",
@@ -6927,7 +7246,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     remove_bg_submit = subparsers.add_parser("remove-background-submit", help="Submit a remove-background job")
     add_shared_path_args(remove_bg_submit)
-    remove_bg_submit.add_argument("--image-file", required=True)
+    remove_bg_submit.add_argument("--image-file", required=True, help="Image or MP4 input; GIF, WebP and MP4 return lossless WebP (no audio)")
     remove_bg_submit.add_argument("--mode", default="hd", choices=["pixel", "hd"], help="Source artwork type")
     remove_bg_submit.add_argument(
         "--quality",
@@ -6942,7 +7261,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Solid source background color used by Pixel advanced; defaults to white",
     )
 
-    remove_bg_submit.add_argument("--remove-bg-batch-size", default="16", choices=["1", "4", "8", "16", "all"], help="Frames per removal call; HD recommends 4; ignored for Pixel advanced")
+    remove_bg_submit.add_argument("--remove-bg-batch-size", default="16", choices=["2", "4", "8", "16"], help="Frames per removal call; HD recommends 4; ignored for Pixel advanced")
 
     remove_bg_submit.add_argument("--preserve-translucency", action=argparse.BooleanOptionalAction, default=False, help="Keep soft alpha in Pixel removal; HD always keeps soft alpha; no extra credits")
 
@@ -7091,12 +7410,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--quality",
         default="detailed",
         choices=["standard", "detailed", "ultimate"],
+        action=_StoreExplicitArgument,
         help="Output quality: Standard, Detailed, or Ultimate",
     )
     ui_submit.add_argument(
         "--generation-model",
         default="image-2",
-        choices=GENERATION_MODEL_CHOICES,
+        choices=UI_GENERATION_MODEL_CHOICES,
     )
     ui_submit.add_argument("--generation-speed", default="normal", choices=GENERATION_SPEED_CHOICES)
     ui_submit.add_argument(
@@ -7119,6 +7439,7 @@ def build_parser() -> argparse.ArgumentParser:
     ui_submit.set_defaults(
         template="hd_retro_rpg",
         generation_provider="image2",
+        quality_explicit=False,
         project_id=None,
         thread_id=None,
     )
@@ -7254,7 +7575,7 @@ def build_parser() -> argparse.ArgumentParser:
         "tts-run",
         help=(
             "Synthesize one spoken line from a voice description, or clone a voice from reference audio "
-            "(5 credits per 50 characters, up to 200 characters)"
+            "(1 credit per 10 characters, 2 credit minimum; English billed per word, up to 200 characters)"
         ),
     )
     add_shared_path_args(tts_run)
@@ -7284,6 +7605,36 @@ def build_parser() -> argparse.ArgumentParser:
             "(Chinese/English/Japanese/Spanish map to ZH/EN/JA/ES)"
         ),
     )
+    tts_run.add_argument(
+        "--emotion",
+        default=MEOWA_VOICE_CLONE_DEFAULT_EMOTION,
+        help=(
+            "Optional clone-mode emotion prompt, e.g. happy or 开心; ignored without --reference-audio; "
+            f"up to {MEOWA_VOICE_CLONE_MAX_EMOTION_CHARACTERS} characters"
+        ),
+    )
+    tts_run.add_argument(
+        "--emotion-intensity",
+        type=float,
+        default=MEOWA_VOICE_CLONE_DEFAULT_EMOTION_INTENSITY,
+        help=(
+            "Clone-mode emotion strength from "
+            f"{MEOWA_VOICE_CLONE_EMOTION_INTENSITY_MIN:g} to {MEOWA_VOICE_CLONE_EMOTION_INTENSITY_MAX:g}; "
+            f"default {MEOWA_VOICE_CLONE_DEFAULT_EMOTION_INTENSITY:g}"
+        ),
+    )
+    tts_run.set_defaults(optimize_prompt=False)
+    tts_run.add_argument(
+        "--optimize-prompt",
+        action="store_true",
+        dest="optimize_prompt",
+        help=(
+            "Web 'AI polish' (free, voice description mode only): add natural punctuation to --text "
+            "without changing its words, and expand a short --voice hint such as '女孩，可爱' into a full "
+            "voice description before synthesis"
+        ),
+    )
+    tts_run.add_argument("--no-optimize-prompt", action="store_false", dest="optimize_prompt", help=argparse.SUPPRESS)
     tts_run.add_argument("--project-id", default="", help="Existing project id; omit to create one")
     tts_run.add_argument("--thread-id", default="", help="Optional thread id inside --project-id")
     tts_run.add_argument("--project-title", default="Speech", help="Title for the auto-created project")
@@ -7319,9 +7670,9 @@ def build_parser() -> argparse.ArgumentParser:
             "character_template_2head_deep_sea_choir_conductor",
         ],
     )
-    spine_run.add_argument("--project-id", required=True)
-    spine_run.add_argument("--thread-id", required=True)
-    spine_run.add_argument("--source-message-id", required=True)
+    spine_run.add_argument("--project-id", default="", help="Existing project id; omit to create one")
+    spine_run.add_argument("--thread-id", default="", help="Existing thread id; omit to create one")
+    spine_run.add_argument("--source-message-id", default="", help=argparse.SUPPRESS)
     spine_run.add_argument("--client-operation-id", default="")
     spine_run.add_argument(
         "--generation-model",
@@ -7330,7 +7681,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Generation model; defaults to Image2",
     )
     spine_run.add_argument("--export-resolution", default="2K", choices=["1K", "2K", "4K"])
-    spine_run.add_argument("--export-version", default="4.2", choices=["4.2", "3.8"])
+    spine_run.add_argument(
+        "--export-version",
+        default="4.2",
+        choices=["4.2", "3.8.99", "3.8.75"],
+    )
     spine_run.add_argument("--quality", default="detailed", choices=IMAGE2_QUALITY_CHOICES)
     spine_run.add_argument("--weapon", default="auto", choices=["auto", "yes", "no"])
     spine_run.add_argument(
@@ -7372,7 +7727,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     spine_edit_run.add_argument("--resolution", default="1K", choices=["1K", "2K"])
     spine_edit_run.add_argument("--quality", default="standard", choices=IMAGE2_QUALITY_CHOICES)
-    spine_edit_run.add_argument("--export-version", default="4.2", choices=["4.2", "3.8"])
+    spine_edit_run.add_argument(
+        "--export-version",
+        default="4.2",
+        choices=["4.2", "3.8.99", "3.8.75"],
+    )
 
     spine_replace_run = subparsers.add_parser(
         "spine-replace-run",
@@ -7392,7 +7751,28 @@ def build_parser() -> argparse.ArgumentParser:
     spine_replace_run.add_argument("--offset-y-percent", type=_bounded_integer(-100, 100), default=0)
     spine_replace_run.add_argument("--rotation-degrees", type=_bounded_integer(-180, 180), default=0)
     spine_replace_run.add_argument("--remove-bg-method", default="none", choices=["none", "standard"])
-    spine_replace_run.add_argument("--export-version", default="4.2", choices=["4.2", "3.8"])
+    spine_replace_run.add_argument(
+        "--export-version",
+        default="4.2",
+        choices=["4.2", "3.8.99", "3.8.75"],
+    )
+
+    spine_cleanup_run = subparsers.add_parser(
+        "spine-cleanup-run",
+        help="Remove editor frames and labels from an uploaded Spine atlas",
+    )
+    add_shared_path_args(spine_cleanup_run)
+    spine_cleanup_run.add_argument("--source-spine-package", required=True)
+    spine_cleanup_run.add_argument("--project-id", required=True)
+    spine_cleanup_run.add_argument("--thread-id", required=True)
+    spine_cleanup_run.add_argument("--client-operation-id", default="")
+    spine_cleanup_run.add_argument("--display-name", default="Spine")
+    spine_cleanup_run.add_argument("--skin-name", default="")
+    spine_cleanup_run.add_argument(
+        "--export-version",
+        default="4.2",
+        choices=["4.2", "3.8.99", "3.8.75"],
+    )
 
     spine_reskin_run = subparsers.add_parser(
         "spine-reskin-run",
@@ -7414,7 +7794,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     spine_reskin_run.add_argument("--resolution", default="2K", choices=["1K", "2K"])
     spine_reskin_run.add_argument("--quality", default="standard", choices=IMAGE2_QUALITY_CHOICES)
-    spine_reskin_run.add_argument("--export-version", default="4.2", choices=["4.2", "3.8"])
+    spine_reskin_run.add_argument(
+        "--export-version",
+        default="4.2",
+        choices=["4.2", "3.8.99", "3.8.75"],
+    )
 
     subparsers.add_parser("credits-balance", help="Get current credits balance")
     subparsers.add_parser("free-credits", help="Read free-credit eligibility and open the website link to verify and claim")
@@ -7438,14 +7822,20 @@ def build_parser() -> argparse.ArgumentParser:
     add_shared_path_args(animate_submit_parser)
     animate_submit_parser.add_argument("--image-file", required=True)
     animate_submit_parser.add_argument("--prompt", default="")
-    animate_submit_parser.add_argument("--output-frames", type=int, default=8, choices=[4, 6, 8, 10, 12, 16])
+    animate_submit_parser.add_argument("--output-frames", type=int, default=8, choices=list(range(3, 17)))
     animate_submit_parser.add_argument("--output-format", default="spritesheet", choices=["webp", "gif", "spritesheet"])
     animate_submit_parser.add_argument("--animation-type", default="other")
     animate_submit_parser.add_argument(
         "--animation-model",
-        default="",
+        default="pixel-engine-v1.1",
         choices=["pixel-engine-v1.1", "frame-engine-v1.1"],
-        help="Animation model; defaults from the source dimensions like the web UI",
+        help="Animation image type: pixel-engine-v1.1 for Pixel or frame-engine-v1.1 for HD",
+    )
+    animate_submit_parser.add_argument(
+        "--intelligence",
+        default="standard",
+        choices=["standard", "advanced"],
+        help="Animation intelligence tier; advanced uses the newer generation model",
     )
     animate_submit_parser.set_defaults(optimize_prompt=True)
     animate_submit_parser.add_argument("--optimize-prompt", action="store_true", dest="optimize_prompt")
@@ -7472,12 +7862,22 @@ def build_parser() -> argparse.ArgumentParser:
         edit_parser.add_argument("--edit-intent", required=True)
         edit_parser.add_argument("--video-description", default="")
         edit_parser.add_argument("--image-description", default="")
-        edit_parser.add_argument("--background-color", default="#ffffff", help="Fill transparent reference pixels with #RRGGBB; applies to both media inputs")
         edit_parser.add_argument("--style-mode", choices=["pixel", "hd"], default="pixel")
         edit_parser.add_argument("--resolution", choices=["480p", "720p"], default="480p", help="720p requires HD mode")
         edit_parser.add_argument("--alpha-mode", choices=["sharp", "soft"], default="sharp", action=AnimationEditAlphaAction, help="Default sharp for Pixel, soft for HD")
-        edit_parser.add_argument("--remove-bg-method", choices=["none", "standard"], default="standard")
-        edit_parser.add_argument("--remove-bg-batch-size", choices=["4", "8", "16", "all"], default="16")
+        edit_parser.add_argument("--remove-bg-method", choices=["none", "standard"], default="standard", action=_StoreExplicitArgument)
+        edit_parser.set_defaults(remove_bg_method_explicit=False)
+        edit_parser.add_argument("--remove-bg-batch-size", choices=["2", "4", "8", "16"], default="16")
+        edit_parser.add_argument(
+            "--high-frame-rate",
+            action="store_true",
+            default=False,
+            help="Keep every generated frame in the output WebP instead of sampling to 8fps. Defaults removal off and fill to #00b140.",
+        )
+        edit_parser.add_argument("--background-color", default="#ffffff", action=_StoreExplicitArgument, help="Fill transparent reference pixels with #RRGGBB; applies to both media inputs")
+        edit_parser.set_defaults(background_color_explicit=False)
+        edit_parser.add_argument("--primary-reference", choices=["video", "image"], default="video",
+            help="video: edit the reference video's character; image: the image character performs the video's action in place (requires --image-file)")
         if edit_command == "meowa-animation-edit-prompts":
             edit_parser.add_argument("--output-language", choices=["zh", "en"], default="zh")
 
@@ -7490,7 +7890,7 @@ def build_parser() -> argparse.ArgumentParser:
     meowa_animation_run_parser.add_argument(
         "--last-image-file",
         default="",
-        help="Optional exact last frame; when set, loop mode is ignored",
+        help="Optional exact last frame; when set, loop mode is ignored and an omitted --output-frames defaults to 24 (3 s)",
     )
     meowa_animation_run_parser.add_argument("--prompt", required=True)
     meowa_animation_run_parser.add_argument(
@@ -7501,8 +7901,8 @@ def build_parser() -> argparse.ArgumentParser:
     meowa_animation_run_parser.add_argument(
         "--resolution",
         default="480p",
-        choices=["480p", "720p"],
-        help="Output resolution; 720p is available only for HD and costs 10 extra credits",
+        choices=["480p", "720p", "1080p"],
+        help="Pixel and HD support 480p, 720p (+10 credits), and 1080p (Standard 30 / Detailed 35 generation credits)",
     )
     meowa_animation_run_parser.add_argument(
         "--alpha-mode",
@@ -7517,7 +7917,10 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=16,
         choices=[8, 16, 24, 32],
+        action=_StoreExplicitArgument,
+        help="8/16/24/32 frames = 1-4 s; defaults to 24 when --last-image-file is set",
     )
+    meowa_animation_run_parser.set_defaults(output_frames_explicit=False)
     meowa_animation_run_parser.add_argument(
         "--quality-mode",
         default="medium",
@@ -7536,16 +7939,23 @@ def build_parser() -> argparse.ArgumentParser:
         default="standard",
         choices=["none", "standard", "advanced"],
         action=_StoreExplicitArgument,
-        help="Background removal: none or standard (advanced is temporarily unavailable)",
+        help="Background removal: none or standard (advanced is temporarily unavailable); "
+        "defaults to none at 1080p, standard otherwise",
     )
     meowa_animation_run_parser.set_defaults(remove_bg_method_explicit=False)
     meowa_animation_run_parser.add_argument(
-        "--remove-bg-batch-size", choices=["4", "8", "16", "all"], default="16",
+        "--remove-bg-batch-size", choices=["2", "4", "8", "16"], default="16",
         help="Frames per removal (highest to lowest quality); each batch costs 5 credits",
     )
     meowa_animation_run_parser.add_argument(
         "--background-color", default="#c6c6c6", action=_StoreExplicitArgument,
         help="Source background color; defaults to #00b140 when removal is none",
+    )
+    meowa_animation_run_parser.add_argument(
+        "--high-frame-rate",
+        action="store_true",
+        default=False,
+        help="Keep every generated frame in the output WebP instead of sampling to 8fps. Defaults removal off and fill to #00b140.",
     )
     meowa_animation_run_parser.set_defaults(background_color_explicit=False)
     meowa_animation_run_parser.set_defaults(optimize_prompt=True)
@@ -7661,6 +8071,7 @@ def build_parser() -> argparse.ArgumentParser:
         "spine-inspect",
         "spine-edit-run",
         "spine-replace-run",
+        "spine-cleanup-run",
         "spine-reskin-run",
         "credits-balance",
         "free-credits",
@@ -7705,11 +8116,16 @@ def _resolve_meowa_animation_remove_bg_method(
     style_mode: str,
     remove_bg_method: str,
     explicitly_selected: bool,
+    resolution: str = "480p",
+    high_frame_rate: bool = False,
 ) -> str:
     if remove_bg_method == "advanced":
         if explicitly_selected:
             raise ValueError("Advanced background removal is temporarily unavailable")
         return "standard"
+    # Web default: 1080p and high frame rate open with a green-screen source and no paid removal.
+    if not explicitly_selected and (high_frame_rate or resolution == "1080p"):
+        return "none"
     return remove_bg_method
 
 
@@ -7722,6 +8138,21 @@ def _resolve_meowa_animation_quality_mode(
     if explicitly_selected:
         return quality_mode
     return "standard" if style_mode == "hd" else "medium"
+
+
+MEOWA_ANIMATION_LAST_FRAME_OUTPUT_FRAMES = 24
+
+
+# Mirrors the web UI: a first/last-frame pair defaults to 3 s because 2 s tends to freeze.
+def _resolve_meowa_animation_output_frames(
+    *,
+    output_frames: int,
+    explicitly_selected: bool,
+    has_last_frame: bool,
+) -> int:
+    if explicitly_selected or not has_last_frame:
+        return output_frames
+    return MEOWA_ANIMATION_LAST_FRAME_OUTPUT_FRAMES
 
 
 def _resolve_meowa_animation_alpha_mode(
@@ -10111,6 +10542,34 @@ def main() -> int:
             language = resolve_meowa_tts_language(args.language, clone=clone_mode)
             if clone_mode and args.voice != MEOWA_TTS_DEFAULT_VOICE_DESCRIPTION:
                 raise ValueError("--voice cannot be combined with --reference-audio; choose one voice source")
+            if clone_mode and args.optimize_prompt:
+                raise ValueError("--optimize-prompt only applies to voice description mode (without --reference-audio)")
+            if not clone_mode and (
+                args.emotion != MEOWA_VOICE_CLONE_DEFAULT_EMOTION
+                or args.emotion_intensity != MEOWA_VOICE_CLONE_DEFAULT_EMOTION_INTENSITY
+            ):
+                raise ValueError("--emotion and --emotion-intensity only apply with --reference-audio")
+            clone_emotion = normalize_meowa_voice_clone_emotion(args.emotion) if clone_mode else MEOWA_VOICE_CLONE_DEFAULT_EMOTION
+            clone_emotion_intensity = (
+                normalize_meowa_voice_clone_emotion_intensity(args.emotion_intensity)
+                if clone_mode
+                else MEOWA_VOICE_CLONE_DEFAULT_EMOTION_INTENSITY
+            )
+            tts_text = args.text
+            tts_voice = args.voice
+            if args.optimize_prompt:
+                polished = prepare_meowa_tts_prompt(
+                    api_base=args.api_base,
+                    api_key=args.api_key,
+                    text=tts_text,
+                    voice_hint=tts_voice,
+                    language=language,
+                    timeout=args.timeout,
+                    verify=verify,
+                )
+                tts_text, tts_voice = polished["text"], polished["voice_description"]
+                print(f"[INFO] polished_text={tts_text}")
+                print(f"[INFO] voice_description={tts_voice}")
             if not project_id:
                 project_id = _create_game_design_project(
                     api_base=args.api_base,
@@ -10126,6 +10585,8 @@ def main() -> int:
                 request_payload = {
                     "text": args.text,
                     "language": language,
+                    "emotion": clone_emotion,
+                    "emotion_intensity": clone_emotion_intensity,
                     "reference_audios": reference_audios,
                     "project_id": project_id,
                     "thread_id": thread_id or None,
@@ -10138,6 +10599,8 @@ def main() -> int:
                     project_id=project_id,
                     thread_id=thread_id,
                     language=language,
+                    emotion=clone_emotion,
+                    emotion_intensity=clone_emotion_intensity,
                     timeout=args.timeout,
                     max_wait=args.max_wait,
                     poll_interval=args.poll_interval,
@@ -10145,19 +10608,20 @@ def main() -> int:
                 )
             else:
                 request_payload = {
-                    "text": args.text,
-                    "voice_description": args.voice,
+                    "text": tts_text,
+                    "voice_description": tts_voice,
                     "language": language,
                     "project_id": project_id,
                     "thread_id": thread_id or None,
+                    "optimize_prompt": args.optimize_prompt,
                 }
                 submit_payload, final_payload = run_meowa_tts(
                     api_base=args.api_base,
                     api_key=args.api_key,
-                    text=args.text,
+                    text=tts_text,
                     project_id=project_id,
                     thread_id=thread_id,
-                    voice_description=args.voice,
+                    voice_description=tts_voice,
                     language=language,
                     timeout=args.timeout,
                     max_wait=args.max_wait,
@@ -10380,6 +10844,56 @@ def main() -> int:
             print(_format_json_for_display(final_payload))
             return 0
 
+        if args.command == "spine-cleanup-run":
+            print(f"[INFO] planned_output_dir={_predict_saved_dir(effective_output_dir, args.display_name)}")
+            submit_payload = submit_spine_frame_cleanup(
+                api_base=args.api_base,
+                api_key=args.api_key,
+                project_id=args.project_id,
+                thread_id=args.thread_id,
+                package_path=args.source_spine_package,
+                client_operation_id=args.client_operation_id,
+                display_name=args.display_name,
+                skin_name=args.skin_name,
+                timeout=args.timeout,
+                verify=verify,
+            )
+            final_payload = wait_submitted_workflow_job(
+                api_base=args.api_base,
+                api_key=args.api_key,
+                submit_payload=submit_payload,
+                label="Spine frame cleanup",
+                timeout=args.timeout,
+                max_wait=args.max_wait,
+                poll_interval=args.poll_interval,
+                verify=verify,
+            )
+            if str(final_payload.get("status") or "").strip().lower() != "success":
+                print(_format_json_for_display(final_payload))
+                return _command_exit_code(1)
+            job_id = str(
+                final_payload.get("api_job_id")
+                or final_payload.get("job_id")
+                or submit_payload.get("job_id")
+                or ""
+            ).strip()
+            if not job_id:
+                raise SkillCompatibilityError("Spine cleanup response is missing its Job ID")
+            output_dir, _downloads = save_spine_final_package(
+                api_base=args.api_base,
+                api_key=args.api_key,
+                job_id=job_id,
+                output_root=str(effective_output_dir),
+                slug_seed=args.display_name,
+                timeout=args.timeout,
+                verify=verify,
+                no_download=args.no_download,
+                export_version=args.export_version,
+            )
+            print(f"[INFO] saved_dir={output_dir}")
+            print(_format_json_for_display(final_payload))
+            return 0
+
         if args.command == "spine-reskin-run":
             print(f"[INFO] planned_output_dir={_predict_saved_dir(effective_output_dir, args.prompt)}")
             submit_payload = submit_spine_full_reskin(
@@ -10437,13 +10951,23 @@ def main() -> int:
 
         if args.command == "spine-run":
             print(f"[INFO] planned_output_dir={_predict_saved_dir(effective_output_dir, args.prompt)}")
+            project_id, thread_id, source_message_id = prepare_spine_submission_context(
+                api_base=args.api_base,
+                api_key=args.api_key,
+                prompt=args.prompt,
+                project_id=args.project_id,
+                thread_id=args.thread_id,
+                source_message_id=args.source_message_id,
+                timeout=args.timeout,
+                verify=verify,
+            )
             request_payload = {
                 "prompt": args.prompt,
                 "character_reference": args.character_reference,
                 "template_name": args.template_name,
-                "project_id": args.project_id,
-                "thread_id": args.thread_id,
-                "source_message_id": args.source_message_id,
+                "project_id": project_id,
+                "thread_id": thread_id,
+                "source_message_id": source_message_id,
                 "client_operation_id": args.client_operation_id,
                 "generation_model": args.generation_model,
                 "export_resolution": args.export_resolution,
@@ -10457,9 +10981,9 @@ def main() -> int:
                 api_base=args.api_base,
                 api_key=args.api_key,
                 prompt=args.prompt,
-                project_id=args.project_id,
-                thread_id=args.thread_id,
-                source_message_id=args.source_message_id,
+                project_id=project_id,
+                thread_id=thread_id,
+                source_message_id=source_message_id,
                 client_operation_id=args.client_operation_id,
                 character_reference=args.character_reference,
                 template_name=args.template_name,
@@ -10519,12 +11043,22 @@ def main() -> int:
             return 0
 
         if args.command in {"meowa-animation-edit-run", "meowa-animation-edit-prompts"}:
+            remove_bg_method = args.remove_bg_method
+            background_color = args.background_color
+            if args.high_frame_rate and not args.remove_bg_method_explicit:
+                remove_bg_method = "none"
+            if args.high_frame_rate and remove_bg_method == "none" and not args.background_color_explicit:
+                background_color = "#00b140"
             data = {"edit_intent": args.edit_intent, "video_description": args.video_description,
-                    "image_description": args.image_description if args.image_file else "", "background_color": args.background_color}
+                    "image_description": args.image_description if args.image_file else "", "background_color": background_color,
+                    "high_frame_rate": "true" if args.high_frame_rate else "false"}
             if args.style_mode == "pixel" and args.resolution != "480p":
                 raise ValueError("Pixel mode requires 480p")
+            if args.primary_reference == "image" and not args.image_file:
+                raise ValueError("--primary-reference image requires --image-file")
             data.update(style_mode=args.style_mode, resolution=args.resolution, alpha_mode=args.alpha_mode,
-                        remove_bg_method=args.remove_bg_method, remove_bg_batch_size=args.remove_bg_batch_size)
+                        remove_bg_method=remove_bg_method, remove_bg_batch_size=args.remove_bg_batch_size,
+                        primary_reference=args.primary_reference)
             polish = args.command == "meowa-animation-edit-prompts"
             if not polish and (not args.edit_intent.strip() or not args.video_description.strip()
                                or (args.image_file and not args.image_description.strip())):
@@ -10566,8 +11100,6 @@ def main() -> int:
             )
             if quality_mode == "advanced":
                 raise ValueError("Ultimate quality is still in development")
-            if args.style_mode == "pixel" and args.resolution != "480p":
-                raise ValueError("720p resolution is unavailable for pixel style mode")
             alpha_mode = _resolve_meowa_animation_alpha_mode(
                 style_mode=args.style_mode,
                 alpha_mode=args.alpha_mode,
@@ -10577,6 +11109,8 @@ def main() -> int:
                 style_mode=args.style_mode,
                 remove_bg_method=args.remove_bg_method,
                 explicitly_selected=args.remove_bg_method_explicit,
+                resolution=args.resolution,
+                high_frame_rate=args.high_frame_rate,
             )
             if remove_bg_method == "none" and not args.background_color_explicit:
                 args.background_color = "#00b140"
@@ -10594,10 +11128,15 @@ def main() -> int:
                 with Image.open(last_image_path) as last_source:
                     if last_source.size != (source_width, source_height):
                         raise ValueError("animation first and last frames must have identical dimensions")
-            if args.style_mode == "pixel" and max(source_width, source_height) > 256:
-                raise ValueError("pixel animation source cannot exceed 256 pixels on its longest side")
+            if args.style_mode == "pixel" and max(source_width, source_height) > 320:
+                raise ValueError("pixel animation source cannot exceed 320 pixels on its longest side")
 
-            duration_seconds = args.output_frames // 8
+            output_frames = _resolve_meowa_animation_output_frames(
+                output_frames=args.output_frames,
+                explicitly_selected=args.output_frames_explicit,
+                has_last_frame=last_image_path is not None,
+            )
+            duration_seconds = output_frames // 8
             animation_mode = "non_loop" if last_image_path else args.animation_mode
             source_padding = {
                 "enabled": True,
@@ -10644,6 +11183,7 @@ def main() -> int:
                 remove_bg_method=remove_bg_method,
                 remove_bg_batch_size=args.remove_bg_batch_size,
                 background_color=args.background_color,
+                high_frame_rate=args.high_frame_rate,
                 source_padding=source_padding,
                 timeout=args.timeout,
                 verify=verify,
@@ -10684,7 +11224,7 @@ def main() -> int:
                     "prompt": args.prompt,
                     "style_mode": args.style_mode,
                     "alpha_mode": alpha_mode,
-                    "output_frames": args.output_frames,
+                    "output_frames": output_frames,
                     "quality_mode": args.quality_mode,
                     "animation_mode": args.animation_mode,
                     "remove_bg_method": args.remove_bg_method,
@@ -10699,18 +11239,11 @@ def main() -> int:
             return 0
 
         if args.command == "animate-submit":
-            selected_animation_model = getattr(args, "animation_model", "")
-            is_pixel = resolve_animate_is_pixel(
-                args.image_file,
-                requested_is_pixel=(
-                    selected_animation_model == "pixel-engine-v1.1"
-                    if selected_animation_model
-                    else None
-                ),
-            )
-            animation_model = selected_animation_model or (
-                "pixel-engine-v1.1" if is_pixel else "frame-engine-v1.1"
-            )
+            animation_model = args.animation_model
+            intelligence = args.intelligence
+            is_pixel = animation_model == "pixel-engine-v1.1"
+            if intelligence == "standard" and args.output_frames not in {4, 6, 8, 10, 12, 16}:
+                raise ValueError("standard intelligence supports output_frames 4, 6, 8, 10, 12, or 16")
             pixel_config, source_padding = build_animate_source_controls(
                 args.image_file,
                 color_count=args.color_count,
@@ -10719,6 +11252,7 @@ def main() -> int:
                 padding_left=args.padding_left,
                 padding_right=args.padding_right,
                 requested_is_pixel=is_pixel,
+                pixel_max_size=320 if intelligence == "advanced" else 256,
             )
             payload = submit_animate(
                 api_base=args.api_base,
@@ -10730,6 +11264,7 @@ def main() -> int:
                 output_format=args.output_format,
                 animation_type=args.animation_type,
                 animation_model=animation_model,
+                intelligence=intelligence,
                 optimize_prompt=args.optimize_prompt,
                 remove_bg_method=args.remove_bg_method,
                 pixel_config=pixel_config,
@@ -10752,18 +11287,11 @@ def main() -> int:
 
         if args.command == "animate-run":
             print(f"[INFO] planned_output_dir={_predict_saved_dir(effective_output_dir, args.prompt or Path(args.image_file).stem)}")
-            selected_animation_model = getattr(args, "animation_model", "")
-            is_pixel = resolve_animate_is_pixel(
-                args.image_file,
-                requested_is_pixel=(
-                    selected_animation_model == "pixel-engine-v1.1"
-                    if selected_animation_model
-                    else None
-                ),
-            )
-            animation_model = selected_animation_model or (
-                "pixel-engine-v1.1" if is_pixel else "frame-engine-v1.1"
-            )
+            animation_model = args.animation_model
+            intelligence = args.intelligence
+            is_pixel = animation_model == "pixel-engine-v1.1"
+            if intelligence == "standard" and args.output_frames not in {4, 6, 8, 10, 12, 16}:
+                raise ValueError("standard intelligence supports output_frames 4, 6, 8, 10, 12, or 16")
             pixel_config, source_padding = build_animate_source_controls(
                 args.image_file,
                 color_count=args.color_count,
@@ -10772,6 +11300,7 @@ def main() -> int:
                 padding_left=args.padding_left,
                 padding_right=args.padding_right,
                 requested_is_pixel=is_pixel,
+                pixel_max_size=320 if intelligence == "advanced" else 256,
             )
             submit_payload = submit_animate(
                 api_base=args.api_base,
@@ -10783,6 +11312,7 @@ def main() -> int:
                 output_format=args.output_format,
                 animation_type=args.animation_type,
                 animation_model=animation_model,
+                intelligence=intelligence,
                 optimize_prompt=args.optimize_prompt,
                 remove_bg_method=args.remove_bg_method,
                 pixel_config=pixel_config,

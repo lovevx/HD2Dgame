@@ -1,29 +1,49 @@
 extends CharacterBody3D
+const GameAudio := preload("res://data/game_audio.gd")
 signal defeated
 const CombatSkills := preload("res://data/combat_skills.gd")
-## 头顶眩晕条（scripts/battle/stun_gauge.gd）。用显式 preload 而不是全局类名，
+const WOLF_SPRITE_SHEET := preload("res://assets/enemies/directions/runtime/wolf_8dir.png")
+const BOAR_SPRITE_SHEET := preload("res://assets/enemies/directions/runtime/boar_8dir.png")
+const GOLEM_SPRITE_SHEET := preload("res://assets/enemies/directions/runtime/flesh_golem_8dir.png")
+const MONSTER_DIRECTIONS: Array[String] = [
+	"down", "down_right", "right", "up_right", "up", "up_left", "left", "down_left",
+]
+## 3×3 atlas: down-left/down/down-right, left/empty/right, up-left/up/up-right.
+const MONSTER_DIRECTION_CELLS := {
+	"down_left": Vector2i(0, 0), "down": Vector2i(1, 0), "down_right": Vector2i(2, 0),
+	"left": Vector2i(0, 1), "right": Vector2i(2, 1),
+	"up_left": Vector2i(0, 2), "up": Vector2i(1, 2), "up_right": Vector2i(2, 2),
+}
+## 每张 3×3 图集按 MONSTER_DIRECTIONS 顺序记录脚底锚点（像素）。
+const WOLF_GROUND_OFFSETS: Array[float] = [177.0, 177.0, 130.0, 111.0, 120.0, 111.0, 130.0, 177.0]
+const BOAR_GROUND_OFFSETS: Array[float] = [174.0, 175.0, 130.0, 112.0, 104.0, 112.0, 130.0, 175.0]
+const GOLEM_GROUND_OFFSETS: Array[float] = [187.0, 187.0, 162.0, 141.0, 141.0, 141.0, 162.0, 187.0]
+## 头顶眩晕条（scripts/combat/stun_gauge.gd）。用显式 preload 而不是全局类名，
 ## 这样不依赖编辑器的全局类缓存，命令行跑回归也能解析。
-const StunGaugeScript := preload("res://scripts/battle/stun_gauge.gd")
-## 敌人：红色预警圈锁定位置，前摇结束后才结算；远程威胁共用范围攻击。
-## kind 为 CUSTOM 时完全沿用试炼里的导出参数（近战 / 远程占位敌人）；
+const StunGaugeScript := preload("res://scripts/combat/stun_gauge.gd")
+## 敌人：红色预警圈锁定位置，前摇结束后才结算。
+## kind 为 CUSTOM 时使用通用近战数值；
 ## 其余 kind 走 PROFILES：野狼、野猪为能量型，肉体傀儡为无能量实验体
 ## —— 青钢影的真实伤害对它无效，白盒阶段靠这个区分来验证苏晓的弱点。
 
 enum Kind { CUSTOM, WOLF, BOAR, GOLEM, DUMMY, HUMAN }
 
-## 人形敌人（HUMAN）外观查表：按 model key 取肤色/衣着/武器/体型。
-## 数值仍由关卡（campaign.gd）写入，这里只负责白盒模型的样子。
+## 人形敌人（HUMAN）外观、战斗风格与眩晕阈值查表：按 model key 取配置。
+## 血量与攻击数值由关卡（campaign.gd）写入；stun_max 为处决眩晕阈值。
 const HUMAN_PROFILES := {
 	"vagrant": {"name": "持械流民", "color": Color("8a7662"), "trim": Color("574a3c"),
-		"weapon": "dagger", "energy": true, "tall": 1.0},
+		"weapon": "dagger", "sidearm": true, "energy": true, "tall": 1.0, "stun_max": 25.0,
+		"attack_style": "vagrant", "reach": 8.0, "keep": 2.6},
 	"carlos": {"name": "黑市商人·卡洛斯", "color": Color("4a4a58"), "trim": Color("2b2b34"),
-		"weapon": "dagger", "energy": true, "tall": 1.05},
+		"weapon": "dagger", "energy": true, "tall": 1.05, "stun_max": 45.0},
 	"instructor": {"name": "考核教官", "color": Color("5d6a86"), "trim": Color("3a4255"),
-		"weapon": "sword", "energy": true, "tall": 1.08},
+		"weapon": "sword", "energy": true, "tall": 1.08, "stun_max": 55.0},
 	"oka": {"name": "布兰登·欧卡", "color": Color("6b3f3a"), "trim": Color("3a2320"),
-		"weapon": "sword", "energy": true, "tall": 1.1},
+		"weapon": "axe", "energy": true, "tall": 1.1, "stun_max": 80.0,
+		"attack_style": "oka", "reach": 8.0, "keep": 1.8},
 	"guard": {"name": "欧卡护卫", "color": Color("6e7262"), "trim": Color("40423a"),
-		"weapon": "spear", "energy": true, "tall": 1.03},
+		"weapon": "spear", "sidearm": true, "energy": true, "tall": 1.03, "stun_max": 40.0,
+		"attack_style": "guard", "reach": 9.0, "keep": 6.5},
 }
 
 ## color 是主体毛色，trim 是四肢/头部等暗部；energy 决定头顶有没有能量核。
@@ -31,16 +51,19 @@ const HUMAN_PROFILES := {
 ## reach / keep 是距离不是速度，保持不变。
 const PROFILES := {
 	Kind.WOLF: {
-		"name": "野狼", "hp": 34.0, "speed": 1.7, "damage": 10.0, "reach": 2.3,
-		"windup": 0.5, "keep": 1.6, "color": Color("8fa0bb"), "trim": Color("59647a"), "energy": true,
+		"name": "野狼", "hp": 34.0, "speed": 1.7, "damage": 10.0, "reach": 4.4,
+		"windup": 0.5, "keep": 1.6, "color": Color("8fa0bb"), "trim": Color("59647a"), "energy": true, "stun_max": 25.0,
+		"attack_style": "wolf_pounce",
 	},
 	Kind.BOAR: {
-		"name": "野猪", "hp": 72.0, "speed": 1.25, "damage": 16.0, "reach": 2.4,
-		"windup": 0.75, "keep": 1.6, "color": Color("a9643c"), "trim": Color("67381f"), "energy": true,
+		"name": "野猪", "hp": 72.0, "speed": 1.25, "damage": 16.0, "reach": 7.0,
+		"windup": 0.75, "keep": 1.6, "color": Color("a9643c"), "trim": Color("67381f"), "energy": true, "stun_max": 45.0,
+		"attack_style": "boar_charge",
 	},
 	Kind.GOLEM: {
-		"name": "肉体傀儡", "hp": 58.0, "speed": 0.95, "damage": 18.0, "reach": 2.4,
-		"windup": 0.85, "keep": 1.7, "color": Color("9a8fb5"), "trim": Color("5d5670"), "energy": false,
+		"name": "肉体傀儡", "hp": 58.0, "speed": 0.95, "damage": 18.0, "reach": 3.0,
+		"windup": 1.1, "keep": 1.7, "color": Color("9a8fb5"), "trim": Color("5d5670"), "energy": false, "stun_max": 40.0,
+		"attack_style": "golem_slam",
 	},
 	## 纯靶子：血量极高且打不坏（见 take_damage），站桩不动、永不攻击。
 	Kind.DUMMY: {
@@ -52,7 +75,8 @@ const PROFILES := {
 @export var max_hp: float = 48.0
 @export_range(0.0, 0.9, 0.05) var physical_reduction: float = 0.0
 @export var move_speed: float = 1.2
-@export var ranged: bool = false
+## 覆盖敌种 / 人形档位的预设值；0 表示使用档位配置。
+@export_range(0.0, 200.0, 1.0) var stun_threshold_override := 0.0
 @export var kind: Kind = Kind.CUSTOM
 ## 人形敌人（Kind.HUMAN）的外观档位：见 HUMAN_PROFILES。空串 = 保持默认近战守卫。
 @export var model: String = ""
@@ -68,34 +92,45 @@ var player: Node3D
 var marker: MeshInstance3D
 var health_label: Label3D
 var material: StandardMaterial3D
-var body_root: Node3D          # 白盒模型容器；CUSTOM 占位敌人不建模型，沿用胶囊
+var body_root: Node3D          # 怪物精灵或人形白盒容器；CUSTOM 占位敌人沿用胶囊
+var monster_sprite: Sprite3D
+var _monster_direction_textures: Dictionary = {}
+var _monster_ground_offsets: Array[float] = []
+var _monster_direction := "down"
 var enemy_name := "近战守卫"
 var attack_damage := 14.0
 var kill_tier: int = 1   # 击杀武器耐久档：普通 1 / 精英 3 / BOSS 8（策划案 §6.3.1）
 var attack_reach := 2.5
 var attack_windup := 0.65
 var keep_distance := 1.6
+var attack_style := "melee"
+var _attack_kind := "melee"
+var _attack_windup_duration := 0.65
+var _attack_radius := 1.65
+var _attack_recovery := 1.4
+var _marker_base_scale := Vector3.ONE
+var _rush_timer := 0.0
+var _rush_direction := Vector3.ZERO
+var _rush_speed := 0.0
+var _rush_damage := 0.0
+var _rush_radius := 1.3
+var _rush_recovery := 1.4
+var _rush_hit := false
+var _guard_retreat_timer := 0.0
+var _oka_alerted := false
 var _flash_timer := 0.0
-var stun_timer: float = 0.0          # 拼刀硬直：被弹开期间不能行动
-var clash_immune_timer: float = 0.0  # 拼刀后短暂免疫再次判定，与玩家冷却配合防双判
 var _arm_weapon: Node3D              # 人形敌人右臂（含武器），前摇举刀/出手挥击靠它
 var _strike_timer := 0.0             # 挥击动作计时：出手后 0.22 秒内完成劈下-回摆
-## 回合战驱动门闩：开时实时 AI 让位给 battle_controller，由 battle_advance() 步进。
-var battle_driven := false
 ## 游荡巡逻（练习场演示用）：只绕出生点慢速转圈，永不攻击。
 var patrol_only := false
 var _patrol_home := Vector3.ZERO
 var _patrol_setup := false
 var _patrol_angle := 0.0
-## ---------- 眩晕条（即时战斗的破绽资源，见 docs/COMBAT_DESIGN.md §1.4） ----------
+## ---------- 眩晕条（即时战斗的破绽资源，见 docs/REALTIME_COMBAT_EXTRACTION.md） ----------
 ## 打满 → 停止移动；此时用直踹命中即处决。木桩不吃眩晕。
 var stun := 0.0
 var stun_max := CombatSkills.STUN_MAX
 var _stun_gauge: Node3D = null
-const CLASH_WINDOW := 0.3   # 与 player.gd 拼刀窗口一致：双方命中时刻相差 ≤ 0.3 秒视为重叠
-const CLASH_STUN := 0.8     # 拼刀硬直时长
-const CLASH_REPEL := 8.0    # 拼刀弹开初速度
-const CLASH_IMMUNE := 0.35  # 拼刀后免疫时长
 
 func _ready() -> void:
 	# 纯靶子不进 enemies 组，避免被试炼/波次的“清怪”逻辑算作存活敌人。
@@ -105,14 +140,6 @@ func _ready() -> void:
 		add_to_group("enemies")
 	var body_color := Color("ce6654")
 	var trim_color := Color("7a3a30")
-	if ranged:
-		enemy_name = "远程威胁"
-		attack_damage = 18.0
-		attack_reach = 9.0
-		attack_windup = 0.95
-		keep_distance = 6.0
-		body_color = Color("a56fe0")
-		trim_color = Color("5f3d84")
 	var profile: Dictionary = PROFILES.get(kind, {})
 	if not profile.is_empty():
 		enemy_name = profile["name"]
@@ -122,16 +149,24 @@ func _ready() -> void:
 		attack_reach = profile["reach"]
 		attack_windup = profile["windup"]
 		keep_distance = profile["keep"]
+		attack_style = str(profile.get("attack_style", "melee"))
+		stun_max = float(profile.get("stun_max", CombatSkills.STUN_MAX))
 		has_energy = profile["energy"]
 		body_color = profile["color"]
 		trim_color = profile["trim"]
-	# 人形敌人：数值由关卡写入，这里只接管名字/颜色/能量，按 model 搭白盒模型。
+	# 人形敌人：血量与伤害由关卡写入；model 决定外观、战斗风格与眩晕阈值。
 	var human: Dictionary = HUMAN_PROFILES.get(model, {}) if kind == Kind.HUMAN else {}
 	if not human.is_empty():
 		enemy_name = human["name"]
 		body_color = human["color"]
 		trim_color = human["trim"]
 		has_energy = human["energy"]
+		attack_style = str(human.get("attack_style", attack_style))
+		attack_reach = float(human.get("reach", attack_reach))
+		keep_distance = float(human.get("keep", keep_distance))
+		stun_max = float(human.get("stun_max", stun_max))
+	if stun_threshold_override > 0.0:
+		stun_max = stun_threshold_override
 	hp_ = max_hp
 	player = get_tree().get_first_node_in_group("player")
 	material = StandardMaterial3D.new()
@@ -141,8 +176,8 @@ func _ready() -> void:
 		# 有白盒模型的敌人把占位胶囊藏起来，只留它当碰撞参考
 		$MeshInstance3D.visible = false
 		_build_body(body_color, trim_color)
-	if kind != Kind.CUSTOM and has_energy:
-		_add_energy_core()  # 无能量肉体傀儡不挂能量核，一眼区分两类敌人
+	if kind != Kind.CUSTOM and has_energy and kind != Kind.WOLF and kind != Kind.BOAR:
+		_add_energy_core()  # 狼、野猪把能量晶体画在精灵里；人形能量敌人保留悬浮核
 	if kind == Kind.DUMMY:
 		# 靶子不显示“无能量”标签，读作一个可击打的木桩即可
 		enemy_name = "练功木桩"
@@ -168,7 +203,7 @@ func _ready() -> void:
 	marker.top_level = true
 	marker.visible = false
 
-## 能量型敌人头顶挂一颗发光能量核，无能量肉体傀儡没有：一眼区分两类敌人。
+## 人形能量敌人头顶挂发光能量核；狼、野猪的能量特征画在精灵中。
 func _add_energy_core() -> void:
 	var core := MeshInstance3D.new()
 	core.name = "EnergyCore"
@@ -186,72 +221,72 @@ func _add_energy_core() -> void:
 	core.position = Vector3(0, 1.9, 0)  # 悬在头顶，不与上方的血量标签打架
 	add_child(core)
 
-# ---------------------------------------------------------------- 白盒模型
+# ---------------------------------------------------------------- 怪物精灵 / 白盒模型
 
-## 三种小怪的白盒形体：野狼低伏细长、野猪矮壮带獠牙、肉体傀儡是佝偻人形。
-## 统一朝 -Z 为正面（朝向由 _physics_process 里的转向负责）。
+## 野狼、野猪与肉体傀儡使用 2D 像素精灵；碰撞体和实时 AI 仍由本 CharacterBody3D 负责。
 func _build_body(color: Color, trim: Color) -> void:
 	body_root = Node3D.new()
 	body_root.name = "Body"
 	add_child(body_root)
 	match kind:
 		Kind.WOLF:
-			_build_wolf(color, trim)
+			_build_pixel_monster(WOLF_SPRITE_SHEET, 0.0052, WOLF_GROUND_OFFSETS)
 		Kind.BOAR:
-			_build_boar(color, trim)
+			_build_pixel_monster(BOAR_SPRITE_SHEET, 0.0044, BOAR_GROUND_OFFSETS)
 		Kind.GOLEM:
-			_build_golem(color, trim)
+			_build_pixel_monster(GOLEM_SPRITE_SHEET, 0.0054, GOLEM_GROUND_OFFSETS)
 		Kind.DUMMY:
 			_build_dummy(color, trim)
 		Kind.HUMAN:
 			var human: Dictionary = HUMAN_PROFILES.get(model, {})
-			_build_human(color, trim, str(human.get("weapon", "dagger")), float(human.get("tall", 1.0)))
+			_build_human(color, trim, str(human.get("weapon", "dagger")), float(human.get("tall", 1.0)), bool(human.get("sidearm", false)))
 
-func _build_wolf(color: Color, trim: Color) -> void:
-	var fur := _material(color, 0.8)
-	var dark := _material(trim, 0.85)
-	_part("Torso", Vector3(0, 0.78, 0.05), Vector3(0.62, 0.62, 1.5), fur)
-	_part("Chest", Vector3(0, 0.86, -0.55), Vector3(0.68, 0.64, 0.5), fur)
-	_part("Neck", Vector3(0, 0.95, -0.86), Vector3(0.42, 0.44, 0.4), fur)
-	_part("Head", Vector3(0, 1.02, -1.14), Vector3(0.46, 0.44, 0.5), fur)
-	_part("Snout", Vector3(0, 0.92, -1.48), Vector3(0.26, 0.24, 0.34), dark)
-	_part("EarL", Vector3(-0.17, 1.28, -1.0), Vector3(0.12, 0.2, 0.08), dark)
-	_part("EarR", Vector3(0.17, 1.28, -1.0), Vector3(0.12, 0.2, 0.08), dark)
-	_part("Tail", Vector3(0, 0.98, 0.9), Vector3(0.14, 0.14, 0.6), dark)
-	for sx in [-1.0, 1.0]:
-		for sz in [-1.0, 1.0]:
-			_part("Leg", Vector3(sx * 0.24, 0.25, sz * 0.5), Vector3(0.16, 0.5, 0.16), dark)
+func _build_pixel_monster(sheet: Texture2D, sprite_pixel_size: float, ground_offsets: Array[float]) -> void:
+	_monster_direction_textures = _build_directional_textures(sheet)
+	_monster_ground_offsets = ground_offsets
+	monster_sprite = Sprite3D.new()
+	monster_sprite.name = "MonsterSprite"
+	monster_sprite.texture = _monster_direction_textures["down"]
+	monster_sprite.pixel_size = sprite_pixel_size
+	monster_sprite.offset = Vector2(0, _monster_ground_offsets[0])
+	monster_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	monster_sprite.shaded = true
+	monster_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	monster_sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	body_root.add_child(monster_sprite)
+	_update_monster_sprite_direction()
 
-func _build_boar(color: Color, trim: Color) -> void:
-	var hide := _material(color, 0.85)
-	var dark := _material(trim, 0.9)
-	_part("Torso", Vector3(0, 0.76, 0.1), Vector3(0.86, 0.8, 1.6), hide)
-	_part("Hump", Vector3(0, 1.22, -0.3), Vector3(0.7, 0.3, 0.9), dark)
-	_part("Head", Vector3(0, 0.72, -1.05), Vector3(0.62, 0.56, 0.6), hide)
-	_part("Snout", Vector3(0, 0.62, -1.44), Vector3(0.36, 0.32, 0.42), dark)
-	_part("TuskL", Vector3(-0.19, 0.62, -1.62), Vector3(0.09, 0.1, 0.3), _material(Color("e6ddc4"), 0.5))
-	_part("TuskR", Vector3(0.19, 0.62, -1.62), Vector3(0.09, 0.1, 0.3), _material(Color("e6ddc4"), 0.5))
-	_part("EarL", Vector3(-0.26, 1.02, -1.1), Vector3(0.12, 0.2, 0.1), dark)
-	_part("EarR", Vector3(0.26, 1.02, -1.1), Vector3(0.12, 0.2, 0.1), dark)
-	for i in 4:
-		_part("Bristle", Vector3(0, 1.26, -0.85 + i * 0.45), Vector3(0.1, 0.22, 0.1), dark)
-	for sx in [-1.0, 1.0]:
-		for sz in [-1.0, 1.0]:
-			_part("Leg", Vector3(sx * 0.3, 0.21, sz * 0.55), Vector3(0.2, 0.42, 0.2), dark)
+func _build_directional_textures(sheet: Texture2D) -> Dictionary:
+	var cell_width := int(sheet.get_width() / 3.0)
+	var cell_height := int(sheet.get_height() / 3.0)
+	var textures: Dictionary = {}
+	for direction in MONSTER_DIRECTIONS:
+		var cell: Vector2i = MONSTER_DIRECTION_CELLS[direction]
+		var atlas := AtlasTexture.new()
+		atlas.atlas = sheet
+		atlas.region = Rect2(cell.x * cell_width, cell.y * cell_height, cell_width, cell_height)
+		textures[direction] = atlas
+	return textures
 
-func _build_golem(color: Color, trim: Color) -> void:
-	var flesh := _material(color, 0.9)
-	var dark := _material(trim, 0.95)
-	_part("Hips", Vector3(0, 0.5, 0), Vector3(0.56, 0.42, 0.46), dark)
-	_part("Torso", Vector3(0, 1.02, 0.06), Vector3(0.72, 0.86, 0.5), flesh)
-	_part("Chest", Vector3(0, 1.34, 0.02), Vector3(0.8, 0.34, 0.54), dark)
-	_part("Head", Vector3(0, 1.62, 0.12), Vector3(0.42, 0.44, 0.44), flesh)
-	_part("Jaw", Vector3(0, 1.42, 0.24), Vector3(0.3, 0.16, 0.3), dark)
-	for sx in [-1.0, 1.0]:
-		_part("UpperArm", Vector3(sx * 0.5, 1.16, 0.08), Vector3(0.2, 0.5, 0.22), flesh)
-		_part("Forearm", Vector3(sx * 0.52, 0.66, 0.12), Vector3(0.18, 0.5, 0.2), dark)
-		_part("Thigh", Vector3(sx * 0.19, 0.52, 0), Vector3(0.24, 0.5, 0.26), flesh)
-		_part("Shin", Vector3(sx * 0.19, 0.16, 0.02), Vector3(0.22, 0.32, 0.24), dark)
+func _update_monster_sprite_direction() -> void:
+	if monster_sprite == null or _monster_direction_textures.is_empty():
+		return
+	var facing := -global_basis.z
+	facing.y = 0.0
+	if facing.length_squared() < 0.0001:
+		return
+	var view_direction := facing
+	if is_instance_valid(player) and player.has_method("view_dir"):
+		view_direction = player.call("view_dir", facing)
+	var index := int(round(atan2(view_direction.x, view_direction.z) / (PI / 4.0))) % 8
+	if index < 0:
+		index += 8
+	var direction := MONSTER_DIRECTIONS[index]
+	if direction == _monster_direction:
+		return
+	_monster_direction = direction
+	monster_sprite.texture = _monster_direction_textures[direction]
+	monster_sprite.offset.y = _monster_ground_offsets[index]
 
 ## 练功木桩：十字形站桩，横杆当手臂、圆木当躯干，顶上挂一块红色圆靶。
 func _build_dummy(color: Color, trim: Color) -> void:
@@ -267,7 +302,7 @@ func _build_dummy(color: Color, trim: Color) -> void:
 
 ## 人形敌人（流民/卡洛斯/教官/欧卡/护卫）：四肢+躯干+头的方块拼装。
 ## 右手持武器，_arm_weapon 是右手引用——前摇举刀、出手挥击都靠它旋转。
-func _build_human(color: Color, trim: Color, weapon: String, tall: float) -> void:
+func _build_human(color: Color, trim: Color, weapon: String, tall: float, has_sidearm := false) -> void:
 	var cloth := _material(color, 0.9)
 	var dark := _material(trim, 0.95)
 	var skin := _material(Color("e0b48c"), 0.65)
@@ -283,6 +318,8 @@ func _build_human(color: Color, trim: Color, weapon: String, tall: float) -> voi
 	_part("Hood", Vector3(0, 1.98 * tall, 0), Vector3(0.46, 0.2, 0.46), dark)
 	# 左手（垂在身侧）
 	_part("ArmL", Vector3(-0.42, 1.34 * tall, 0), Vector3(0.18, 0.56 * tall, 0.2), cloth)
+	if has_sidearm:
+		_build_sidearm(tall)
 	# 右手：单独节点便于旋转，武器挂在它下面
 	_arm_weapon = Node3D.new()
 	_arm_weapon.name = "ArmWeapon"
@@ -299,7 +336,14 @@ func _build_human(color: Color, trim: Color, weapon: String, tall: float) -> voi
 	# 初始举刀姿态：右手略抬，接近警戒位
 	_arm_weapon.rotation_degrees.x = 18.0
 
-## 右手上的武器：匕首 / 单手剑 / 长枪，挂在高举的前臂下。
+func _build_sidearm(tall: float) -> void:
+	var metal := _material(Color("34363b"), 0.48)
+	var wood := _material(Color("5b4533"), 0.75)
+	_part("Sidearm", Vector3(-0.42, 1.24 * tall, -0.12), Vector3(0.16, 0.13, 0.38), metal)
+	_part("SidearmBarrel", Vector3(-0.42, 1.24 * tall, -0.38), Vector3(0.07, 0.07, 0.22), metal)
+	_part("SidearmGrip", Vector3(-0.42, 1.12 * tall, -0.02), Vector3(0.09, 0.2 * tall, 0.1), wood)
+
+## 右手上的武器：匕首 / 单手剑 / 长枪 / 重斧，挂在高举的前臂下。
 func _build_human_weapon(weapon: String, tall: float) -> void:
 	var steel := _material(Color("cdd6de"), 0.35)
 	var grip := _material(Color("6a4a30"), 0.8)
@@ -312,6 +356,9 @@ func _build_human_weapon(weapon: String, tall: float) -> void:
 		"spear":
 			blade = Vector3(0.09, 1.5, 0.09)
 			grip_len = 0.18
+		"axe":
+			blade = Vector3(0.48, 0.58, 0.13)
+			grip_len = 0.72
 		_:
 			blade = Vector3(0.12, 0.9, 0.1)
 			grip_len = 0.18
@@ -335,19 +382,20 @@ func _build_human_weapon(weapon: String, tall: float) -> void:
 func _animate_arm(delta: float) -> void:
 	if _arm_weapon == null:
 		return
+	var ranged_pose := _attack_kind == "vagrant_spray" or _attack_kind == "guard_shot"
+	var windup_pose := -24.0 if ranged_pose else -115.0
+	var strike_pose := 16.0 if ranged_pose else 55.0
 	if windup >= 0.0:
-		var t := clampf(1.0 - windup / maxf(0.01, attack_windup), 0.0, 1.0)
-		_arm_weapon.rotation_degrees.x = lerpf(18.0, -115.0, ease(t, 0.55))
+		var t := clampf(1.0 - windup / maxf(0.01, _attack_windup_duration), 0.0, 1.0)
+		_arm_weapon.rotation_degrees.x = lerpf(18.0, windup_pose, ease(t, 0.55))
 		body_root.rotation_degrees.x = lerpf(body_root.rotation_degrees.x, -4.0, minf(1.0, delta * 8.0))
 	elif _strike_timer > 0.0:
 		_strike_timer -= delta
 		var phase := 1.0 - _strike_timer / 0.22
 		if phase < 0.5:
-			# 前 0.11 秒：从头顶快速劈下到身前
-			_arm_weapon.rotation_degrees.x = lerpf(-115.0, 55.0, phase * 2.0)
+			_arm_weapon.rotation_degrees.x = lerpf(windup_pose, strike_pose, phase * 2.0)
 		else:
-			# 后 0.11 秒：回摆到警戒位
-			_arm_weapon.rotation_degrees.x = lerpf(55.0, 18.0, (phase - 0.5) * 2.0)
+			_arm_weapon.rotation_degrees.x = lerpf(strike_pose, 18.0, (phase - 0.5) * 2.0)
 		body_root.rotation_degrees.x = lerpf(body_root.rotation_degrees.x, 0.0, minf(1.0, delta * 10.0))
 	else:
 		body_root.rotation_degrees.x = lerpf(body_root.rotation_degrees.x, 0.0, minf(1.0, delta * 6.0))
@@ -383,7 +431,9 @@ func _flash() -> void:
 
 func _apply_flash(lit: bool) -> void:
 	for child in body_root.get_children():
-		if child is MeshInstance3D and child.material_override is StandardMaterial3D:
+		if child is Sprite3D:
+			child.modulate = Color(1.8, 1.8, 1.8) if lit else Color.WHITE
+		elif child is MeshInstance3D and child.material_override is StandardMaterial3D:
 			var mat: StandardMaterial3D = child.material_override
 			var base: Color = mat.get_meta("base_color", mat.albedo_color)
 			mat.albedo_color = base.lightened(0.45) if lit else base
@@ -399,39 +449,6 @@ func set_max_hp(value: float) -> void:
 	dead = false
 	_update_health()
 
-## 是否为可拼刀目标：近战且在蓄力，剩余命中时刻不超过拼刀窗口（玩家此刻命中它即判定对拼）。
-func is_strike_imminent() -> bool:
-	return not ranged and windup > 0.0 and windup <= CLASH_WINDOW
-
-func can_be_clashed() -> bool:
-	return clash_immune_timer <= 0.0
-
-## 拼刀刚触发后的一小段时间：本次双方都不结算伤害，也阻止玩家该段攻击后续帧补刀。
-func is_clash_immune() -> bool:
-	return clash_immune_timer > 0.0
-
-## 拼刀命中：取消本次出手、被弹开并进入短硬直，预警圈提前收起。
-func on_clash(repel_dir := Vector3.FORWARD) -> void:
-	if dead:
-		return
-	windup = -1.0
-	if marker != null:
-		marker.visible = false
-	stun_timer = CLASH_STUN
-	clash_immune_timer = CLASH_IMMUNE
-	knock = repel_dir.normalized() * CLASH_REPEL
-	attack_cd = maxf(attack_cd, 1.4)
-
-## 出手落地瞬间：玩家若正处在挥击窗口则双方对拼（本次都不结算伤害），返回是否已判拼刀。
-func _resolve_strike() -> bool:
-	if ranged or clash_immune_timer > 0.0 or not is_instance_valid(player):
-		return false
-	if player.has_method("can_clash_now") and player.can_clash_now():
-		player.register_clash()
-		on_clash(global_position - player.global_position)
-		return true
-	return false
-
 ## 游荡巡逻：绕出生点慢速转圈（练习场演示用）。
 func _patrol(delta: float) -> void:
 	var dt := minf(delta, 0.05)
@@ -443,22 +460,6 @@ func _patrol(delta: float) -> void:
 	global_position = global_position.move_toward(target, move_speed * 0.6 * dt)
 	if body_root != null:
 		body_root.rotation_degrees.y = lerpf(body_root.rotation_degrees.y, 0.0, dt * 4.0)
-
-## 回合战步进（battle_controller 驱动）：决定并执行"接近 / 攻击"，返回意图文本供 AT 栏用。
-func battle_advance(target_world: Vector3) -> String:
-	if kind == Kind.DUMMY or dead:
-		return "待机"
-	var flat := target_world - global_position
-	flat.y = 0.0
-	var dist := flat.length()
-	if dist <= attack_reach * 0.9:
-		return "攻击"
-	var step := move_speed * 1.0
-	var dir: Vector3 = flat.normalized() if dist > 0.01 else Vector3.FORWARD
-	global_position += dir * minf(step, dist - attack_reach * 0.9)
-	if body_root != null:
-		body_root.rotation_degrees.y = lerpf(body_root.rotation_degrees.y, rad_to_deg(atan2(dir.x, -dir.z)), 0.25)
-	return "接近"
 
 ## ---------- 眩晕与处决 ----------
 
@@ -518,9 +519,6 @@ func _physics_process(delta: float) -> void:
 		position.y = 0
 		_animate_arm(delta)
 		return
-	if battle_driven:
-		velocity = Vector3.ZERO
-		return
 	if dead or not is_instance_valid(player) or not player.alive:
 		return
 	# 游荡巡逻：白盒遭遇演示用，只绕出生点慢速转圈，不出手。
@@ -529,50 +527,251 @@ func _physics_process(delta: float) -> void:
 		_animate_arm(delta)
 		return
 	attack_cd -= delta
-	clash_immune_timer = maxf(0.0, clash_immune_timer - delta)
 	if _flash_timer > 0.0:
 		_flash_timer -= delta
 		if _flash_timer <= 0.0:
 			_apply_flash(false)
-	# 拼刀硬直：原地被弹开，期间不移动、不攻击
-	if stun_timer > 0.0:
-		stun_timer -= delta
-		knock = knock.move_toward(Vector3.ZERO, 14.0 * delta)
-		velocity = knock
-		move_and_slide()
-		position.y = 0
+	knock = knock.move_toward(Vector3.ZERO, 20 * delta)
+	if _rush_timer > 0.0:
+		_tick_rush(delta)
+		_face_target(delta)
 		_animate_arm(delta)
 		return
-	knock = knock.move_toward(Vector3.ZERO, 20 * delta)
 	if windup >= 0:
 		windup -= delta
-		marker.scale = Vector3.ONE * (1.0 + 0.04 * sin(windup * 40))
+		marker.scale = _marker_base_scale * (1.0 + 0.04 * sin(windup * 40))
 		if windup <= 0:
-			# 出手落地：若玩家正处在挥击窗口则判定拼刀，双方都不结算伤害
-			var clashed := _resolve_strike()
-			if not clashed and player.global_position.distance_to(target_point) <= 1.65:
-				player.take_damage(attack_damage)
-			_strike_timer = 0.22  # 人形敌人：挥击动作（劈下→回摆）只在出手后播放
+			_resolve_attack()
+			if kind == Kind.HUMAN:
+				_strike_timer = 0.22
 			marker.visible = false
 			windup = -1
-			attack_cd = 1.4
 		velocity = knock
 	else:
 		var offset := player.global_position - global_position
 		offset.y = 0
-		velocity = offset.normalized() * move_speed if offset.length() > keep_distance else Vector3.ZERO
+		if attack_style == "oka" and not _oka_alerted:
+			if _oka_spots_player(offset):
+				_oka_alerted = true
+			else:
+				_patrol(delta)
+				_animate_arm(delta)
+				return
+		_tick_attack_style(offset, offset.length(), delta)
 		velocity += knock
-		if offset.length() <= attack_reach and attack_cd <= 0:
-			target_point = player.global_position
-			windup = attack_windup
-			marker.global_position = target_point + Vector3.UP * 0.045
-			marker.visible = true
 	_face_target(delta)
 	_animate_arm(delta)
 	move_and_slide()
 	position.y = 0
 
-## 有白盒模型的敌人朝目标转向；胶囊占位敌人是对称体，不需要朝向。
+func _tick_attack_style(offset: Vector3, dist: float, delta: float) -> void:
+	match attack_style:
+		"vagrant":
+			if dist > 8.0:
+				velocity = offset.normalized() * move_speed * 0.8
+			elif dist >= 4.0:
+				velocity = Vector3.ZERO
+				if attack_cd <= 0.0:
+					_begin_attack("vagrant_spray", player.global_position, 0.7, 1.0, 1.2)
+			elif dist > 2.6:
+				velocity = offset.normalized() * move_speed * 0.6
+				if attack_cd <= 0.0:
+					_begin_attack("slow_rush", player.global_position, 0.55, 1.25, 1.2, true)
+			else:
+				velocity = Vector3.ZERO
+				if attack_cd <= 0.0:
+					_begin_attack("melee", player.global_position, 0.55, 1.65, 1.2)
+		"guard":
+			_tick_guard(offset, dist, delta)
+		"oka":
+			if dist > 8.0:
+				velocity = offset.normalized() * move_speed
+			elif dist <= 3.0:
+				velocity = Vector3.ZERO
+				if attack_cd <= 0.0:
+					_begin_attack("heavy_chop", player.global_position, 0.9, 2.25, 1.5)
+			else:
+				velocity = offset.normalized() * move_speed * 0.45 if attack_cd > 0.0 else Vector3.ZERO
+				if attack_cd <= 0.0:
+					_begin_attack("oka_leap", player.global_position, 0.5, 1.5, 1.5, true)
+		"wolf_pounce":
+			if dist > attack_reach:
+				velocity = offset.normalized() * move_speed
+			elif attack_cd <= 0.0:
+				velocity = Vector3.ZERO
+				_begin_attack("wolf_pounce", player.global_position, attack_windup, 1.35, 1.45, true)
+			else:
+				velocity = offset.normalized() * move_speed * 0.55 if dist > keep_distance else Vector3.ZERO
+		"boar_charge":
+			if dist > attack_reach:
+				velocity = offset.normalized() * move_speed
+			elif attack_cd <= 0.0:
+				velocity = Vector3.ZERO
+				_begin_attack("boar_charge", player.global_position, attack_windup, 1.6, 1.8, true)
+			else:
+				velocity = offset.normalized() * move_speed * 0.35 if dist > 2.5 else Vector3.ZERO
+		"golem_slam":
+			if dist > attack_reach:
+				velocity = offset.normalized() * move_speed
+			else:
+				velocity = Vector3.ZERO
+				if attack_cd <= 0.0:
+					_begin_attack("golem_slam", player.global_position, attack_windup, 2.6, 1.9)
+		_:
+			velocity = offset.normalized() * move_speed if dist > keep_distance else Vector3.ZERO
+			if dist <= attack_reach and attack_cd <= 0.0:
+				_begin_attack("melee", player.global_position, attack_windup, 1.65, 1.4)
+
+func _tick_guard(offset: Vector3, dist: float, delta: float) -> void:
+	if _guard_retreat_timer > 0.0:
+		_guard_retreat_timer = maxf(0.0, _guard_retreat_timer - delta)
+		velocity = -offset.normalized() * move_speed
+	elif dist > 9.0:
+		velocity = offset.normalized() * move_speed * 0.75
+	elif dist >= 4.0:
+		velocity = Vector3.ZERO
+		if attack_cd <= 0.0:
+			_begin_attack("guard_shot", player.global_position, 0.95, 0.9, 1.25)
+	elif dist <= 2.8:
+		velocity = Vector3.ZERO
+		if attack_cd <= 0.0:
+			_begin_attack("guard_stab", player.global_position, 0.5, 1.3, 1.1)
+		else:
+			velocity = -offset.normalized() * move_speed
+	else:
+		velocity = -offset.normalized() * move_speed
+
+func _begin_attack(kind_name: String, point: Vector3, windup_time: float, radius: float, recovery: float, corridor := false) -> void:
+	_attack_kind = kind_name
+	_attack_windup_duration = windup_time
+	_attack_radius = radius
+	_attack_recovery = recovery
+	target_point = point
+	target_point.y = 0.0
+	windup = windup_time
+	GameAudio.play_sfx("enemy_attack", global_position, -8.0, randf_range(0.94, 1.04))
+	_marker_base_scale = Vector3.ONE * (radius / 1.65)
+	marker.rotation.y = 0.0
+	marker.global_position = target_point + Vector3.UP * 0.045
+	if corridor:
+		var direction := target_point - global_position
+		direction.y = 0.0
+		var length := maxf(2.0, _flat_distance(target_point, global_position))
+		marker.global_position = (global_position + target_point) * 0.5 + Vector3.UP * 0.045
+		marker.rotation.y = atan2(-direction.x, -direction.z)
+		_marker_base_scale = Vector3(0.58 / 1.65, 1.0, length / 3.3)
+	marker.scale = _marker_base_scale
+	marker.visible = true
+
+func _resolve_attack() -> void:
+	match _attack_kind:
+		"vagrant_spray":
+			_fire_vagrant_spray()
+			attack_cd = _attack_recovery
+		"guard_shot":
+			if _player_near_point(target_point, 0.7) and _has_line_of_fire():
+				player.take_damage(attack_damage)
+			attack_cd = _attack_recovery
+		"slow_rush", "wolf_pounce", "boar_charge", "oka_leap":
+			_start_rush()
+		"guard_stab":
+			if _player_near_point(target_point, _attack_radius):
+				player.take_damage(attack_damage)
+			_guard_retreat_timer = 0.7
+			attack_cd = _attack_recovery
+		"heavy_chop", "golem_slam", "melee":
+			if _player_near_point(target_point, _attack_radius):
+				player.take_damage(attack_damage)
+			attack_cd = _attack_recovery
+
+func _fire_vagrant_spray() -> void:
+	if not _has_line_of_fire():
+		return
+	var distance_ratio := clampf(_flat_distance(global_position, target_point) / 8.0, 0.0, 1.0)
+	var spread := lerpf(0.55, 1.45, distance_ratio)
+	var hits := 0
+	for _shot in 3:
+		var impact := target_point + Vector3(randf_range(-spread, spread), 0.0, randf_range(-spread, spread))
+		if _player_near_point(impact, 0.65):
+			hits += 1
+	if hits > 0:
+		player.take_damage(attack_damage * float(hits) / 3.0)
+
+func _has_line_of_fire() -> bool:
+	if not is_instance_valid(player):
+		return false
+	var start := global_position + Vector3.UP * 1.0
+	var end := player.global_position + Vector3.UP * 1.0
+	var query := PhysicsRayQueryParameters3D.create(start, end)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return not hit.is_empty() and hit.get("collider") == player
+
+func _start_rush() -> void:
+	var flat_to_target := target_point - global_position
+	flat_to_target.y = 0.0
+	_rush_direction = flat_to_target.normalized() if flat_to_target.length_squared() > 0.001 else Vector3.FORWARD
+	var rush_distance := 3.0
+	match _attack_kind:
+		"slow_rush":
+			_rush_speed = 2.4
+			_rush_radius = 1.2
+			_rush_damage = attack_damage * 0.8
+			_rush_recovery = 1.2
+			rush_distance = 3.3
+		"wolf_pounce":
+			_rush_speed = 5.2
+			_rush_radius = 1.4
+			_rush_damage = attack_damage
+			_rush_recovery = 1.45
+			rush_distance = 4.4
+		"boar_charge":
+			_rush_speed = 6.0
+			_rush_radius = 1.6
+			_rush_damage = attack_damage
+			_rush_recovery = 1.8
+			rush_distance = 7.0
+		"oka_leap":
+			_rush_speed = 6.2
+			_rush_radius = 1.6
+			_rush_damage = attack_damage * 1.2
+			_rush_recovery = 1.5
+			rush_distance = 5.5
+	var travel := minf(rush_distance, maxf(1.5, _flat_distance(target_point, global_position) + 0.7))
+	_rush_timer = travel / _rush_speed
+	_rush_hit = false
+	marker.visible = false
+
+func _tick_rush(delta: float) -> void:
+	_rush_timer = maxf(0.0, _rush_timer - delta)
+	velocity = _rush_direction * _rush_speed + knock
+	move_and_slide()
+	position.y = 0.0
+	if not _rush_hit and _flat_distance(player.global_position, global_position) <= _rush_radius:
+		player.take_damage(_rush_damage)
+		_rush_hit = true
+		_rush_timer = 0.0
+	if is_on_wall() or _rush_timer <= 0.0:
+		velocity = Vector3.ZERO
+		_rush_timer = 0.0
+		attack_cd = _rush_recovery
+
+func _player_near_point(point: Vector3, radius: float) -> bool:
+	return is_instance_valid(player) and _flat_distance(player.global_position, point) <= radius
+
+func _flat_distance(a: Vector3, b: Vector3) -> float:
+	var offset := a - b
+	offset.y = 0.0
+	return offset.length()
+
+func _oka_spots_player(offset: Vector3) -> bool:
+	if offset.length() > 8.0 or offset.length_squared() < 0.001:
+		return false
+	var forward := -global_basis.z
+	forward.y = 0.0
+	return forward.normalized().dot(offset.normalized()) > 0.25
+
+## 人形白盒与怪物精灵朝目标转向；胶囊占位敌人是对称体，不需要朝向。
 func _face_target(delta: float) -> void:
 	if body_root == null or not is_instance_valid(player):
 		return
@@ -581,22 +780,36 @@ func _face_target(delta: float) -> void:
 	if offset.length() < 0.2:
 		return
 	rotation.y = lerp_angle(rotation.y, atan2(-offset.x, -offset.z), minf(1.0, delta * 6.0))
+	_update_monster_sprite_direction()
 
 func take_damage(amount: float, knock_dir := Vector3.ZERO, _attacker: Node = null, true_damage := 0.0) -> void:
 	if dead:
 		return
-	var final := maxf(0.0, amount) * (1.0 - clampf(physical_reduction, 0.0, 0.9)) + maxf(0.0, true_damage)
+	var physical := maxf(0.0, amount)
+	if attack_style == "oka":
+		if not _oka_alerted and _attacker is Node3D:
+			var from_attacker: Vector3 = (_attacker.global_position - global_position)
+			from_attacker.y = 0.0
+			var back := global_basis.z
+			back.y = 0.0
+			if from_attacker.length_squared() > 0.001 and back.normalized().dot(from_attacker.normalized()) > 0.45:
+				physical *= 2.0
+				GameState.push_message("背刺命中 · 欧卡进入战斗")
+		_oka_alerted = true
+	var final := physical * (1.0 - clampf(physical_reduction, 0.0, 0.9)) + maxf(0.0, true_damage)
 	if kind == Kind.DUMMY:
 		# 靶子打不坏：扣血只是留痕，最低保住 1 点，也不吃击退。
 		hp_ = maxf(1, hp_ - final)
 		_update_health()
 		_flash()
+		GameAudio.play_sfx("enemy_hit", global_position, -5.0, randf_range(0.94, 1.06))
 		return
 	hp_ = maxf(0, hp_ - final)
 	knock = knock_dir
 	_update_health()
 	_flash()
 	if hp_ <= 0:
+		GameAudio.play_sfx("enemy_death", global_position, -2.0)
 		dead = true
 		defeated.emit()
 		marker.visible = false
@@ -605,6 +818,8 @@ func take_damage(amount: float, knock_dir := Vector3.ZERO, _attacker: Node = nul
 		var tween := create_tween()
 		tween.tween_property(self, "scale", Vector3.ONE * 0.05, 0.18)
 		tween.tween_callback(queue_free)
+	else:
+		GameAudio.play_sfx("enemy_hit", global_position, -5.0, randf_range(0.94, 1.06))
 
 func _update_health() -> void:
 	var tag := ""

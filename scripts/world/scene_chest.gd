@@ -4,6 +4,9 @@ extends Area3D
 ## 白盒外观：木箱 + 金色包边 + 地面光圈 + 名称标签；开启后箱盖翻起、标签改为已开启。
 
 const Campaign := preload("res://data/campaign.gd")
+const GameAudio := preload("res://data/game_audio.gd")
+## 贴底提示里的键名现读，改键后不会还写着旧键。
+const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
 
 ## 消耗品短名：正文里带上物品表的长名（含「· 2使用」）读起来别扭，这里单独给简称。
 const SHORT_LABEL := {"trap": "火药陷阱", "potion": "恢复药剂"}
@@ -26,7 +29,7 @@ func _process(_delta: float) -> void:
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud == null or hud.is_modal_open():
 		return
-	hud.show_prompt("V  开启场景宝箱")
+	hud.show_prompt("%s  开启场景宝箱" % KeyBindings.key_text("interact"))
 
 ## 进圈：登记玩家并加入焦点组，让 campaign 控制器把 V 让给宝箱，避免同时触发关卡流程。
 func _on_body_entered(body: Node3D) -> void:
@@ -57,6 +60,7 @@ func _open() -> void:
 	opened = true
 	remove_from_group("scene_chest_focus")
 	_hide_prompt()
+	GameAudio.play_sfx("chest", global_position, -2.0)
 	_play_open()
 	if rewards.is_empty():
 		return

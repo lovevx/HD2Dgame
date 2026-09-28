@@ -14,14 +14,14 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func run() -> void:
-	# 用战斗验证场：有玩家（玩家自带 CameraOcclusionFade）+ 会死亡的敌人。
-	var lab: Node = load("res://scenes/main/battle_lab.tscn").instantiate()
-	root.add_child(lab)
-	current_scene = lab
+	# 用实时战斗练习场：有玩家（玩家自带 CameraOcclusionFade）+ 可重扫的场景几何。
+	var arena: Node = load("res://scenes/main/main.tscn").instantiate()
+	root.add_child(arena)
+	current_scene = arena
 	await process_frame
 	await physics_frame
 
-	var player: Node = lab.get_node_or_null("player")
+	var player: Node = arena.get_node_or_null("player")
 	if player == null:
 		print("PROBE: 找不到玩家")
 		quit(1)
@@ -39,7 +39,7 @@ func run() -> void:
 	mesh.size = Vector3(3, 6, 3)
 	tall.mesh = mesh
 	tall.position = Vector3(0, 3, -1)
-	lab.add_child(tall)
+	arena.add_child(tall)
 	await process_frame
 	fade.call("_refresh")
 	var candidates: Array = fade.get("_candidates")

@@ -1,0 +1,310 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2160" height="1430" viewBox="0 0 2160 1430">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111c29"/><stop offset="1" stop-color="#09111a"/>
+    </linearGradient>
+    <linearGradient id="hub" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#24404e"/><stop offset="1" stop-color="#142a35"/>
+    </linearGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#ffffff" stroke-opacity=".035" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10Z" fill="#70d39b"/>
+    </marker>
+    <marker id="arrowGold" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10Z" fill="#efc96f"/>
+    </marker>
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+      .title { fill:#f2f6fb; font-size:42px; font-weight:700; }
+      .sub { fill:#aebed0; font-size:20px; }
+      .card { fill:#162230; stroke:#34465b; stroke-width:2; }
+      .cardtitle { fill:#f2f6fb; font-size:25px; font-weight:700; }
+      .body { fill:#d4deea; font-size:17px; }
+      .small { fill:#9fb0c3; font-size:15px; }
+      .maplabel { fill:#e5edf6; font-size:14px; font-weight:600; paint-order:stroke; stroke:#111923; stroke-width:3px; stroke-linejoin:round; }
+      .mapminor { fill:#c1cfdd; font-size:12px; paint-order:stroke; stroke:#111923; stroke-width:3px; stroke-linejoin:round; }
+      .route { fill:none; stroke:#70d39b; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; marker-end:url(#arrow); }
+      .routeDash { fill:none; stroke:#70d39b; stroke-width:4; stroke-dasharray:9 8; stroke-linecap:round; marker-end:url(#arrow); }
+      .interact { fill:#efc96f; stroke:#fff0ba; stroke-width:2; }
+      .enemy { fill:#db6870; stroke:#ffadb1; stroke-width:2; }
+      .building { fill:#465a70; stroke:#8395a8; stroke-width:2; }
+      .wall { fill:#667180; stroke:#b2b9c2; stroke-width:2; }
+      .vegetation { fill:#304b3c; stroke:#6e9d6c; stroke-width:2; }
+      .water { fill:#1f526b; stroke:#5790a6; stroke-width:2; }
+    </style>
+  </defs>
+  <rect width="2160" height="1430" fill="url(#bg)"/>
+  <rect width="2160" height="1430" fill="url(#grid)"/>
+
+  <text x="48" y="66" class="title">哥亚王国篇 · 场景布局概念板</text>
+  <text x="50" y="105" class="sub">根据《轮回乐园》卷一原文与项目关卡稿整理｜当前可玩段落 1.2–1.6｜平面关系示意，非比例尺</text>
+  <rect x="1695" y="37" width="417" height="70" rx="16" fill="#2b241a" stroke="#8b7546" stroke-width="2"/>
+  <text x="1720" y="67" fill="#f0d58c" font-size="18" font-weight="700">场景提案 · 非当前运行地图</text>
+  <text x="1720" y="91" fill="#c2b48b" font-size="15">前四区复用练习场；山林复用既有场景</text>
+
+  <rect x="48" y="136" width="2064" height="80" rx="18" fill="#14202d" stroke="#304357" stroke-width="2"/>
+  <text x="72" y="166" fill="#91a4b9" font-size="15" font-weight="700">剧情 / 整备动线</text>
+  <g font-size="17" font-weight="700" text-anchor="middle">
+    <rect x="76" y="176" width="296" height="28" rx="14" fill="#254250"/><text x="224" y="196" fill="#c5e6f2">HUB 灰潮港</text>
+    <path d="M375 190H410" stroke="#70d39b" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="420" y="176" width="296" height="28" rx="14" fill="#283c31"/><text x="568" y="196" fill="#c2ebd0">1.2 废品终点站</text>
+    <path d="M719 190H754" stroke="#70d39b" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="764" y="176" width="296" height="28" rx="14" fill="#283c31"/><text x="912" y="196" fill="#c2ebd0">1.3 王都入口</text>
+    <path d="M1063 190H1098" stroke="#70d39b" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="1108" y="176" width="296" height="28" rx="14" fill="#283c31"/><text x="1256" y="196" fill="#c2ebd0">1.4 侍卫总部</text>
+    <path d="M1407 190H1442" stroke="#70d39b" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="1452" y="176" width="296" height="28" rx="14" fill="#3c2c34"/><text x="1600" y="196" fill="#f0c6cc">1.5 欢乐街</text>
+    <path d="M1751 190H1786" stroke="#70d39b" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="1796" y="176" width="290" height="28" rx="14" fill="#303d2b"/><text x="1941" y="196" fill="#d0e3ad">1.6 科尔波山</text>
+  </g>
+
+  <!-- HUB -->
+  <g>
+    <rect x="48" y="240" width="672" height="500" rx="20" class="card"/>
+    <text x="72" y="278" class="cardtitle">HUB　灰潮港主城</text>
+    <text x="610" y="277" fill="#77cde0" font-size="15" font-weight="700">整备</text>
+    <g transform="translate(68 300)">
+      <rect width="340" height="414" rx="14" fill="url(#hub)" stroke="#507080" stroke-width="2"/>
+      <path d="M139 18H201V335H139Z" fill="#68717a" stroke="#9cabb6" stroke-width="2"/>
+      <path d="M28 148H312V205H28Z" fill="#68717a" stroke="#9cabb6" stroke-width="2"/>
+      <rect x="137" y="0" width="66" height="42" rx="6" fill="#356274" stroke="#87c5d5" stroke-width="2"/>
+      <text x="170" y="25" class="maplabel" text-anchor="middle">北门 / 出发</text>
+      <rect x="22" y="88" width="95" height="46" rx="8" fill="#4a654f" stroke="#8eb885" stroke-width="2"/>
+      <text x="69" y="108" class="maplabel" text-anchor="middle">杂货</text><text x="69" y="126" class="mapminor" text-anchor="middle">西侧</text>
+      <rect x="22" y="226" width="95" height="46" rx="8" fill="#4a654f" stroke="#8eb885" stroke-width="2"/>
+      <text x="69" y="246" class="maplabel" text-anchor="middle">委托所</text><text x="69" y="264" class="mapminor" text-anchor="middle">西南</text>
+      <rect x="223" y="88" width="95" height="46" rx="8" fill="#6a5639" stroke="#d2ad64" stroke-width="2"/>
+      <text x="270" y="108" class="maplabel" text-anchor="middle">工坊</text><text x="270" y="126" class="mapminor" text-anchor="middle">东侧</text>
+      <rect x="223" y="226" width="95" height="46" rx="8" fill="#6a5639" stroke="#d2ad64" stroke-width="2"/>
+      <text x="270" y="246" class="maplabel" text-anchor="middle">演武场</text><text x="270" y="264" class="mapminor" text-anchor="middle">东南</text>
+      <circle cx="170" cy="177" r="16" fill="#e2c77e" stroke="#fff2c5" stroke-width="2"/>
+      <text x="170" y="181" font-size="11" fill="#23313c" text-anchor="middle" font-weight="700">出生</text>
+      <path d="M170 327V382" stroke="#70d39b" stroke-width="5" marker-end="url(#arrow)"/>
+      <rect x="0" y="337" width="340" height="77" class="water"/>
+      <path d="M65 337V397H25M275 337V397H315" fill="none" stroke="#b28a58" stroke-width="13" stroke-linecap="square"/>
+      <text x="170" y="393" class="maplabel" text-anchor="middle">南岸码头 / 抵达</text>
+    </g>
+    <g>
+      <text x="430" y="324" class="body" font-weight="700">空间角色</text>
+      <text x="430" y="354" class="body">南岸进港，中央主街贯穿南北。</text>
+      <text x="430" y="382" class="body">西侧杂货 / 委托，东侧工坊 / 演武。</text>
+      <text x="430" y="422" class="body" font-weight="700">搭建重点</text>
+      <text x="430" y="452" class="body">保留轴线和传送门视线；服务区靠边，</text>
+      <text x="430" y="480" class="body">用不同暖色灯与地面环识别。</text>
+      <text x="430" y="520" class="body" font-weight="700">小说关系</text>
+      <text x="430" y="550" class="body">这是游戏循环的整备港，不属于</text>
+      <text x="430" y="578" class="body">哥亚王国副本地图。</text>
+      <text x="430" y="632" class="small">对照现有 harbor.tscn</text>
+    </g>
+  </g>
+
+  <!-- Scrap terminal -->
+  <g>
+    <rect x="744" y="240" width="672" height="500" rx="20" class="card"/>
+    <text x="768" y="278" class="cardtitle">1.2　废品终点站</text>
+    <text x="1300" y="277" fill="#b5d27f" font-size="15" font-weight="700">边缘地带</text>
+    <g transform="translate(764 300)">
+      <rect width="340" height="414" rx="14" fill="#202c27" stroke="#647a54" stroke-width="2"/>
+      <path d="M0 0H340V55H0Z" fill="#3d4a4e" stroke="#7b898d" stroke-width="2"/>
+      <text x="170" y="34" class="maplabel" text-anchor="middle">黑石城墙 / 城门方向</text>
+      <path d="M171 392C160 352 185 324 170 292S188 242 164 208 178 157 157 118 179 88 172 54" class="route"/>
+      <path d="M22 97L58 72L99 93L91 133L43 144Z" fill="#555b50" stroke="#8b8d75" stroke-width="2"/>
+      <path d="M228 84L282 68L319 102L296 142L241 132Z" fill="#51584d" stroke="#8b8d75" stroke-width="2"/>
+      <path d="M17 235L55 203L102 223L96 273L43 284Z" fill="#4d554a" stroke="#858a72" stroke-width="2"/>
+      <path d="M237 215L292 195L324 227L301 275L246 265Z" fill="#535b4c" stroke="#858a72" stroke-width="2"/>
+      <path d="M69 322L105 295L133 320L117 354L74 359Z" fill="#454c43" stroke="#777f6a" stroke-width="2"/>
+      <path d="M215 312L252 289L280 315L263 352L224 357Z" fill="#454c43" stroke="#777f6a" stroke-width="2"/>
+      <circle cx="148" cy="218" r="22" class="enemy"/><circle cx="192" cy="225" r="22" class="enemy"/>
+      <text x="170" y="183" class="maplabel" text-anchor="middle">流民遭遇区</text>
+      <rect x="142" y="268" width="18" height="18" transform="rotate(45 151 277)" class="interact"/>
+      <text x="170" y="305" class="mapminor" text-anchor="middle">战利品</text>
+      <circle cx="170" cy="382" r="11" fill="#79d7a0" stroke="#d7ffe3" stroke-width="2"/>
+      <text x="170" y="405" class="mapminor" text-anchor="middle">入口</text>
+      <text x="315" y="78" class="mapminor">N</text>
+      <path d="M313 100V79" stroke="#e6edf4" stroke-width="2" marker-end="url(#arrow)"/>
+    </g>
+    <g>
+      <text x="1126" y="324" class="body" font-weight="700">布局骨架</text>
+      <text x="1126" y="354" class="body">两侧堆场围边，中间留连续通道。</text>
+      <text x="1126" y="382" class="body">把拾荒棚屋压在边缘，留出战斗圈。</text>
+      <text x="1126" y="422" class="body" font-weight="700">小说线索</text>
+      <text x="1126" y="452" class="body">大型垃圾场、流民聚居、腐败青烟，</text>
+      <text x="1126" y="480" class="body">前方紧邻黑石城墙。</text>
+      <text x="1126" y="520" class="body" font-weight="700">玩法落点</text>
+      <text x="1126" y="550" class="body">入口 → 流民战 → 拾取枪 / 药剂 →</text>
+      <text x="1126" y="578" class="body">城门方向。青烟作远景，不做伤害区。</text>
+      <text x="1126" y="632" class="small">视线杂乱，路径仍要好读</text>
+    </g>
+  </g>
+
+  <!-- Capital gate -->
+  <g>
+    <rect x="1440" y="240" width="672" height="500" rx="20" class="card"/>
+    <text x="1464" y="278" class="cardtitle">1.3　王都入口</text>
+    <text x="2000" y="277" fill="#d9c384" font-size="15" font-weight="700">门槛</text>
+    <g transform="translate(1460 300)">
+      <rect width="340" height="414" rx="14" fill="#293038" stroke="#77818e" stroke-width="2"/>
+      <rect x="0" y="24" width="340" height="38" class="wall"/>
+      <rect x="137" y="18" width="66" height="50" fill="#293038" stroke="#b4bbc4" stroke-width="2"/>
+      <text x="170" y="17" class="mapminor" text-anchor="middle">王都内</text>
+      <text x="170" y="49" class="maplabel" text-anchor="middle">小城门</text>
+      <rect x="18" y="82" width="304" height="126" rx="12" fill="#39444c" stroke="#71808a" stroke-width="2"/>
+      <text x="170" y="107" class="maplabel" text-anchor="middle">门后检查空地 / 卡洛斯遭遇区</text>
+      <path d="M170 390V250C170 225 170 220 170 207" class="route"/>
+      <circle cx="111" cy="157" r="15" class="enemy"/><circle cx="229" cy="157" r="15" class="enemy"/>
+      <text x="111" y="187" class="mapminor" text-anchor="middle">守卫</text><text x="229" y="187" class="mapminor" text-anchor="middle">守卫</text>
+      <circle cx="170" cy="140" r="19" fill="#cb7070" stroke="#ffc0b8" stroke-width="2"/>
+      <text x="170" y="145" font-size="11" fill="#fff" text-anchor="middle" font-weight="700">卡洛斯</text>
+      <rect x="272" y="110" width="18" height="18" transform="rotate(45 281 119)" class="interact"/>
+      <text x="282" y="151" class="mapminor" text-anchor="middle">白箱</text>
+      <path d="M170 80V64" class="routeDash"/>
+      <path d="M170 207V241" class="route"/>
+      <circle cx="170" cy="387" r="11" fill="#79d7a0" stroke="#d7ffe3" stroke-width="2"/>
+      <text x="170" y="408" class="mapminor" text-anchor="middle">由废品场来</text>
+      <text x="315" y="86" class="mapminor">N</text>
+    </g>
+    <g>
+      <text x="1822" y="324" class="body" font-weight="700">布局骨架</text>
+      <text x="1822" y="354" class="body">黑石墙先压住视野，过门后再放开。</text>
+      <text x="1822" y="382" class="body">检查坪接一处紧凑战斗货场。</text>
+      <text x="1822" y="422" class="body" font-weight="700">玩法落点</text>
+      <text x="1822" y="452" class="body">守卫守住门槛；卡洛斯留在内侧，</text>
+      <text x="1822" y="480" class="body">白箱靠后，出口朝王都深处。</text>
+      <text x="1822" y="520" class="body" font-weight="700">教学顺序</text>
+      <text x="1822" y="550" class="body">装备并试射燧发枪 → 击败卡洛斯 →</text>
+      <text x="1822" y="578" class="body">开箱拿引荐信 → 进入下一场。</text>
+      <text x="1822" y="632" class="small">门洞两侧站人，不堵通道</text>
+    </g>
+  </g>
+
+  <!-- Guard HQ -->
+  <g>
+    <rect x="48" y="760" width="672" height="500" rx="20" class="card"/>
+    <text x="72" y="798" class="cardtitle">1.4　侍卫总部</text>
+    <text x="605" y="797" fill="#c9d2db" font-size="15" font-weight="700">秩序 / 切磋</text>
+    <g transform="translate(68 820)">
+      <rect width="340" height="414" rx="14" fill="#27313b" stroke="#69798a" stroke-width="2"/>
+      <rect x="40" y="20" width="260" height="116" rx="8" class="building"/>
+      <path d="M40 79H300" stroke="#a0b0be" stroke-width="2"/>
+      <text x="170" y="52" class="maplabel" text-anchor="middle">二层侍卫办公楼</text>
+      <text x="102" y="105" class="mapminor" text-anchor="middle">办公室</text>
+      <text x="236" y="105" class="mapminor" text-anchor="middle">军械 / 储物</text>
+      <path d="M170 393V340" class="route"/>
+      <rect x="18" y="170" width="304" height="150" rx="18" fill="#303b43" stroke="#87939a" stroke-width="2"/>
+      <circle cx="170" cy="244" r="55" fill="#414944" stroke="#c0a96a" stroke-width="3" stroke-dasharray="10 6"/>
+      <text x="170" y="249" class="maplabel" text-anchor="middle">切磋圈</text>
+      <circle cx="170" cy="339" r="14" fill="#db6870" stroke="#ffadb1" stroke-width="2"/>
+      <text x="170" y="367" class="mapminor" text-anchor="middle">入口 / 门岗</text>
+      <circle cx="127" cy="244" r="10" fill="#79d7a0" stroke="#d7ffe3" stroke-width="2"/>
+      <circle cx="214" cy="244" r="10" class="enemy"/>
+      <rect x="275" y="274" width="16" height="16" transform="rotate(45 283 282)" class="interact"/>
+      <text x="286" y="311" class="mapminor" text-anchor="middle">装备</text>
+      <text x="315" y="158" class="mapminor">N</text>
+    </g>
+    <g>
+      <text x="430" y="844" class="body" font-weight="700">布局骨架</text>
+      <text x="430" y="874" class="body">两层办公楼靠后，前院留成整块。</text>
+      <text x="430" y="902" class="body">门岗和军械房退到边缘。</text>
+      <text x="430" y="942" class="body" font-weight="700">小说线索</text>
+      <text x="430" y="972" class="body">原文写明两层办公楼、门前两名侍卫；</text>
+      <text x="430" y="1000" class="body">欧卡死后总部出现人事混乱。</text>
+      <text x="430" y="1040" class="body" font-weight="700">玩法落点</text>
+      <text x="430" y="1070" class="body">报到 → 院心切磋 → 领取制服 / 斩龙闪。</text>
+      <text x="430" y="1098" class="body">正面、规整，和外部垃圾场形成反差。</text>
+      <text x="430" y="1152" class="small">楼体做背景，院心保持可战斗</text>
+    </g>
+  </g>
+
+  <!-- Joy Street -->
+  <g>
+    <rect x="744" y="760" width="672" height="500" rx="20" class="card"/>
+    <text x="768" y="798" class="cardtitle">1.5　欢乐街</text>
+    <text x="1300" y="797" fill="#df9ca8" font-size="15" font-weight="700">夜色 / 双目标</text>
+    <g transform="translate(764 820)">
+      <rect width="340" height="414" rx="14" fill="#302630" stroke="#80596a" stroke-width="2"/>
+      <path d="M120 18H220V395H120Z" fill="#58414a" stroke="#a77b83" stroke-width="2"/>
+      <rect x="17" y="23" width="92" height="104" rx="9" fill="#51414b" stroke="#9b7984" stroke-width="2"/>
+      <rect x="231" y="23" width="92" height="104" rx="9" fill="#51414b" stroke="#9b7984" stroke-width="2"/>
+      <rect x="17" y="147" width="92" height="104" rx="9" fill="#51414b" stroke="#9b7984" stroke-width="2"/>
+      <rect x="231" y="147" width="92" height="104" rx="9" fill="#51414b" stroke="#9b7984" stroke-width="2"/>
+      <rect x="17" y="271" width="92" height="104" rx="9" fill="#51414b" stroke="#9b7984" stroke-width="2"/>
+      <rect x="231" y="271" width="92" height="104" rx="9" fill="#51414b" stroke="#9b7984" stroke-width="2"/>
+      <path d="M123 23H217" stroke="#edbb75" stroke-width="5" stroke-dasharray="6 9"/>
+      <path d="M123 151H217M123 275H217" stroke="#edbb75" stroke-width="5" stroke-dasharray="6 9"/>
+      <path d="M170 392V300C170 270 158 244 170 216S170 164 170 136" class="route"/>
+      <rect x="135" y="37" width="70" height="66" rx="8" fill="#704955" stroke="#d59b86" stroke-width="2"/>
+      <text x="170" y="63" class="maplabel" text-anchor="middle">目标楼阁</text><text x="170" y="83" class="mapminor" text-anchor="middle">内院 / 房间</text>
+      <circle cx="145" cy="169" r="15" class="enemy"/><circle cx="196" cy="182" r="15" class="enemy"/>
+      <text x="170" y="208" class="mapminor" text-anchor="middle">欧卡 + 护卫</text>
+      <path d="M89 52C113 22 220 18 252 54" fill="none" stroke="#a889c9" stroke-width="3" stroke-dasharray="7 7"/>
+      <text x="68" y="398" class="mapminor">入口</text>
+      <text x="315" y="18" class="mapminor">N</text>
+    </g>
+    <g>
+      <text x="1126" y="844" class="body" font-weight="700">布局骨架</text>
+      <text x="1126" y="874" class="body">两排楼阁夹住一条主街，尽头落到</text>
+      <text x="1126" y="902" class="body">欧卡所在的目标楼和房间。</text>
+      <text x="1126" y="942" class="body" font-weight="700">空间提示</text>
+      <text x="1126" y="972" class="body">暖灯、招牌、檐廊做纵深；屋顶轮廓</text>
+      <text x="1126" y="1000" class="body">只暗示跟踪，不作为首版可走地面。</text>
+      <text x="1126" y="1040" class="body" font-weight="700">玩法落点</text>
+      <text x="1126" y="1070" class="body">主街内击败欧卡与护卫；宝箱靠近</text>
+      <text x="1126" y="1098" class="body">目标楼阁。侧巷短而可见，不做迷宫。</text>
+      <text x="1126" y="1152" class="small">紫虚线表示叙事屋顶意象</text>
+    </g>
+  </g>
+
+  <!-- Colbo -->
+  <g>
+    <rect x="1440" y="760" width="672" height="500" rx="20" class="card"/>
+    <text x="1464" y="798" class="cardtitle">1.6　科尔波山</text>
+    <text x="1980" y="797" fill="#b8d38b" font-size="15" font-weight="700">外围 → 决战</text>
+    <g transform="translate(1460 820)">
+      <rect width="340" height="414" rx="14" fill="#23352e" stroke="#62835f" stroke-width="2"/>
+      <rect x="8" y="8" width="156" height="398" rx="12" fill="#27392f" stroke="#557858" stroke-width="2"/>
+      <rect x="176" y="8" width="156" height="398" rx="12" fill="#26372d" stroke="#557858" stroke-width="2"/>
+      <text x="86" y="31" class="maplabel" text-anchor="middle">外围三波</text>
+      <text x="254" y="31" class="maplabel" text-anchor="middle">林间空地</text>
+      <path d="M86 375C58 332 112 296 83 260S119 213 82 175S104 124 86 67" class="route"/>
+      <circle cx="59" cy="303" r="14" class="enemy"/><circle cx="117" cy="230" r="14" class="enemy"/><circle cx="61" cy="151" r="14" class="enemy"/>
+      <circle cx="86" cy="55" r="13" fill="#79d7a0" stroke="#d7ffe3" stroke-width="2"/>
+      <text x="86" y="397" class="mapminor" text-anchor="middle">南入口</text>
+      <text x="86" y="79" class="mapminor" text-anchor="middle">北门 / 传送</text>
+      <circle cx="254" cy="205" r="66" fill="#37483a" stroke="#a4b784" stroke-width="3"/>
+      <circle cx="254" cy="205" r="37" fill="#46533e" stroke="#c2c792" stroke-width="2" stroke-dasharray="6 6"/>
+      <path d="M254 365V290" class="route"/>
+      <path d="M191 85L213 61L230 93L214 111ZM279 74L305 61L319 95L294 110ZM191 314L215 300L228 330L210 350ZM280 315L307 294L323 329L297 351Z" class="vegetation"/>
+      <path d="M233 209C241 195 249 224 258 207S273 224 281 207" fill="none" stroke="#66a9c3" stroke-width="5"/>
+      <circle cx="254" cy="205" r="9" class="enemy"/>
+      <circle cx="221" cy="259" r="8" class="interact"/><circle cx="284" cy="258" r="8" class="interact"/>
+      <text x="254" y="293" class="mapminor" text-anchor="middle">花草 / 预埋陷阱</text>
+      <text x="315" y="55" class="mapminor">N</text>
+    </g>
+    <g>
+      <text x="1822" y="844" class="body" font-weight="700">两段空间</text>
+      <text x="1822" y="874" class="body">外围：林路、地标、三波敌人、北门。</text>
+      <text x="1822" y="902" class="body">决战：低草环场，水源 / 野花作线索。</text>
+      <text x="1822" y="942" class="body" font-weight="700">战斗尺度</text>
+      <text x="1822" y="972" class="body">巨虎约4米高、7–8米长；中心要空，</text>
+      <text x="1822" y="1000" class="body">树石压边，留足扑击与绕后空间。</text>
+      <text x="1822" y="1040" class="body" font-weight="700">准备和读图</text>
+      <text x="1822" y="1070" class="body">入口附近留准备区；陷阱点分散在</text>
+      <text x="1822" y="1098" class="body">可见边缘，前景树不可盖住预警。</text>
+      <text x="1822" y="1152" class="small">现有 colpo 外围 / 空地作基准</text>
+    </g>
+  </g>
+
+  <rect x="48" y="1280" width="2064" height="108" rx="16" fill="#111b26" stroke="#34465b" stroke-width="2"/>
+  <text x="72" y="1314" fill="#edf3f9" font-size="17" font-weight="700">图例</text>
+  <path d="M130 1308H170" class="route"/><text x="184" y="1314" class="small">主路线</text>
+  <circle cx="286" cy="1308" r="10" class="enemy"/><text x="306" y="1314" class="small">敌人 / Boss</text>
+  <rect x="422" y="1299" width="17" height="17" transform="rotate(45 430 1307)" class="interact"/><text x="449" y="1314" class="small">奖励 / 交互</text>
+  <rect x="565" y="1298" width="28" height="20" rx="4" class="building"/><text x="603" y="1314" class="small">建筑 / 阻挡</text>
+  <path d="M725 1308H765" fill="none" stroke="#a889c9" stroke-width="3" stroke-dasharray="7 7"/><text x="778" y="1314" class="small">叙事意象</text>
+  <text x="950" y="1314" fill="#b7c6d4" font-size="15">草图按俯视斜角游戏镜头考虑；具体尺寸需在 Godot 里按角色、镜头和碰撞体复核。</text>
+  <path d="M72 1340H2088" stroke="#34465b" stroke-width="1"/>
+  <text x="72" y="1370" fill="#d4bd80" font-size="16" font-weight="700">后续原著扩展（未实现 / 不属于本次可玩范围）</text>
+  <text x="535" y="1370" class="small">废品终点站焚城 → 王都分区攻防 → 独立王宫区与楼层搜索；建议复用场地轮廓，以火线、城墙和纵深改变战局。</text>
+</svg>

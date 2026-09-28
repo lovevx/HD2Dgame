@@ -1,4 +1,5 @@
 extends Area3D
+const GameAudio := preload("res://data/game_audio.gd")
 ## 场景传送门：玩家走进传送门区域即触发切场景，不再按 V 交互。
 ## 清场门控读全局 enemies 组与波次调度：未清场时走进只显示锁定提示，不会传送。
 
@@ -58,6 +59,7 @@ func enter() -> void:
 		return
 	if _locked():
 		return
+	GameAudio.play_sfx("ui_confirm", Vector3.INF, -7.0)
 	if campaign_action.is_valid():
 		campaign_action.call()
 		return

@@ -1,5 +1,6 @@
 extends Area3D
 ## 乐园币掉落物：靠近自动磁吸，接触玩家后入账
+const GameAudio := preload("res://data/game_audio.gd")
 
 @export var value: int = 3
 var magnet_radius: float = 4.0
@@ -26,6 +27,7 @@ func _collect() -> void:
 		return
 	collected = true
 	GameState.add_coins(value)
+	GameAudio.play_sfx("coin", global_position, -2.0, randf_range(0.96, 1.05))
 	tween = create_tween()
 	tween.tween_property(self, "scale", Vector3.ZERO, 0.15).set_ease(Tween.EASE_IN)
 	tween.tween_callback(queue_free)

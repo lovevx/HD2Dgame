@@ -1,11 +1,30 @@
 extends Node3D
 ## 复用现有场景与HUD，只负责跨场景进度和奖励；地图保留自己的镜头/光照/遮挡。
 const Data := preload("res://data/campaign.gd")
+## 提示文案里的键名一律现读 —— 写死键名会在玩家改键后变成假提示。
+const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
 const HudScene := preload("res://scripts/ui/hud.tscn")
 const EnemyScene := preload("res://scripts/combat/enemy.tscn")
 const EnemyScript := preload("res://scripts/combat/enemy.gd")
 const EquipmentDropScript := preload("res://scripts/combat/equipment_drop.gd")
 const SceneChestScript := preload("res://scripts/world/scene_chest.gd")
+const GameAudio := preload("res://data/game_audio.gd")
+const TUTORIAL_STEPS_BY_STAGE := {
+	1: ["gun", "potion"],
+	2: ["kick", "shadow"],
+	3: ["wave", "ring"],
+	4: ["shield", "hunter", "trap"],
+}
+const TUTORIAL_LABELS := {
+	"gun": "试射燧发枪", "potion": "使用药剂", "kick": "使用直踹",
+	"shadow": "使用影刺", "wave": "释放刀芒", "ring": "释放环断",
+	"shield": "开启傲歌护盾", "hunter": "开启猎魔", "trap": "预埋火药陷阱",
+}
+const HUB_GUIDE_STEPS := ["growth", "supplies", "training", "archive", "practice"]
+const HUB_GUIDE_LABELS := {
+	"growth": "属性成长", "supplies": "补给查看", "training": "工坊整备",
+	"archive": "任务档案", "practice": "自选练习",
+}
 const ARENA := "res://scenes/main/main.tscn"
 const HARBOR := "res://scenes/world/harbor.tscn"
 const OUTER := "res://scenes/world/colpo_forest_outer.tscn"
@@ -27,10 +46,17 @@ var boss: Node
 var loot_position := Vector3.ZERO
 var loot_marker: Label3D
 var _paused := false
+var _boss_evacuation_seen := false
+var _boss_bar_hidden_for_fake := false
 ## 新手教学进度（仅试炼场教学用，不落档）：木桩命中 / 剃使用次数。
 var training_hits := 0
 var training_dashes := 0
 var _was_dodging := false
+var tutorial_steps: Dictionary = {}
+var _tutorial_was_hunting := false
+var _tutorial_healing_uses := 0
+var _tutorial_bullets := 0
+var _tutorial_bombs := 0
 
 func _ready() -> void:
 	add_to_group("campaign_controller")
@@ -46,7 +72,7 @@ func _ready() -> void:
 		state = "hub"
 	elif GameState.campaign.stage == 4:
 		location = "clearing" if GameState.campaign.get("colpo_outer_cleared", false) or GameState.campaign.cleared else "outer"
-	if GameState.campaign.cleared and not GameState.campaign.hub:
+	if GameState.campaign.cleared and not GameState.campaign.hub and location != "practice":
 		state = "cleared"
 	# 出击事务：只有战斗区域才开本局记账，灰潮港/演武场没有「未提交的本场状态」。
 	# 死亡重试会重新进入本函数，于是重新拍一次快照（基线即回滚后的状态）。
@@ -55,6 +81,7 @@ func _ready() -> void:
 	else:
 		GameState.end_sortie()
 	_build_world()
+	_load_tutorial_progress()
 	hud = HudScene.instantiate()
 	hud.campaign_controller = self
 	add_child(hud)
@@ -73,21 +100,79 @@ func _ready() -> void:
 		player.bombs = 3
 		if _training_active():
 			player.hit_target.connect(_on_training_hit)
+	_connect_tutorial_tracking()
 	if location == "hub" and _onboarding():
 		# 船靠岸后从码头出生，港口向导就在跳板边
 		player.position = Vector3(0, 0, 9)
 	if location == "clearing":
 		_restore_full_state()
 	_refresh_objective()
+	if location == "hub" and GameState.campaign.get("settled", false) \
+			and not GameState.campaign.get("settlement_intro_seen", false):
+		_show_settlement_intro()
 	if state == "prepare" and location not in ["practice", "hub"]:
 		_show_story()
 	sync_pause()
 
-## 正式关卡开场剧情：进关在底部显示剧情条（小字不挡视野），按任意操作自动收起。
+## 正式关卡开场剧情：进关在上方显示剧情条，按任意操作自动收起。
 ## 战斗仍由 V 开始，与各区域原有流程一致。
 func _show_story() -> void:
 	var stage: Dictionary = Data.STAGES[GameState.campaign.stage]
-	hud.show_story(stage.name, str(stage.get("story", stage.brief)))
+	var story := str(stage.get("story", stage.brief))
+	var hint := _tutorial_hint(GameState.campaign.stage)
+	if hint != "":
+		story += "\n\n" + hint
+	hud.show_story(stage.name, story)
+
+func _show_settlement_intro() -> void:
+	hud.show_panel("阶段试炼结算", "%s\n\n先去东侧工坊分配本次获得的属性点。补给、工坊和任务档案会按整备顺序逐步提示。" % GameState.campaign.report,
+		"开始整备", _dismiss_settlement_intro)
+	sync_pause()
+
+func _dismiss_settlement_intro() -> void:
+	GameState.campaign.settlement_intro_seen = true
+	GameState.save_game()
+	hud.hide_panel()
+	_refresh_objective()
+	sync_pause()
+
+func _hub_guide_step() -> String:
+	if not GameState.campaign.get("settled", false):
+		return ""
+	var done: Dictionary = GameState.campaign.get("hub_guide_done", {}).duplicate(true)
+	if GameState.get_attr_points() <= 0:
+		done["growth"] = true
+	for step_id in HUB_GUIDE_STEPS:
+		if not bool(done.get(step_id, false)):
+			return str(step_id)
+	return "depart"
+
+func _hub_guide_objective() -> String:
+	match _hub_guide_step():
+		"growth":
+			return "阶段结算已完成 · 可用属性点 %d\n先到东侧工坊分配 1 点属性。" % GameState.get_attr_points()
+		"supplies":
+			return "属性成长已完成\n前往西侧商店查看药剂与陷阱补给；购买按需选择。"
+		"training":
+			return "补给已查看\n回到东侧工坊查看装备修理与刀术训练；材料不足可先跳过。"
+		"archive":
+			return "工坊整备已查看\n前往西南委托所查看任务档案中的下一轮目标。"
+		"practice":
+			return "任务档案已查看\n东南演武场可自选练习；准备好后可直接去北侧出发。"
+		_:
+			return "主城整备完成\n前往北侧世界入口开始下一轮试炼。"
+
+func _mark_hub_guide_step(step_id: String) -> void:
+	if not GameState.campaign.get("settled", false) or step_id not in HUB_GUIDE_STEPS:
+		return
+	var done: Dictionary = GameState.campaign.get("hub_guide_done", {}).duplicate(true)
+	if bool(done.get(step_id, false)):
+		return
+	done[step_id] = true
+	GameState.campaign.hub_guide_done = done
+	GameState.save_game()
+	GameState.push_message("主城整备已完成 · %s" % HUB_GUIDE_LABELS[step_id])
+	_refresh_objective()
 
 func _build_world() -> void:
 	var path: String = {"hub": HARBOR, "outer": OUTER, "clearing": CLEARING}.get(location, ARENA)
@@ -124,6 +209,160 @@ func _build_world() -> void:
 	loot_marker.hide()
 	add_child(loot_marker)
 
+func _load_tutorial_progress() -> void:
+	tutorial_steps = GameState.campaign.get("tutorial_steps", {}).duplicate(true)
+	# 兼容曾进入欢乐街后集中技能教学的旧存档。
+	var legacy_steps: Dictionary = GameState.campaign.get("skill_training_steps", {})
+	for step_id in TUTORIAL_LABELS:
+		if bool(legacy_steps.get(step_id, false)):
+			tutorial_steps[step_id] = true
+	GameState.campaign.tutorial_steps = tutorial_steps.duplicate(true)
+
+func _connect_tutorial_tracking() -> void:
+	_tutorial_was_hunting = player.hunter_active
+	_tutorial_healing_uses = player.healing_uses
+	_tutorial_bullets = player.bullets
+	_tutorial_bombs = player.bombs
+	player.kicked.connect(_on_tutorial_kicked)
+	player.skill_animation_requested.connect(_on_tutorial_skill_animation)
+	player.guarded.connect(_on_tutorial_guarded)
+	player.bombs_changed.connect(_on_tutorial_bombs_changed)
+
+func _tutorial_hint(stage: int) -> String:
+	var pending: Array[String] = []
+	for step_id in TUTORIAL_STEPS_BY_STAGE.get(stage, []):
+		if not bool(tutorial_steps.get(step_id, false)):
+			pending.append(str(step_id))
+	match stage:
+		0:
+			if state == "cleared":
+				return "战利品已入包 · 背包查看药剂；受伤时按 %s 使用" % KeyBindings.key_text("potion")
+			if state == "loot":
+				return "战后按 %s 领取战利品，再打开背包查看药剂。" % KeyBindings.key_text("interact")
+			return "留意敌人的红色预警并及时离开范围，观察生命值。战后按 %s 领取战利品。" % KeyBindings.key_text("interact")
+		1:
+			var cues: Array[String] = []
+			if pending.has("gun") and state != "cleared":
+				cues.append("先在背包装备燧发枪，再按 %s 试射" % KeyBindings.key_text("shoot"))
+			if pending.has("potion"):
+				cues.append("受伤后按 %s 使用药剂" % KeyBindings.key_text("potion"))
+			return " · ".join(cues)
+		2:
+			var cues: Array[String] = []
+			if pending.has("kick"):
+				cues.append("按 %s 直踹打断教官" % KeyBindings.key_text("kick"))
+			if pending.has("shadow"):
+				cues.append("按 %s 斩中后贴近，再按 %s 影刺" % [KeyBindings.key_text("attack"), KeyBindings.key_text("shadow_stab")])
+			return "完成直踹与影刺以解锁欢乐街：" + " · ".join(cues) + "（未完成可在清场后的木桩补练）" if not cues.is_empty() else ""
+		3:
+			var cues: Array[String] = []
+			if pending.has("wave"):
+				cues.append("按 %s 释放刀芒远程攻击" % KeyBindings.key_text("sword_wave"))
+			if pending.has("ring"):
+				cues.append("等欧卡与护卫靠近后按 %s 环断" % KeyBindings.key_text("huanduan"))
+			return "完成刀芒与环断以解锁科尔波山：" + " · ".join(cues) + "（未完成可在清场后的木桩补练）" if not cues.is_empty() else ""
+		4:
+			var cues: Array[String] = []
+			if pending.has("shield"):
+				cues.append("%s 傲歌护盾" % KeyBindings.key_text("aoge"))
+			if pending.has("hunter"):
+				cues.append("%s 开启猎魔（持续耗蓝）" % KeyBindings.key_text("hunter_toggle"))
+			if pending.has("trap"):
+				cues.append("%s 预埋一枚陷阱" % KeyBindings.key_text("bomb"))
+			return "完成全部猎虎准备练习后才会引出巨虎：" + " · ".join(cues) if not cues.is_empty() else ""
+	return ""
+
+func _free_practice_hint() -> String:
+	var actions := {
+		"kick": "%s 直踹" % KeyBindings.key_text("kick"),
+		"shadow": "%s 影刺" % KeyBindings.key_text("shadow_stab"),
+		"wave": "%s 刀芒" % KeyBindings.key_text("sword_wave"),
+		"ring": "%s 环断" % KeyBindings.key_text("huanduan"),
+		"shield": "%s 傲歌" % KeyBindings.key_text("aoge"),
+		"hunter": "%s 猎魔" % KeyBindings.key_text("hunter_toggle"),
+	}
+	var pending: Array[String] = []
+	for step_id in actions:
+		if not bool(tutorial_steps.get(step_id, false)):
+			pending.append(str(actions[step_id]))
+	return "自选练习：" + " · ".join(pending) if not pending.is_empty() else "技能均已尝试 · 继续自由练习"
+
+func _progression_blocker_text() -> String:
+	match GameState.campaign.stage:
+		1:
+			var tasks: Array[String] = []
+			if not bool(tutorial_steps.get("gun", false)):
+				tasks.append("装备燧发枪并试射（%s）" % KeyBindings.key_text("shoot"))
+			if GameState.item_count("letter") == 0:
+				tasks.append("打开 %s 背包中的卡洛斯宝箱取得引荐信" % KeyBindings.key_text("character_panel"))
+			return "解锁下一地区前：" + "；".join(tasks)
+		2:
+			var tasks: Array[String] = []
+			if GameState.campaign.equipment.get("main_weapon", "") != "dragon":
+				tasks.append("打开 %s 背包装备斩龙闪" % KeyBindings.key_text("character_panel"))
+			if not bool(tutorial_steps.get("kick", false)) or not bool(tutorial_steps.get("shadow", false)):
+				tasks.append("完成直踹与影刺练习")
+			return "解锁欢乐街前：" + "；".join(tasks)
+		3:
+			return "完成刀芒与环断练习以解锁科尔波山"
+	return "完成当前地区目标后继续"
+
+func _ensure_progression_practice_dummy() -> void:
+	var required_steps: Array = TUTORIAL_STEPS_BY_STAGE.get(GameState.campaign.stage, [])
+	for step_id in required_steps:
+		if not bool(tutorial_steps.get(step_id, false)):
+			if world.get_node_or_null("PracticeDummy") == null:
+				world._spawn_dummy()
+			player.mp = player.max_mp
+			player.stamina = player.max_stamina
+			GameState.push_message("安全补练木桩已开放 · 完成当前技能后可继续")
+			return
+
+func _mark_tutorial_step(step_id: String) -> void:
+	if not TUTORIAL_LABELS.has(step_id) or bool(tutorial_steps.get(step_id, false)):
+		return
+	tutorial_steps[step_id] = true
+	GameState.campaign.tutorial_steps = tutorial_steps.duplicate(true)
+	if not GameState.is_sortie_active():
+		GameState.save_game()
+	GameState.push_message("已掌握 · %s" % TUTORIAL_LABELS[step_id])
+	if location == "clearing" and director != null:
+		if director.phase == "prep":
+			director.call("_update_objective")
+		elif director.phase == "fight" and is_instance_valid(boss) and not boss.is_evacuation_active():
+			director.call("_update_fight_objective")
+	elif not (location == "clearing" and director != null and director.phase == "fight"):
+		_refresh_objective()
+
+func _on_tutorial_kicked() -> void:
+	_mark_tutorial_step("kick")
+
+func _on_tutorial_skill_animation(action: String) -> void:
+	match action:
+		"sword_wave": _mark_tutorial_step("wave")
+		"ring_break": _mark_tutorial_step("ring")
+
+func _on_tutorial_guarded() -> void:
+	_mark_tutorial_step("shield")
+
+func _on_tutorial_bombs_changed(count: int) -> void:
+	if count < _tutorial_bombs:
+		_mark_tutorial_step("trap")
+	_tutorial_bombs = count
+
+func _track_tutorial_actions() -> void:
+	if player.hunter_active and not _tutorial_was_hunting:
+		_mark_tutorial_step("hunter")
+	_tutorial_was_hunting = player.hunter_active
+	if player.healing_uses > _tutorial_healing_uses:
+		_mark_tutorial_step("potion")
+	_tutorial_healing_uses = player.healing_uses
+	if player.bullets < _tutorial_bullets:
+		_mark_tutorial_step("gun")
+	_tutorial_bullets = player.bullets
+	if player.shadow_cd > 0.0:
+		_mark_tutorial_step("shadow")
+
 func _wire_interactions() -> void:
 	if location == "outer":
 		var portal = world.get_node("ExitPortal")
@@ -132,18 +371,27 @@ func _wire_interactions() -> void:
 		portal.locked_text = "先清除外围三波威胁"
 	elif location == "clearing":
 		var portal = world.get_node("ReturnPortal")
-		portal.campaign_action = advance_next
-		portal.campaign_can_enter = func(): return state == "cleared"
+		portal.campaign_action = func():
+			if state == "cleared":
+				advance_next()
+			elif is_instance_valid(boss) and boss.is_evacuation_active():
+				retreat_from_boss()
+		portal.campaign_can_enter = func():
+			return state == "cleared" or (is_instance_valid(boss) and boss.is_evacuation_active())
 		portal.prompt_text = "阶段结算 · 返回灰潮港"
-		portal.locked_text = "先击杀巨虎并领取战利品"
+		portal.locked_text = "先击杀巨虎并领取战利品，或趁其倒地限时撤离"
 		world.get_node("AreaLabel_007").text = "结算 · 返回灰潮港"
 		_set_return_gate_visible(GameState.campaign.cleared)
 	elif location == "arena":
 		var portal = world.get_node("ExitPortal")
 		portal.campaign_action = advance_next
 		portal.campaign_can_enter = func(): return state == "cleared" and GameState.can_advance_region()
-		portal.prompt_text = "进入下一地区"
-		portal.locked_text = "清场领奖后，完成当前地区目标"
+		portal.prompt_text = "进入科尔波山外围" if GameState.campaign.stage == 3 else "进入下一地区"
+		portal.locked_text = {
+			1: "试射燧发枪并打开卡洛斯宝箱取得引荐信",
+			2: "装备斩龙闪并完成直踹、影刺练习",
+			3: "完成刀芒、环断练习后前往科尔波山",
+		}.get(GameState.campaign.stage, "清场领奖后，完成当前地区目标")
 	elif location == "hub":
 		var portal := world.get_node("DeparturePortal")
 		# 新手流程：传送阵门控与动作都随 flow 动态判定（接完任务即解锁出发），
@@ -157,11 +405,20 @@ func _wire_interactions() -> void:
 				GameState.push_message("先完成新手教学并接取任务")
 			else:
 				depart()
-		portal.prompt_text = "传送阵 · 开始试炼（废品终点站）" if _flow() == "quested" else "接受下一次阶段试炼"
-		world.get_node("DeparturePortalSign").text = "世界入口 · 阶段试炼"
+		var resume_boss: bool = GameState.campaign.stage == 4 and bool(GameState.campaign.get("colpo_outer_cleared", false)) \
+			and not GameState.campaign.cleared and not GameState.campaign.settled
+		portal.prompt_text = "传送阵 · 开始试炼（废品终点站）" if _flow() == "quested" else ("返回科尔波山决战" if resume_boss else "接受下一次阶段试炼")
+		world.get_node("DeparturePortalSign").text = "返回科尔波山决战" if resume_boss else "世界入口 · 阶段试炼"
 		world.get_node("TrialPortal").campaign_action = enter_practice
 		# 轮回商店走 ShopPanel 完整商店 UI（harbor.gd 已把 panel_handler 接到 open，买药等全部商品统一走它）
-		world.get_node("ForgeService").campaign_action = show_forge
+		var shop_service = world.get_node("ShopService")
+		var open_shop: Callable = shop_service.panel_handler
+		shop_service.panel_handler = func():
+			if open_shop.is_valid(): open_shop.call()
+			_mark_hub_guide_step("supplies")
+		world.get_node("ForgeService").campaign_action = func():
+			show_forge()
+			_mark_hub_guide_step("training")
 		world.get_node("QuestService").campaign_action = show_tasks
 		var npc := world.get_node_or_null("GuideNpc")
 		if npc != null:
@@ -234,17 +491,42 @@ func _process(_delta: float) -> void:
 			GameState.push_message("剃 ×%d / 1" % training_dashes)
 			_check_training_done()
 		_was_dodging = player.dodging
+	_track_tutorial_actions()
 	if state == "combat":
 		var living := 0
 		for enemy in enemies:
 			if is_instance_valid(enemy) and enemy.is_alive(): living += 1
 		if is_instance_valid(boss):
-			hud.set_boss_state(boss.hp, "%s · %.0f%%" % [boss.phase_text(), boss.hp / boss.max_hp * 100])
+			if boss.is_faking_death():
+				hud.hide_boss()
+				_boss_bar_hidden_for_fake = true
+			else:
+				if _boss_bar_hidden_for_fake:
+					hud.show_boss("科尔波山之主 · 巨型变异巨虎", boss.max_hp)
+					_boss_bar_hidden_for_fake = false
+				hud.set_boss_state(boss.hp, "%s · %.0f%%" % [boss.phase_text(), boss.hp / boss.max_hp * 100])
+			if boss.is_evacuation_active():
+				if not _boss_evacuation_seen:
+					_boss_evacuation_seen = true
+					_set_return_gate_visible(true)
+					world.get_node("AreaLabel_007").text = "限时撤离 · 返回灰潮港"
+					world.get_node("ReturnPortal").prompt_text = "限时撤离 · 返回灰潮港"
+				var seconds := int(ceil(boss.evacuation_seconds_left()))
+				if boss.evacuation_has_risen():
+					hud.set_objective("巨虎反扑 · 剩余 %d 秒撤离" % seconds)
+				else:
+					hud.set_objective("巨虎倒地 · %d 秒内返回主城" % seconds)
+			elif _boss_evacuation_seen:
+				_boss_evacuation_seen = false
+				_set_return_gate_visible(false)
+				world.get_node("AreaLabel_007").text = "结算 · 返回灰潮港"
+				world.get_node("ReturnPortal").prompt_text = "阶段结算 · 返回灰潮港"
+				hud.set_objective("撤离窗口关闭 · 击杀科尔波山之主")
 		if living == 0 and player.alive:
 			state = "loot"
 			loot_position = player.global_position
 			loot_marker.position = loot_position + Vector3(0, 2, 0)
-			loot_marker.text = "战利品 · V 领取"
+			loot_marker.text = "战利品 · %s 领取" % KeyBindings.key_text("interact")
 			loot_marker.show()
 			hud.hide_boss()
 			_refresh_objective()
@@ -256,6 +538,8 @@ func _process(_delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact") and not hud.is_modal_open() and location not in ["hub", "practice"]:
+		if state in ["combat", "outer_combat"]:
+			return
 		# 站在场景宝箱触发圈里时，V 归宝箱，避免同时推进关卡流程
 		if get_tree().get_first_node_in_group("scene_chest_focus") != null:
 			return
@@ -263,45 +547,69 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _refresh_objective() -> void:
+	if location == "arena" and world.has_method("set_route_phase"):
+		world.set_route_phase(state, GameState.can_advance_region())
 	var title: String = Data.STAGES[GameState.campaign.stage].name
+	var task_name: String = title
 	var text: String = Data.STAGES[GameState.campaign.stage].brief
 	if location == "hub":
 		title = "灰潮港 · 单机乐园"
 		if GameState.player_name != "":
 			title += "　契约者 %s" % GameState.player_name
-		match _flow():
-			"ship":
-				text = "港口向导在码头等你\n靠近向导按 V 对话"
-			"training":
-				text = "前往东侧 · 试炼传送阵（演武场）\n完成新手教学"
-			"equipped":
-				text = "轮回乐园已发布新任务\n前往西侧 · 任务委托所接取"
-			"quested":
-				text = "任务已接取\n前往北侧 · 传送阵开始试炼"
-			_:
-				text = "北：世界入口
+		if GameState.campaign.get("settled", false):
+			task_name = "猎虎归港整备"
+			text = _hub_guide_objective()
+		else:
+			match _flow():
+				"ship":
+					task_name = "初抵灰潮港"
+					text = "港口向导在码头等你\n靠近向导按 %s 对话" % KeyBindings.key_text("interact")
+				"training":
+					task_name = "新手教学"
+					text = "前往东侧 · 试炼传送阵（演武场）\n完成新手教学"
+				"equipped":
+					task_name = "猎杀者试炼"
+					text = "轮回乐园已发布新任务\n前往西侧 · 任务委托所接取"
+				"quested":
+					task_name = str(Data.STAGES[0].name)
+					text = "任务已接取\n前往北侧 · 传送阵开始试炼"
+				_:
+					text = "北：世界入口
 	西：补给 / 委托所
 	东：工坊整备 / 演武场
-	靠近功能点按 V · J 任务档案"
+	靠近功能点按 %s · %s 任务档案" % [KeyBindings.key_text("interact"), KeyBindings.key_text("quest_log")]
 	elif location == "practice":
-		title = "灰潮 · 自由练习场"
 		if _training_active():
-			text = "新手教学：攻击木桩 ×3 · 剃 ×1（Shift）\n完成后发放整套基础装备\nEsc 返回灰潮港"
+			task_name = "新手教学"
+			title = "灰潮 · 新手教学"
+			text = "新手教学：攻击木桩 ×3 · 剃 ×1（%s）\n完成后发放整套基础装备\n%s 返回灰潮港" % [KeyBindings.key_text("dodge"), KeyBindings.key_text("open_menu")]
 		else:
-			text = "打木桩练习连击 / 拼刀
+			task_name = "自由练习"
+			title = "灰潮 · 自由练习场"
+			text = "打木桩练习斩击 / 剃
 	不消耗正式物资
-	Esc 返回灰潮港"
+	%s 返回灰潮港
+	%s" % [KeyBindings.key_text("open_menu"), _free_practice_hint()]
 	elif location == "outer":
 		title = "科尔波山 · 原始丛林外围"
 		text = "清除三波威胁后，经北侧传送门进入决战空地"
 	elif state == "cleared":
-		text = "战利品已保存 · C 开箱/换装\n前往北侧出口传送门" + (" · 阶段结算 / 回灰潮港" if GameState.campaign.stage == 4 else " · 进入下一地区")
+		var next_step := " · 阶段结算 / 回灰潮港" if GameState.campaign.stage == 4 else (" · 进入科尔波山外围" if GameState.campaign.stage == 3 else " · 进入下一地区")
+		text = "战利品已保存 · %s 开箱/换装\n前往北侧出口传送门" % KeyBindings.key_text("character_panel") + next_step
 		if location == "arena" and not GameState.can_advance_region():
-			text = "打开 C 背包中的卡洛斯宝箱，取得引荐信后前往北侧出口" if GameState.campaign.stage == 1 else "在 C 背包装备斩龙闪后前往北侧出口"
-	hud.configure(title, text)
-	if state == "prepare": hud.show_prompt("V 开始15秒猎虎准备 · 1预埋陷阱" if location == "clearing" else "V 开始遭遇")
-	elif state == "loot": hud.show_prompt("靠近战利品 · V领取 · C查看背包")
-	elif state == "cleared": hud.show_prompt("C 开箱/换装 · 走向北侧传送门")
+			text = _progression_blocker_text()
+	if (location == "arena" and GameState.campaign.stage <= 3) or location == "clearing":
+		var hint := _tutorial_hint(GameState.campaign.stage)
+		if hint != "":
+			text += "\n" + hint
+	hud.configure(title, text, task_name)
+	if state == "prepare":
+		if location == "clearing":
+			hud.show_prompt("%s 开始15秒猎虎准备 · %s 预埋陷阱" % [KeyBindings.key_text("interact"), KeyBindings.key_text("bomb")])
+		else:
+			hud.show_prompt("%s 开始遭遇" % KeyBindings.key_text("interact"))
+	elif state == "loot": hud.show_prompt("靠近战利品 · %s领取 · %s查看背包" % [KeyBindings.key_text("interact"), KeyBindings.key_text("character_panel")])
+	elif state == "cleared": hud.show_prompt("%s 开箱/换装 · 走向北侧传送门" % KeyBindings.key_text("character_panel"))
 	else: hud.hide_prompt()
 
 func primary_action() -> void:
@@ -321,7 +629,34 @@ func advance_next() -> void:
 	if GameState.campaign.stage == 4:
 		if GameState.settle_trial(): reload_scene()
 	elif GameState.advance_region(): reload_scene()
-	else: GameState.push_message("先在 C 背包中开启卡洛斯宝箱取得引荐信，或装备斩龙闪。")
+	else: GameState.push_message(_progression_blocker_text())
+
+func retreat_from_boss() -> void:
+	if state != "combat" or not is_instance_valid(boss) or not boss.is_evacuation_active():
+		return
+	if boss.is_faking_death() and not boss.evacuation_has_risen():
+		if not boss.confirm_evacuation_kill():
+			return
+		for id in pending_hunts:
+			GameState.record_hunt(id)
+		pending_hunts.clear()
+		_copy_supplies()
+		GameState.clear_region(player.hp / player.max_hp)
+		state = "cleared"
+		advance_next()
+		return
+	boss.cancel_evacuation()
+	state = "retreating"
+	_boss_evacuation_seen = false
+	_set_return_gate_visible(false)
+	_freeze(true)
+	GameState.settle_sortie(GameState.Sortie.ABANDON)
+	GameState.campaign.hub = true
+	GameState.campaign.cleared = false
+	GameState.campaign_practice = false
+	GameState.push_message("已撤回灰潮港 · 巨虎未击杀，决战可再次进入")
+	GameState.save_game()
+	reload_scene()
 
 func start_encounter() -> void:
 	if state != "prepare": return
@@ -344,15 +679,21 @@ func start_encounter() -> void:
 			enemy.kill_tier = 3 if profiles[i][1] >= 170 else 1  # 精英（欧卡）击杀扣 3 点耐
 			enemy.kind = EnemyScript.Kind.HUMAN  # 人形白盒模型 + 举刀/挥击动作
 			enemy.model = str(profiles[i][3]) if profiles[i].size() > 3 else ""
-			enemy.position = Vector3(-3 + i * 6, 0, -5)
+			match GameState.campaign.stage:
+				0: enemy.position = Vector3(0, 0, -3.5)
+				1: enemy.position = Vector3(0, 0, -4.5)
+				2: enemy.position = Vector3(0, 0, -2.8)
+				3: enemy.position = Vector3(-2.5, 0, -4.8) if i == 0 else Vector3(2.6, 0, -3.0)
 			add_child(enemy)
 			enemy.defeated.connect(_on_hunt.bind("%d_%d" % [GameState.campaign.stage, i]))
 			# 精英（欧卡）掉落概率更高；普通小怪给基础概率
 			enemy.defeated.connect(_spawn_equipment_drop.bind(enemy, 0.9 if profiles[i][1] >= 150 else 0.5))
 			enemies.append(enemy)
+		world.set_route_phase(state, false)
 
 func _on_boss_spawned(target: Node3D) -> void:
 	boss = target
+	_boss_bar_hidden_for_fake = false
 	enemies.append(boss)
 	boss.defeated.connect(_on_hunt.bind("tiger"))
 	state = "combat"
@@ -382,7 +723,7 @@ func _on_hunt(id: String) -> void:
 func claim_loot() -> void:
 	if state != "loot" or not player.alive: return
 	if player.global_position.distance_to(loot_position) > 3.0:
-		GameState.push_message("靠近战利品标记后按 V。")
+		GameState.push_message("靠近战利品标记后按 %s。" % KeyBindings.key_text("interact"))
 		return
 	var gained := 0
 	for id in pending_hunts: gained += GameState.record_hunt(id)
@@ -390,9 +731,11 @@ func claim_loot() -> void:
 	GameState.clear_region(player.hp / player.max_hp)
 	state = "cleared"
 	if location == "clearing": _set_return_gate_visible(true)
+	if location == "arena" and GameState.campaign.stage in [2, 3]:
+		_ensure_progression_practice_dummy()
 	loot_marker.hide()
 	_sync_inventory()
-	GameState.push_message("战利品入库 · 永久法力 +%d · C开箱/换装" % gained)
+	GameState.push_message("战利品入库 · 永久法力 +%d · %s开箱/换装" % [gained, KeyBindings.key_text("character_panel")])
 	_refresh_objective()
 	show_sheet()
 
@@ -441,6 +784,11 @@ func close_sheet() -> void:
 
 func use_item(id: String) -> void:
 	if not can_manage_items(): return
+	if id == "carlos_chest" and GameState.campaign.stage == 1 and not bool(tutorial_steps.get("gun", false)):
+		GameState.push_message("先在 %s 背包装备燧发枪，再按 %s 试射，然后开启卡洛斯宝箱。" % [
+			KeyBindings.key_text("character_panel"), KeyBindings.key_text("shoot"),
+		])
+		return
 	if state in ["cleared", "outer_cleared"]: _store_supplies()
 	if Data.CHESTS.has(id): GameState.open_chest(id)
 	else: GameState.equip_item(id)
@@ -587,7 +935,9 @@ func _show_forge_attrs() -> void:
 
 func _upgrade(key: String) -> void:
 	if state != "hub": return
-	GameState.push_message("强化完成" if GameState.spend_attr_point(key) else "属性点不足")
+	var spent := GameState.spend_attr_point(key)
+	GameState.push_message("强化完成" if spent else "属性点不足")
+	if spent: _mark_hub_guide_step("growth")
 	player.hp = player.max_hp
 	show_forge()
 
@@ -598,15 +948,23 @@ func _upgrade(key: String) -> void:
 func show_tasks() -> void:
 	if _flow() == "equipped":
 		hud.open_quest_log_with("接取任务 · 猎杀者试炼", _accept_first_quest)
-		return
-	hud.open_quest_log()
+	else:
+		hud.open_quest_log()
+	_mark_hub_guide_step("archive")
 
 func depart() -> void:
 	if state != "hub": return
+	if GameState.campaign.stage == 4 and GameState.campaign.get("colpo_outer_cleared", false) \
+			and not GameState.campaign.cleared and not GameState.campaign.settled:
+		GameState.campaign.hub = false
+		GameState.save_game()
+		reload_scene()
+		return
 	if GameState.begin_next_trial(): reload_scene()
 
 func enter_practice() -> void:
 	if state != "hub": return
+	_mark_hub_guide_step("practice")
 	# 新手流程：没跟向导对话就先进演武场，也按教学处理（流程推进到 training）
 	if _flow() == "ship":
 		GameState.campaign.flow = "training"
@@ -639,11 +997,13 @@ func talk_to_guide() -> void:
 	if _flow() == "ship":
 		GameState.campaign.flow = "training"
 		GameState.save_game()
-		hud.show_panel("港口向导", "「新人，快去东侧的试炼场地熟悉一下身手吧！」\n\n东侧码头旁的试炼传送阵会送你去练武场。\n\n在练武场打三下木桩、用一次剃（Shift），就能领到整套基础装备。", "前往试炼场", func():
-			hud.hide_panel()
-			_refresh_objective())
+		hud.show_dialogue("港口向导", [
+			"新人，快去东侧的试炼场地熟悉一下身手吧！",
+			"东侧码头旁的试炼传送阵会送你去练武场。",
+			"在练武场打三下木桩、用一次剃（%s），就能领到整套基础装备。" % KeyBindings.key_text("dodge"),
+		], _refresh_objective)
 	else:
-		hud.show_panel("港口向导", "「练熟了就去任务委托所看看吧，乐园在等着你的第一次猎杀。」", "返回", hud.hide_panel)
+		hud.show_dialogue("港口向导", ["练熟了就去任务委托所看看吧，乐园在等着你的第一次猎杀。"])
 
 ## 木桩命中（player.hit_target 只统计 targets 组，即练功木桩）。
 func _on_training_hit(target: Node, _dmg: float) -> void:
@@ -664,6 +1024,7 @@ func _check_training_done() -> void:
 	var gear := GameState.grant_starter_gear()
 	GameState.save_game()
 	GameState.push_message("[乐园] 新手教学完成 · 已发放整套基础装备")
+	GameAudio.play_sfx("quest_complete", global_position)
 	hud.show_panel("新手教学完成", "已发放整套基础装备：\n%s\n\n轮回乐园检测到新的试炼任务，回到灰潮港后前往西侧 · 任务委托所接取。" % "、".join(gear), "返回灰潮港", return_from_practice)
 	_refresh_objective()
 
@@ -695,6 +1056,8 @@ func reload_scene() -> void:
 	GameState.change_scene(Data.SCENE)
 
 func _copy_supplies() -> void:
+	if GameState.debug_mode_active:
+		return
 	GameState.campaign.bag.potion = player.potions
 	GameState.campaign.bag.trap = player.bombs
 	GameState.campaign.bullets = player.bullets

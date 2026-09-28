@@ -3,7 +3,9 @@ extends CharacterBody3D
 const BombScene := preload("res://scripts/combat/alchemy_bomb.tscn")
 const Attributes := preload("res://data/attributes.gd")
 const CombatSkills := preload("res://data/combat_skills.gd")
+const KeyBindings := preload("res://scripts/ui/key_bindings.gd")
 const SwordWave := preload("res://scripts/combat/sword_wave.gd")
+const GameAudio := preload("res://data/game_audio.gd")
 ## 前景遮挡淡出：镜头被房子、城墙挡住时把它们调成半透明（见该脚本头部说明）。
 const OcclusionFade := preload("res://scripts/world/camera_occlusion_fade.gd")
 const MAX_THROW := 11.0   # 数字 1 最远投掷距离
@@ -21,9 +23,8 @@ const MAX_THROW := 11.0   # 数字 1 最远投掷距离
 @export var attack_range: float = 2.5
 @export var attack_arc_half: float = 1.0
 @export var base_attack_cooldown: float = 0.42
-const ATTACK_HIT_TIME := 0.12   # 有效帧：挥出第 0.12 秒结算命中
-const CLASH_WINDOW := 0.3       # 拼刀判定窗口：双方命中时刻相差 0.3 秒内视为重叠
-const CLASH_COOLDOWN := 0.9     # 拼刀冷却：避免连续刷拼刀
+const ATTACK_HIT_TIME := 0.24   # 与第 5 格刀刃接触同步；实际结算时间取 combat_skills.gd
+const RECOVERY_MOVE_FACTOR := 0.7  # 命中判定后放开部分移动，保留后摇与走位空间
 @export var dodge_speed: float = 18.0
 @export var dodge_duration: float = 0.55
 @export var dodge_cooldown: float = 2.2
@@ -38,15 +39,15 @@ var stamina: float = 120.0
 var max_stamina: float = 120.0
 var alive: bool = true
 var invulnerable: bool = false
-## 回合战门闩：为 true 时实时输入被 battle_controller 接管，本文件只提供"回合执行动作"入口。
-var battle_mode := false
-## 回合内面向：由 controller 在玩家行动前写入，战技/走位朝它出手。
-var battle_turn_dir := Vector3.FORWARD
 var kick_cd := 0.0
 var input_dir := Vector2.ZERO
 var running := true   # 常驻跑步：移动时恒为 true，不再需要 Shift（2026-09-21）
+var _footstep_timer := 0.0
 var facing := Vector3(0, 0, -1)
 var combo_stage: int = 0
+var current_attack_animation := "attack"
+var current_attack_hit_time := CombatSkills.COMBO_HIT_TIMES[0]
+var _next_horizontal_attack := true
 var attack_cd: float = 0.0
 var dodging: bool = false
 var dodge_timer: float = 0.0
@@ -58,10 +59,12 @@ var healing_time := 0.0
 var healing_uses := 0
 var shot_cd := 0.0
 var bullets := 6
+var _flintlock_pending := false
 @export var bombs: int = 0   # 炼金炸弹库存，由关卡脚本发放（科尔波山两关各 3 颗）
-var clash_cd: float = 0.0    # 拼刀冷却，触发拼刀后短时冷却防连刷
 var attack_elapsed: float = -1.0
 var attack_hit: bool = false
+var kick_elapsed := 0.0
+var kick_hit_pending := false
 var buffer_time: float = 0.0
 var buffered_direction := Vector3.ZERO
 var shield_visual: MeshInstance3D
@@ -84,9 +87,8 @@ var shadow_windup := 0.0
 signal hp_changed(current: float, maximum: float)
 signal bombs_changed(count: int)
 signal attacked(stage: int)
+signal skill_animation_requested(action: String)
 signal hit_target(target: Node, dmg: float)
-## 命中了一个已经处于眩晕态的目标（山之主据此进入回合制，见 docs/COMBAT_DESIGN.md §2.2）。
-signal struck_stunned_foe(foe: Node)
 signal received_hit   # 受到伤害时触发（用于受击动画）
 signal guarded       # 傲歌起手复用已有防御姿态帧
 signal died
@@ -126,12 +128,16 @@ func reset() -> void:
 	invulnerable = false
 	dodging = false
 	combo_stage = 0
+	current_attack_animation = "attack"
+	current_attack_hit_time = CombatSkills.COMBO_HIT_TIMES[0]
+	_next_horizontal_attack = true
 	attack_cd = 0.0
 	dodge_cd = 0.0
 	dodge_timer = 0.0
-	clash_cd = 0.0
 	attack_elapsed = -1.0
 	attack_hit = false
+	kick_elapsed = 0.0
+	kick_hit_pending = false
 	buffer_time = 0.0
 	buffered_direction = Vector3.ZERO
 	input_dir = Vector2.ZERO
@@ -139,6 +145,7 @@ func reset() -> void:
 	healing_time = 0.0
 	healing_uses = 0
 	shot_cd = 0.0
+	_flintlock_pending = false
 	hunter_active = false
 	shield_hp = 0.0
 	shield_timer = 0.0
@@ -155,6 +162,7 @@ func reset() -> void:
 	shadow_windup = 0.0
 	potions = 2
 	velocity = Vector3.ZERO
+	_footstep_timer = 0.0
 	shield_visual.visible = false
 	$pivot/CharacterSprite.reset_visual()
 	hp_changed.emit(hp, max_hp)
@@ -162,7 +170,7 @@ func reset() -> void:
 ## 从全局六维属性刷新派生值：最大 HP = 50 + 体力×10；最大 MP = 智力×10；
 ## 移速 = 5 + (敏捷-5)×0.05；攻击 = 武器区间中点 × 力量倍率 × 刀术训练（面板期望值）。
 func _refresh_derived_stats() -> void:
-	var a: Dictionary = GameState.effective_attributes() if campaign_mode else GameState.attributes
+	var a: Dictionary = GameState.effective_attributes() if campaign_mode else GameState.debug_attributes()
 	max_hp = Attributes.max_hp(a)
 	max_mp = Attributes.max_mp(a)
 	max_stamina = Attributes.max_stamina(a)
@@ -204,12 +212,10 @@ func roll_attack_damage() -> float:
 func _unhandled_input(event: InputEvent) -> void:
 	if not alive or not is_physics_processing():
 		return
-	if battle_mode:
-		return  # 回合战中按键由 battle_runner 的菜单处理，实时输入一律忽略
 	# 副手武器（燧发枪）由 shoot 动作触发（默认鼠标右键；旧 F 键方案已迁移，策划案 §3.3）。
 	# 走 InputMap 而不是硬判 MOUSE_BUTTON_RIGHT：右键也要能在设置页改键。
 	if event.is_action_pressed("shoot"):
-		_fire_flintlock()
+		_flintlock_pending = true
 	# 野战战技·直踹（默认 K）：走 InputMap，可在设置页改键。
 	if event.is_action_pressed("kick"):
 		_start_kick()
@@ -228,16 +234,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack"):
 		# 攻击朝鼠标所指的地面方向出手
 		var point = mouse_ground_point()
+		var direction: Vector3 = facing
 		if point != null:
-			var direction: Vector3 = point - global_position
+			direction = point - global_position
 			direction.y = 0
-			if direction.length() > 0.15:
-				buffered_direction = direction.normalized()
-				buffer_time = 0.15
+			if direction.length() <= 0.15:
+				direction = facing
+		buffered_direction = direction.normalized()
+		buffer_time = 0.15
 	if event.is_action_pressed("bomb") and bombs > 0 and not dodging and attack_cd <= 0:
 		_throw_bomb()
 	if event.is_action_pressed("potion") and potions > 0 and hp < max_hp and ring_windup <= 0.0 and wave_windup <= 0.0 and shadow_windup <= 0.0:
 		potions -= 1
+		GameAudio.play_sfx("healing", global_position, -3.0)
 		if campaign_mode:
 			healing_time = 1.2
 			healing_uses += 1
@@ -248,10 +257,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if not alive:
 		return
-	if battle_mode:
-		velocity = Vector3.ZERO
-		return  # 回合战中：实时移动/普攻/闪避/技能全部让位给 battle_runner
 	shot_cd = maxf(0.0, shot_cd - delta)
+	if _flintlock_pending:
+		_flintlock_pending = false
+		_fire_flintlock()
 	shield_cd = maxf(0.0, shield_cd - delta)
 	ring_cd = maxf(0.0, ring_cd - delta)
 	wave_cd = maxf(0.0, wave_cd - delta)
@@ -281,10 +290,16 @@ func _physics_process(delta: float) -> void:
 	# 攻击/闪避/饮用中不提速。
 	running = input_dir.length_squared() > 0.001 \
 		and attack_cd <= 0.0 and not dodging and healing_time <= 0.0
+	if running:
+		_footstep_timer += delta
+		if _footstep_timer >= 0.44:
+			_footstep_timer = 0.0
+			GameAudio.play_sfx("footstep", global_position, -15.0, randf_range(0.94, 1.06))
+	else:
+		_footstep_timer = 0.0
 	attack_cd = maxf(0, attack_cd - delta)
 	kick_cd = maxf(0.0, kick_cd - delta)
 	dodge_cd = maxf(0, dodge_cd - delta)
-	clash_cd = maxf(0, clash_cd - delta)
 	ring_lock = maxf(0.0, ring_lock - delta)
 	if ring_windup > 0.0:
 		ring_windup -= delta
@@ -300,13 +315,14 @@ func _physics_process(delta: float) -> void:
 			_resolve_shadow()
 	mp = clampf(mp + max_mp * CombatSkills.MP_REGEN_PER_SECOND * delta, 0, max_mp)
 	stamina = clampf(stamina + CombatSkills.STAMINA_REGEN_PER_SECOND * delta, 0, max_stamina)
-	if Input.is_action_just_pressed("dodge") and dodge_cd <= 0 and attack_cd <= 0 and _is_grounded() \
-			and stamina >= CombatSkills.DODGE_STAMINA_COST:
-		stamina -= CombatSkills.DODGE_STAMINA_COST
-		dodging = true
-		dodge_timer = dodge_duration
-		dodge_cd = dodge_cooldown
-		dodge_dir = world_move(input_dir).normalized() if input_dir != Vector2.ZERO else facing
+	if kick_hit_pending:
+		kick_elapsed += delta
+		if kick_elapsed >= CombatSkills.KICK_HIT_TIME:
+			kick_hit_pending = false
+			attack_hit = true
+			_hurt_in_cone(2.8, roll_attack_damage() * CombatSkills.KICK_MULTIPLIER, 0.35, CombatSkills.KICK_STUN, true)
+	if Input.is_action_just_pressed("dodge"):
+		_try_dodge()
 	if buffer_time > 0 and attack_cd <= 0 and not dodging:
 		facing = buffered_direction
 		buffer_time = 0
@@ -314,7 +330,7 @@ func _physics_process(delta: float) -> void:
 	buffer_time = maxf(0, buffer_time - delta)
 	if attack_elapsed >= 0:
 		attack_elapsed += delta
-		if attack_elapsed >= CombatSkills.COMBO_HIT_TIMES[combo_stage] and not attack_hit:
+		if attack_elapsed >= current_attack_hit_time and not attack_hit:
 			attack_hit = true
 			_hurt_in_cone(attack_range + CombatSkills.COMBO_REACH_BONUS[combo_stage], roll_attack_damage() * CombatSkills.COMBO_MULTIPLIERS[combo_stage], CombatSkills.COMBO_ARC_HALF[combo_stage], CombatSkills.STUN_ON_ATTACK)
 		if attack_cd <= 0:
@@ -328,7 +344,8 @@ func _physics_process(delta: float) -> void:
 		if dodge_timer <= 0:
 			dodging = false
 			invulnerable = false
-	var target := world_move(input_dir) * move_speed * (run_speed_factor if running else 1.0) * (0.35 if attack_cd > 0 else 1.0)
+	var attack_move := (RECOVERY_MOVE_FACTOR if attack_hit else 0.35) if attack_cd > 0.0 else 1.0
+	var target := world_move(input_dir) * move_speed * (run_speed_factor if running else 1.0) * attack_move
 	if ring_lock > 0.0:
 		target = Vector3.ZERO
 	if campaign_mode and hp / max_hp < 0.1:
@@ -348,6 +365,27 @@ func _physics_process(delta: float) -> void:
 		velocity = velocity.lerp(target, minf(1, acceleration * delta))
 	move_and_slide()
 	_clamp_to_bounds()
+
+## 有效帧前不允许取消；命中判定完成后可用剃取消后摇。
+func _try_dodge() -> bool:
+	if dodge_cd > 0.0 or dodging or healing_time > 0.0 or ring_lock > 0.0 or not _is_grounded():
+		return false
+	if attack_cd > 0.0 and not attack_hit:
+		return false
+	if stamina < CombatSkills.DODGE_STAMINA_COST:
+		GameState.push_message("体力不足 · 剃需要 %d" % int(CombatSkills.DODGE_STAMINA_COST))
+		return false
+	if attack_cd > 0.0:
+		attack_cd = 0.0
+		attack_elapsed = -1.0
+		attack_hit = false
+		buffer_time = 0.0
+	stamina -= CombatSkills.DODGE_STAMINA_COST
+	dodging = true
+	dodge_timer = dodge_duration
+	dodge_cd = dodge_cooldown
+	dodge_dir = world_move(input_dir).normalized() if input_dir != Vector2.ZERO else facing
+	return true
 
 ## 把 WASD 的输入向量按机位朝向转成世界方向：W 永远朝画面深处走（远离镜头）。
 ## 机位转到 180° 之后 W 依旧往画面上方走，不会把角色往画面下方送。
@@ -414,6 +452,7 @@ func _throw_bomb() -> void:
 		target = global_position + facing * 2.5
 		target.y = 0.06
 	bombs -= 1
+	GameAudio.play_sfx("bomb", global_position, -3.0)
 	bombs_changed.emit(bombs)
 	var bomb := BombScene.instantiate()
 	get_parent().add_child(bomb)
@@ -422,103 +461,34 @@ func _throw_bomb() -> void:
 
 func _start_attack() -> void:
 	combo_stage = 0
+	current_attack_animation = "attack_horizontal" if _next_horizontal_attack else "attack"
+	_next_horizontal_attack = not _next_horizontal_attack
+	current_attack_hit_time = CombatSkills.HORIZONTAL_ATTACK_HIT_TIME if current_attack_animation == "attack_horizontal" else CombatSkills.COMBO_HIT_TIMES[0]
 	attack_cd = CombatSkills.COMBO_COOLDOWNS[0]
 	attack_elapsed = 0
 	attack_hit = false
+	GameAudio.play_sfx("sword_swing", global_position, -2.0, randf_range(0.94, 1.06))
 	attacked.emit(0)
 
 ## 野战战技·直踢（K 键）：即时挥踢，复用图集 kick 帧；命中附眩晕（P2 眩晕条接入后生效）。
 signal kicked
 
 func _start_kick() -> void:
-	if kick_cd > 0.0 or stamina < CombatSkills.KICK_STAMINA_COST or dodging or battle_mode or attack_cd > 0.0:
+	if kick_cd > 0.0 or dodging or healing_time > 0.0 or attack_cd > 0.0:
+		return
+	if stamina < CombatSkills.KICK_STAMINA_COST:
+		GameState.push_message("体力不足 · 直踹需要 %d" % int(CombatSkills.KICK_STAMINA_COST))
 		return
 	stamina -= CombatSkills.KICK_STAMINA_COST
 	kick_cd = CombatSkills.KICK_COOLDOWN
 	attack_cd = 0.9
 	attack_elapsed = -1.0
+	attack_hit = false
+	kick_elapsed = 0.0
+	kick_hit_pending = true
 	buffer_time = 0.0
-	# 前向短判定：命中叠 25 点眩晕；若目标已在眩晕态则直接处决（docs/COMBAT_DESIGN.md §1.4）。
-	_hurt_in_cone(2.8, roll_attack_damage() * CombatSkills.KICK_MULTIPLIER, 0.35, CombatSkills.KICK_STUN, true)
+	GameAudio.play_sfx("kick", global_position, -2.0, randf_range(0.96, 1.04))
 	kicked.emit()
-
-## ---------- 回合战执行入口（battle_runner 调用，不以按键驱动） ----------
-
-## 回合移动：沿 battle_turn_dir 步进 move 米。
-## 走 move_and_collide（物理查询）而不是直接改 global_position —— 直接赋值会穿墙；
-## 旧实现还顺手把 y 拍成 0，接上真有高低差的地图后会把玩家压进地里。
-## 撞上就停在接触点（move_and_collide 不滑动）；够不到目标由场景提示"距离不够"。
-func battle_execute_move(move: float) -> void:
-	if move <= 0.001:
-		return
-	if battle_turn_dir.length_squared() > 0.001:
-		facing = battle_turn_dir
-	var step := facing
-	step.y = 0.0
-	if step.length_squared() < 0.001:
-		return
-	move_and_collide(step.normalized() * move)
-
-## 回合攻击：扇形判定（reach + 弧半角）；侧/背击乘数由 controller 传入。
-func battle_execute_attack(bonus_mult := 1.0) -> void:
-	_hurt_in_cone(attack_range + CombatSkills.COMBO_REACH_BONUS[0],
-		roll_attack_damage() * CombatSkills.COMBO_MULTIPLIERS[0] * bonus_mult,
-		CombatSkills.COMBO_ARC_HALF[0])
-	attacked.emit(0)
-
-## 回合战技（battle_runner 调用）：**扣完蓝立即结算**，只吃 MP 与「这一回合」这个门闩。
-##
-## 为什么不复用实时的 _start_wave / _start_ring：battle_mode 下 _physics_process 直接 return，
-## ring_cd / wave_cd / *_windup 一个都不走，旧入口的后遗症是
-##   ① 刀芒扣了 12 点蓝，但前摇（wave_windup）永远到不了点 → 伤害从不结算；
-##   ② 被设成 2.5 的 wave_cd 再不递减 → 第二次选刀芒被静默拦掉，整场只能"放"一次；
-##   ③ 环断直调 _resolve_ring()，干脆不扣蓝。
-## 返回 false = 蓝不够（场景据此提示），true = 已出手。
-func battle_execute_skill(skill: String) -> bool:
-	if battle_turn_dir.length_squared() > 0.001:
-		facing = battle_turn_dir
-	match skill:
-		"sword_wave":
-			if mp < CombatSkills.WAVE_MP_COST:
-				return false
-			mp -= CombatSkills.WAVE_MP_COST
-			wave_direction = facing
-			attack_elapsed = -1.0
-			attacked.emit(0)
-			_release_wave()
-			return true
-		"ring":
-			if mp < CombatSkills.RING_MP_COST:
-				return false
-			mp -= CombatSkills.RING_MP_COST
-			attack_elapsed = -1.0
-			attacked.emit(0)
-			_resolve_ring()
-			return true
-		_:
-			push_warning("battle skill not wired: " + skill)
-			return false
-
-## 回合道具：药剂即时回 40% / 炸弹原地 AoE。
-func battle_execute_item(item: String) -> void:
-	match item:
-		"potion":
-			if potions <= 0:
-				return
-			potions -= 1
-			hp = minf(max_hp, hp + max_hp * 0.4)
-			hp_changed.emit(hp, max_hp)
-		"bomb":
-			if bombs <= 0:
-				return
-			bombs -= 1
-			bombs_changed.emit(bombs)
-			var b := BombScene.instantiate()
-			get_parent().add_child(b)
-			b.global_position = global_position + Vector3(0, 1.1, 0)
-			(b as Node3D).place_at(global_position + battle_turn_dir * 5.0)
-		_:
-			push_warning("battle item not wired: " + item)
 
 func _start_wave(forward := Vector3.ZERO) -> void:
 	if wave_cd > 0.0 or attack_cd > 0.0 or dodging or mp < CombatSkills.WAVE_MP_COST:
@@ -537,13 +507,14 @@ func _start_wave(forward := Vector3.ZERO) -> void:
 	wave_cd = CombatSkills.WAVE_COOLDOWN
 	wave_windup = CombatSkills.WAVE_WINDUP
 	attack_cd = base_attack_cooldown
+	GameAudio.play_sfx("magic_cast", global_position, -3.0)
 	attack_elapsed = -1.0
 	buffer_time = 0.0
-	attacked.emit(0)
+	skill_animation_requested.emit("sword_wave")
 
-func _release_wave() -> void:
+func _release_wave(damage_multiplier := 1.0) -> void:
 	var wave := SwordWave.new()
-	wave.configure(self, wave_direction, roll_attack_damage() * CombatSkills.WAVE_WEAPON_MULTIPLIER)
+	wave.configure(self, wave_direction, roll_attack_damage() * CombatSkills.WAVE_WEAPON_MULTIPLIER * damage_multiplier)
 	get_parent().add_child(wave)
 	wave.global_position = global_position + wave_direction * 1.2
 
@@ -591,6 +562,7 @@ func _start_shadow() -> void:
 	buffer_time = 0.0
 
 func _resolve_shadow() -> void:
+	GameAudio.play_sfx("magic_cast", global_position, -3.0, 0.82)
 	var target := shadow_target
 	shadow_target = null
 	if not is_instance_valid(target) or not target.is_alive() or global_position.distance_to(target.global_position) > CombatSkills.SHADOW_MAX_DISTANCE:
@@ -658,7 +630,10 @@ func _end_shield() -> void:
 	shield_visual.visible = false
 
 func _start_ring() -> void:
-	if ring_cd > 0.0 or attack_cd > 0.0 or dodging or mp < CombatSkills.RING_MP_COST:
+	if mp < CombatSkills.RING_MP_COST:
+		GameState.push_message("MP 不足 · 环断需要 %d" % int(CombatSkills.RING_MP_COST))
+		return
+	if ring_cd > 0.0 or attack_cd > 0.0 or dodging:
 		return
 	mp -= CombatSkills.RING_MP_COST
 	ring_cd = CombatSkills.RING_COOLDOWN
@@ -666,10 +641,11 @@ func _start_ring() -> void:
 	ring_lock = CombatSkills.RING_RECOVERY
 	attack_cd = CombatSkills.RING_RECOVERY
 	buffer_time = 0.0
-	attacked.emit(0)  # 复用单段斩击帧，命中仍按环断时间轴结算
+	GameAudio.play_sfx("magic_cast", global_position, -3.0, 0.92)
+	skill_animation_requested.emit("ring_break")
 
-func _resolve_ring() -> void:
-	var damage := roll_attack_damage() * CombatSkills.RING_WEAPON_MULTIPLIER
+func _resolve_ring(damage_multiplier := 1.0) -> void:
+	var damage := roll_attack_damage() * CombatSkills.RING_WEAPON_MULTIPLIER * damage_multiplier
 	var foes := get_tree().get_nodes_in_group("enemies")
 	foes.append_array(get_tree().get_nodes_in_group("targets"))
 	for enemy in foes:
@@ -706,14 +682,26 @@ func _show_ring_fx() -> void:
 	tween.chain().tween_callback(fx.queue_free)
 
 func _damage_target(enemy: Node, damage: float, knock_dir: Vector3, true_damage := 0.0, stun_amount := 0.0, execute := false) -> void:
+	if enemy.has_method("is_faking_death") and enemy.is_faking_death():
+		return
 	var was: bool = enemy.is_alive()
-	# 眩晕态被直踹命中 = 处决击杀（docs/COMBAT_DESIGN.md §1.4）。
+	var was_stunned: bool = was and enemy.has_method("is_stunned") and enemy.is_stunned()
+	var hp_before: Variant = enemy.get("hp_")
+	if hp_before == null:
+		hp_before = enemy.get("hp")
+	# 眩晕态被直踹命中 = 处决击杀（docs/REALTIME_COMBAT_EXTRACTION.md）。
 	var executed: bool = execute and was and enemy.has_method("is_stunned") and enemy.is_stunned() \
 			and enemy.has_method("apply_execution")
 	if executed:
 		enemy.apply_execution()
 	else:
 		enemy.take_damage(damage, knock_dir, self, true_damage)
+	if is_instance_valid(enemy):
+		var hp_after: Variant = enemy.get("hp_")
+		if hp_after == null:
+			hp_after = enemy.get("hp")
+		var dealt := maxf(0.0, float(hp_before) - float(hp_after)) if hp_before != null and hp_after != null else damage + true_damage
+		_show_hit_feedback(enemy, dealt, executed)
 	# 命中回蓝：每次打到敌人回复最大法力的 1%（炸弹等不经本函数的伤害不计）。
 	mp = minf(max_mp, mp + max_mp * CombatSkills.MP_ON_HIT_RATIO)
 	hit_target.emit(enemy, damage + true_damage)
@@ -722,12 +710,31 @@ func _damage_target(enemy: Node, damage: float, knock_dir: Vector3, true_damage 
 		if wid != "":
 			var tier := int(enemy.get("kill_tier") if enemy.get("kill_tier") != null else 1)
 			GameState.damage_item_dura(wid, GameState.Equip.kill_dur(tier))
-	# 眩晕：即时战斗的平A / 直踹命中都叠；回合内的攻击走默认 0（回合内不再积累）。
+	# 眩晕：即时战斗的平A / 直踹命中都叠。
 	if not executed and stun_amount > 0.0 and enemy.is_alive() and enemy.has_method("add_stun"):
 		enemy.add_stun(stun_amount)
-	# 打到"本来就已经眩晕"的目标 → 通知场景（山之主据此进入回合制）。
-	if was and enemy.is_alive() and enemy.has_method("is_stunned") and enemy.is_stunned():
-		struck_stunned_foe.emit(enemy)
+		if not was_stunned and enemy.has_method("executable") and enemy.executable():
+				GameState.push_message("目标已眩晕 · 按 %s 直踹处决" % KeyBindings.key_text("kick"))
+func _show_hit_feedback(enemy: Node, dealt: float, executed: bool) -> void:
+	var spatial := enemy as Node3D
+	if spatial == null:
+		return
+	var text_fx := Label3D.new()
+	text_fx.add_to_group("hit_feedback")
+	text_fx.text = "处决" if executed else ("%.0f" % dealt if dealt >= 1.0 else "命中")
+	text_fx.font_size = 42
+	text_fx.pixel_size = 0.011
+	text_fx.outline_size = 12
+	text_fx.modulate = Color("ffd891") if executed else Color("ff6b5c")
+	text_fx.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	text_fx.no_depth_test = true
+	get_parent().add_child(text_fx)
+	var height := maxf(1.7, float(enemy.hit_radius()) * 1.25) if enemy.has_method("hit_radius") else 1.7
+	text_fx.global_position = spatial.global_position + Vector3(0, height, 0)
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(text_fx, "global_position", text_fx.global_position + Vector3(0, 0.65, 0), 0.38)
+	tween.tween_property(text_fx, "modulate:a", 0.0, 0.38)
+	tween.chain().tween_callback(text_fx.queue_free)
 
 func _hurt_in_cone(reach: float, damage: float, arc_half := -1.0, stun_amount := 0.0, execute := false) -> void:
 	var foes := get_tree().get_nodes_in_group("enemies")
@@ -747,32 +754,12 @@ func _hurt_in_cone(reach: float, damage: float, arc_half := -1.0, stun_amount :=
 		var used_arc: float = arc_half if arc_half >= 0.0 else attack_arc_half
 		if offset.length() > 0.2 and offset.normalized().dot(facing) < cos(used_arc):
 			continue
-		# 拼刀：对方近战攻击正处在出手窗口内（其命中时刻与我们相差 ≤ CLASH_WINDOW），
-		# 本次双方都不结算伤害，敌人被弹开并进入短硬直。
-		if clash_cd <= 0.0 and enemy.has_method("can_be_clashed") and enemy.can_be_clashed() \
-				and enemy.has_method("is_strike_imminent") and enemy.is_strike_imminent():
-			register_clash()
-			enemy.on_clash(offset.normalized() if offset.length() > 0.01 else facing)
-			continue
-		# 拼刀刚触发后短免疫：防止敌人先手判定拼刀后，玩家本段攻击的后续命中帧再补刀
-		if enemy.has_method("is_clash_immune") and enemy.is_clash_immune():
-			continue
 		var bonus := 0.0
 		if hunter_active and enemy.get("has_energy") == true and enemy.get("max_hp") != null:
 			bonus = float(enemy.get("max_hp")) * CombatSkills.HUNTER_TRUE_RATIO
 		_damage_target(enemy, damage, facing * 6, bonus, stun_amount, execute)
-		# 单段斩击即普攻全部：每次命中都留影缝标记，保住影刺技能的前置
 		if attack_elapsed >= 0.0 and enemy.is_alive():
 			_mark_pierced(enemy)
-
-## 玩家是否处于可拼刀的挥击窗口：出手到命中后一小段。敌人攻击在这期间落地则双方对拼。
-func can_clash_now() -> bool:
-	return clash_cd <= 0.0 and attack_elapsed >= 0.0 and attack_elapsed <= CombatSkills.COMBO_HIT_TIMES[combo_stage] + CLASH_WINDOW
-
-## 拼刀已触发（玩家侧冷却与提示，玩家本次攻击与敌人攻击均不结算伤害）。
-func register_clash() -> void:
-	clash_cd = CLASH_COOLDOWN
-	GameState.message.emit("拼刀！")
 
 func take_damage(amount: float, _from_dir := Vector3.ZERO) -> void:
 	if not alive or invulnerable:
@@ -792,6 +779,8 @@ func take_damage(amount: float, _from_dir := Vector3.ZERO) -> void:
 			GameState.push_message("傲歌 · 护盾破碎")
 	var before := hp
 	hp = maxf(0, hp - final)
+	if final > 0.0:
+		GameAudio.play_sfx("player_hurt", global_position, -2.0, randf_range(0.96, 1.04))
 	hp_changed.emit(hp, max_hp)
 	received_hit.emit()
 	if campaign_mode and final > 0:
@@ -833,11 +822,12 @@ func _fire_flintlock() -> void:
 		return
 	bullets -= 1
 	shot_cd = 1.8
+	GameAudio.play_sfx("gunshot", global_position, -1.0)
 	facing = direction.normalized()
 	var nearest: Node3D = null
 	var distance := 22.0
 	for enemy in get_tree().get_nodes_in_group("enemies"):
-		if not enemy.is_alive():
+		if not enemy.is_alive() or not _has_flintlock_line_of_sight(enemy):
 			continue
 		var offset: Vector3 = enemy.global_position - global_position
 		offset.y = 0
@@ -852,3 +842,11 @@ func _fire_flintlock() -> void:
 			var tier := int(nearest.get("kill_tier") if nearest.get("kill_tier") != null else 1)
 			GameState.damage_item_dura("flintlock", GameState.Equip.kill_dur(tier))
 	GameState.push_message("燧发枪发射 · 剩余弹药 %d" % bullets)
+
+func _has_flintlock_line_of_sight(target: Node3D) -> bool:
+	var start := global_position + Vector3.UP * 1.0
+	var end := target.global_position + Vector3.UP * 0.85
+	var query := PhysicsRayQueryParameters3D.create(start, end)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return hit.is_empty() or hit.get("collider") == target

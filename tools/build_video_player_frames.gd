@@ -2,8 +2,8 @@ extends SceneTree
 ## 把「最新版动作 sheet 抽出的 12 帧序列」接入游戏：生成 SpriteFrames。
 ##
 ## 来源：assets/characters/black_swordsman_video/<中文动作>_<方向>_12.png
-##   —— 2026-09-21 起全部 8 个动作都由 tools/extract_latest_12.py 从用户的新版 sheet
-##      按块切出（每方向 12 帧，统一 224×192 格、本体 104px、地面线 y=176）。
+##   —— 原有 8 个动作由 tools/extract_latest_12.py 切出；横斩、环断、刀芒为逐方向补入的动作帧。
+##      所有输入均为每方向 12 帧，统一 224×192 格、本体约 104px、地面线 y=176。
 ##
 ## 输出：res://assets/characters/player_frames_video.tres
 ## 运行：godot --headless --path . --script res://tools/build_video_player_frames.gd
@@ -20,6 +20,9 @@ const ACTION_MAP := {
 	"行走": "walk",
 	"跑步": "run",
 	"攻击": "attack",
+	"横斩": "attack_horizontal",
+	"环断": "ring_break",
+	"刀芒": "sword_wave",
 	"直踹": "kick",
 	"受击": "hit",
 	"闪避": "dodge",
@@ -48,7 +51,7 @@ func _init() -> void:
 	frames.remove_animation("default")
 	var summary: Array[String] = []
 
-	# ---- 12 帧序列（8 动作 × 8 方向）----
+	# ---- 12 帧序列（11 动作 × 8 方向）----
 	for cn in ACTION_MAP.keys():
 		var action: String = ACTION_MAP[cn]
 		for dir in DIRS:

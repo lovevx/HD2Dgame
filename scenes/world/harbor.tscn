@@ -28,7 +28,6 @@
 [ext_resource type="Resource" path="res://assets/hd2d_presets/assets/SM_Nanjiang_YYPshidun002_0b25205e.tres" id="30_i2v4w"]
 [ext_resource type="Resource" path="res://assets/hd2d_presets/assets/SM_JN_fangzi006_0e1b3e44.tres" id="32_4mng2"]
 [ext_resource type="Resource" path="res://assets/hd2d_presets/assets/SM_JN_fangzi001_ce7ea092.tres" id="32_s7vct"]
-[ext_resource type="Resource" path="res://assets/hd2d_presets/assets/SM_gsc_gusuchengpaizi001_ac0e40b3.tres" id="33_4mng2"]
 [ext_resource type="Resource" path="res://assets/hd2d_presets/assets/SM_JN_fangzi005_e0758af2.tres" id="33_rl741"]
 [ext_resource type="Resource" path="res://assets/hd2d_presets/assets/SM_JN_fangzi002_6ed1f2d7.tres" id="34_2k8oc"]
 [ext_resource type="Resource" path="res://assets/hd2d_presets/assets/SM_Item_NJhuojia001_c80a7ee1.tres" id="34_mbpar"]
@@ -1308,7 +1307,7 @@ script = ExtResource("7_f3i1a")
 asset = ExtResource("12_csrwe")
 
 [node name="SM_JN_xiaochuan004" type="Node3D" parent="." unique_id=1353008774]
-transform = Transform3D(-0.006762132, 0, -0.9999771, 0, 1, 0, 0.9999771, 0, -0.006762132, 12.656462, -0.72, 25.67053)
+transform = Transform3D(-0.006762132, 0, -0.9999771, 0, 1, 0, 0.9999771, 0, -0.006762132, 12.656462, -0.72, 26.66234)
 script = ExtResource("7_f3i1a")
 asset = ExtResource("13_a1l76")
 
@@ -1355,12 +1354,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.35, 1.2, 25)
 shape = SubResource("BoxShape3D_60nx0")
 
 [node name="@Node3D@27" type="Node3D" parent="." unique_id=211800848]
-transform = Transform3D(-0.10452851, 0, 0.9945219, 0, 1, 0, -0.9945219, 0, -0.10452851, 3.3752394, -0.72, 24.412663)
+transform = Transform3D(-0.10452851, 0, 0.9945219, 0, 1, 0, -0.9945219, 0, -0.10452851, 1.654532, -0.72, 24.412663)
 script = ExtResource("7_f3i1a")
 asset = ExtResource("10_ud5e2")
 
 [node name="@Node3D@28" type="Node3D" parent="." unique_id=1300399711]
-transform = Transform3D(-0.022709139, 0, 0.99974215, 0, 1, 0, -0.99974215, 0, -0.022709139, 7.6, -0.72, 24.440773)
+transform = Transform3D(-0.022709139, 0, 0.99974215, 0, 1, 0, -0.99974215, 0, -0.022709139, 9.026644, -0.72, 24.440773)
 script = ExtResource("7_f3i1a")
 asset = ExtResource("11_bxc83")
 
@@ -1370,7 +1369,7 @@ script = ExtResource("7_f3i1a")
 asset = ExtResource("12_csrwe")
 
 [node name="@Node3D@30" type="Node3D" parent="." unique_id=42883623]
-transform = Transform3D(0.20791166, 0, -0.9781476, 0, 1, 0, 0.9781476, 0, 0.20791166, 36.6, -0.72, 20.6)
+transform = Transform3D(0.20791166, 0, -0.9781476, 0, 1, 0, 0.9781476, 0, 0.20791166, 39.54273, -0.72, 20.6)
 script = ExtResource("7_f3i1a")
 asset = ExtResource("13_a1l76")
 
@@ -2926,7 +2925,7 @@ script = ExtResource("7_f3i1a")
 asset = ExtResource("28_lgbdo")
 
 [node name="SM_JN_yuchuan004" type="Node3D" parent="SouthPort/Pier22" unique_id=1718148771]
-transform = Transform3D(-0.10452851, 0, 0.9945219, 0, 1, 0, -0.9945219, 0, -0.10452851, 33, -0.9, 31)
+transform = Transform3D(-0.10452851, 0, 0.9945219, 0, 1, 0, -0.9945219, 0, -0.10452851, 33, -3.4804778, 31)
 script = ExtResource("7_f3i1a")
 asset = ExtResource("29_mxr8c")
 
@@ -3019,7 +3018,7 @@ omni_range = 7.5
 omni_attenuation = 1.5
 
 [node name="SM_JN_yuchuan003" type="Node3D" parent="SouthPort/InnerBasin" unique_id=997262371]
-transform = Transform3D(0.9975641, 0, 0.06975647, 0, 1, 0, -0.06975647, 0, 0.9975641, 4.8, -0.72, 21.9)
+transform = Transform3D(0.12022133, 0, -0.9927471, 0, 1, 0, 0.9927471, 0, 0.12022133, 5.6347737, -0.72, 24.3279)
 script = ExtResource("7_f3i1a")
 asset = ExtResource("28_lgbdo")
 
@@ -3096,14 +3095,6 @@ asset = ExtResource("33_rl741")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0, -25)
 script = ExtResource("7_f3i1a")
 asset = ExtResource("34_2k8oc")
-
-[node name="SM_gsc_gusuchengpaizi001" type="Node3D" parent="ShopDistrict" unique_id=827037759]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 5.55, -20.28)
-script = ExtResource("7_f3i1a")
-asset_overrides = {
-"static_collision": false
-}
-asset = ExtResource("33_4mng2")
 
 [node name="SM_Item_lianzi001" type="Node3D" parent="ShopDistrict" unique_id=248698880]
 transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, -24, 2.35, -20.5)
