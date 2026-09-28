@@ -881,7 +881,7 @@ func _forge_decompose() -> void:
 			_forge_decompose())
 
 func _forge_sell() -> void:
-	var lines := ["乐园回收 · 4 折回收公式 / 材料固定单价\n乐园币：%d" % GameState.coins]
+	var lines := ["乐园回收 · 装备按评分与耐久估价 / 材料固定单价\n乐园币：%d" % GameState.coins]
 	for id in _forge_pool():
 		lines.append(_forge_line(id))
 	var bag_lines: Array[String] = []

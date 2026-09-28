@@ -6,20 +6,15 @@ const SettingsPanelScript := preload("res://scripts/ui/settings_panel.gd")
 const TestPanelScript := preload("res://scripts/ui/test_panel.gd")
 const DialogueBoxScript := preload("res://scripts/ui/dialogue_box.gd")
 const Attributes := preload("res://data/attributes.gd")
-const CombatSkills := preload("res://data/combat_skills.gd")
+const PlayerStatusHud := preload("res://scripts/ui/player_status_hud.gd")
 const PlayerFrames := preload("res://assets/characters/player_frames_video.tres")
 const CursorTexture := preload("res://assets/ui/cursor.png")
 ## 光标图里剑尖所在的像素位置：贴图按这个点对准鼠标，指针才不会跑偏。
 const CURSOR_TIP := Vector2(8, 8)
 var player: Node
 var header: Label
-var hp_bar: ProgressBar
-var mp_bar: ProgressBar
-var stamina_bar: ProgressBar
-var hp_value_label: Label
-var mp_value_label: Label
-var stamina_value_label: Label
-var stats: Label
+## 资源条 / 状态标签 / 快捷栏 / 低血红晕都在这个子控件里（player_status_hud.gd）。
+var status_hud: Control
 var objective_name: Label
 var objective: Label
 var objective_shortcut: Label
@@ -73,7 +68,6 @@ const SLOT_TITLE_MAP := {
 	"项链": "necklace", "戒指": "ring", "戒指Ⅱ": "ring_sub",
 }
 var _choice_buttons: Array[Button] = []
-var hotbar_slots: Array[Dictionary] = []
 
 func _ready() -> void:
 	_ensure_test_panel_action()
@@ -83,10 +77,14 @@ func _ready() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
+	# 状态层最先加：它自带的低血红晕铺满全屏，要压在其它 HUD 框下面。
+	status_hud = PlayerStatusHud.new()
+	status_hud.name = "PlayerStatus"
+	status_hud.player = player
+	status_hud.show_world_stats = campaign_controller != null
+	root.add_child(status_hud)
 	_build_player_badge(root)
-	_build_player_status(root)
 	_build_objective(root)
-	_build_hotbar(root)
 	var hint := _label(root, _hud_hint_text(), 15, SystemUI.TEXT_DIM)
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	hint.offset_left = 32
@@ -94,19 +92,22 @@ func _ready() -> void:
 	hint.offset_top = -45
 	hint.offset_bottom = -12
 	hint_bar = hint
+	# 乐园提示：屏幕正中偏下，高过左下状态框与右下快捷栏，不与两者抢位置。
 	message = _label(root, "", 24, SystemUI.ACCENT)
 	message.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	message.offset_left = 430
-	message.offset_right = -920
-	message.offset_top = -214
-	message.offset_bottom = -168
+	message.offset_left = 560
+	message.offset_right = -560
+	message.offset_top = -262
+	message.offset_bottom = -214
 	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	# 交互提示：贴底居中、小字号，只在进圈时出现，离开或按下操作就消失
+	message.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	# 交互提示：贴底、夹在状态框与快捷栏之间，只在进圈时出现，离开或按下操作就消失
 	prompt = _label(root, "", 22, Color("ffe58a"))
 	prompt.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	prompt.offset_left = 430
-	prompt.offset_right = -920
+	prompt.offset_left = 440
+	prompt.offset_right = -900
 	prompt.offset_top = -96
 	prompt.offset_bottom = -56
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -165,55 +166,6 @@ func _build_player_badge(root: Control) -> void:
 	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	SystemUI.decor(frame)
 
-## 左下角只保留三条战斗资源与少量物资 / 世界数值。
-func _build_player_status(root: Control) -> void:
-	var frame := PanelContainer.new()
-	frame.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	frame.offset_left = 32
-	frame.offset_right = 426
-	frame.offset_top = -248
-	frame.offset_bottom = -50
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.add_theme_stylebox_override("panel", SystemUI.flat(Color(SystemUI.BG, 0.9), Color(SystemUI.BORDER, 0.62), 1, SystemUI.RADIUS, 14))
-	root.add_child(frame)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 5)
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.add_child(box)
-	_label(box, "战斗状态", 16, SystemUI.GOLD)
-	var hp_row := _resource_row(box, "生命", Color("e07770"))
-	hp_bar = hp_row["bar"]
-	hp_value_label = hp_row["value"]
-	var mp_row := _resource_row(box, "法力", SystemUI.CRYSTAL)
-	mp_bar = mp_row["bar"]
-	mp_value_label = mp_row["value"]
-	var stamina_row := _resource_row(box, "体力", Color("a8d977"))
-	stamina_bar = stamina_row["bar"]
-	stamina_value_label = stamina_row["value"]
-	var divider := HSeparator.new()
-	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_child(divider)
-	stats = _label(box, "", 14, SystemUI.TEXT_DIM)
-	stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	SystemUI.decor(frame)
-
-func _resource_row(parent: Node, title: String, color: Color) -> Dictionary:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(row)
-	var name_label := _label(row, title, 14, SystemUI.TEXT_DIM)
-	name_label.custom_minimum_size.x = 42
-	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var bar := _bar(row, color, Vector2(170, 14))
-	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var value_label := _label(row, "0 / 0", 13, SystemUI.TEXT)
-	value_label.custom_minimum_size.x = 66
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	return {"bar": bar, "value": value_label}
-
 ## 当前任务固定在右上，按名称、简要内容、快捷键分层呈现。
 func _build_objective(root: Control) -> void:
 	var frame := PanelContainer.new()
@@ -242,54 +194,6 @@ func _build_objective(root: Control) -> void:
 	objective_shortcut = _label(box, _task_shortcut_text(), 14, SystemUI.TEXT_DIM)
 	SystemUI.decor(frame)
 
-## 右下快捷栏沿用游戏热键，数值状态显示在对应动作格内。
-func _build_hotbar(root: Control) -> void:
-	var frame := PanelContainer.new()
-	frame.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	frame.offset_left = -900
-	frame.offset_right = -24
-	frame.offset_top = -166
-	frame.offset_bottom = -48
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.add_theme_stylebox_override("panel", SystemUI.flat(Color(SystemUI.BG, 0.9), Color(SystemUI.BORDER, 0.62), 1, SystemUI.RADIUS, 8))
-	root.add_child(frame)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 4)
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.add_child(box)
-	_label(box, "战技与道具", 15, SystemUI.GOLD)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 3)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_child(row)
-	var actions := [
-		["dodge", "剃", "闪避"], ["kick", "直踹", "体力技"], ["huanduan", "环断", "范围刀术"],
-		["sword_wave", "刀芒", "远程刀术"], ["shadow_stab", "影刺", "标记突刺"],
-		["hunter_toggle", "猎魔", "能量状态"], ["aoge", "护盾", "傲歌"], ["attack", "斩击", "普通攻击"],
-		["shoot", "枪", "燧发枪"], ["bomb", "陷阱", "炼金炸弹"], ["potion", "药剂", "回复生命"],
-	]
-	for entry in actions:
-		var slot := PanelContainer.new()
-		slot.custom_minimum_size = Vector2(74, 72)
-		slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.tooltip_text = "%s · %s" % [entry[2], KeyBindings.key_text(entry[0])]
-		slot.add_theme_stylebox_override("panel", SystemUI.flat(Color("111820", 0.96), Color(SystemUI.BORDER, 0.5), 1, 4, 4))
-		row.add_child(slot)
-		var contents := VBoxContainer.new()
-		contents.alignment = BoxContainer.ALIGNMENT_CENTER
-		contents.add_theme_constant_override("separation", 0)
-		contents.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(contents)
-		var title := _label(contents, entry[1], 16, SystemUI.TEXT)
-		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var key := _label(contents, KeyBindings.key_text(entry[0]), 13, SystemUI.CRYSTAL)
-		key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var state := _label(contents, "就绪", 13, SystemUI.TEXT_DIM)
-		state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		hotbar_slots.append({"action": entry[0], "key": key, "state": state, "card": slot, "description": entry[2]})
-	SystemUI.decor(frame)
-
 func _hud_hint_text() -> String:
 	return KeyBindings.line([
 		{"binds": ["move_up", "move_left", "move_down", "move_right"], "desc": "移动"},
@@ -298,72 +202,6 @@ func _hud_hint_text() -> String:
 		{"bind": "open_menu", "desc": "菜单"},
 		{"bind": "key_guide", "desc": "操作说明"},
 	])
-
-func _update_hotbar() -> void:
-	for slot in hotbar_slots:
-		var info := _hotbar_status(str(slot["action"]))
-		var state: Label = slot["state"]
-		state.text = info["text"]
-		state.add_theme_color_override("font_color", info["color"])
-
-func _hotbar_status(action: String) -> Dictionary:
-	match action:
-		"dodge":
-			return _cooldown_status(player.dodge_cd, "位移中" if player.dodging else "")
-		"kick":
-			if player.stamina < CombatSkills.KICK_STAMINA_COST:
-				return {"text": "体力不足", "color": Color("e07770")}
-			return _cooldown_status(player.kick_cd)
-		"huanduan":
-			if player.ring_windup > 0.0:
-				return {"text": "释放中", "color": SystemUI.GOLD}
-			if player.mp < CombatSkills.RING_MP_COST:
-				return {"text": "法力不足", "color": Color("e07770")}
-			return _cooldown_status(player.ring_cd)
-		"sword_wave":
-			if player.wave_windup > 0.0:
-				return {"text": "释放中", "color": SystemUI.GOLD}
-			if player.mp < CombatSkills.WAVE_MP_COST:
-				return {"text": "法力不足", "color": Color("e07770")}
-			return _cooldown_status(player.wave_cd)
-		"shadow_stab":
-			if player.shadow_windup > 0.0:
-				return {"text": "突刺中", "color": SystemUI.GOLD}
-			if not is_instance_valid(player.pierced_target) or player.pierce_timer <= 0.0:
-				return {"text": "需影缝标记", "color": SystemUI.TEXT_DIM}
-			if player.global_position.distance_to(player.pierced_target.global_position) > CombatSkills.SHADOW_MAX_DISTANCE:
-				return {"text": "超出距离", "color": Color("e07770")}
-			if player.mp < CombatSkills.SHADOW_MP_COST:
-				return {"text": "法力不足", "color": Color("e07770")}
-			return _cooldown_status(player.shadow_cd)
-		"hunter_toggle":
-			return {"text": "猎魔中" if player.hunter_active else "待命", "color": SystemUI.GOLD if player.hunter_active else SystemUI.TEXT_DIM}
-		"aoge":
-			if player.shield_hp > 0.0:
-				return {"text": "护盾 %.0f" % player.shield_hp, "color": SystemUI.CRYSTAL}
-			return _cooldown_status(player.shield_cd, "可开启")
-		"attack":
-			return {"text": "常驻攻击", "color": SystemUI.TEXT_DIM}
-		"shoot":
-			if str(GameState.campaign.equipment.get("offhand", "")) != "flintlock":
-				return {"text": "未装备", "color": SystemUI.TEXT_DIM}
-			if player.shot_cd > 0.0:
-				return {"text": "装填中", "color": SystemUI.TEXT_DIM}
-			if player.bullets <= 0:
-				return {"text": "无弹药", "color": Color("e07770")}
-			return {"text": "弹药 %d" % player.bullets, "color": SystemUI.CRYSTAL}
-		"bomb":
-			return {"text": "陷阱 %d" % player.bombs if player.bombs > 0 else "无存量", "color": SystemUI.CRYSTAL if player.bombs > 0 else SystemUI.TEXT_DIM}
-		"potion":
-			if player.potions <= 0:
-				return {"text": "无存量", "color": SystemUI.TEXT_DIM}
-			return {"text": "生命充足" if player.hp >= player.max_hp else "药剂 %d" % player.potions, "color": SystemUI.TEXT_DIM if player.hp >= player.max_hp else SystemUI.CRYSTAL}
-	return {"text": "—", "color": SystemUI.TEXT_DIM}
-
-func _cooldown_status(remaining: float, ready_text := "") -> Dictionary:
-	if remaining > 0.0:
-		return {"text": _cd_text(remaining), "color": SystemUI.TEXT_DIM}
-	return {"text": ready_text if ready_text != "" else "就绪", "color": SystemUI.CRYSTAL}
 
 func _ensure_test_panel_action() -> void:
 	if not InputMap.has_action("test_panel"):
@@ -385,27 +223,9 @@ func _on_settings_changed(section: String) -> void:
 		row["label"].text = KeyBindings.line(row["items"])
 	for row in _guide_keys:
 		row["label"].text = KeyBindings.keys_of(row["item"])
-	for slot in hotbar_slots:
-		var action := str(slot["action"])
-		var key: Label = slot["key"]
-		var card: PanelContainer = slot["card"]
-		key.text = KeyBindings.key_text(action)
-		card.tooltip_text = "%s · %s" % [slot["description"], key.text]
+	status_hud.refresh_keys()
 
 func _process(_delta: float) -> void:
-	hp_bar.value = player.hp
-	mp_bar.value = player.mp
-	stamina_bar.value = player.stamina
-	hp_bar.max_value = player.max_hp
-	mp_bar.max_value = player.max_mp
-	stamina_bar.max_value = player.max_stamina
-	hp_value_label.text = "%d / %d" % [roundi(player.hp), roundi(player.max_hp)]
-	mp_value_label.text = "%d / %d" % [roundi(player.mp), roundi(player.max_mp)]
-	stamina_value_label.text = "%d / %d" % [roundi(player.stamina), roundi(player.max_stamina)]
-	stats.text = "药剂 %02d  ·  陷阱 %02d  ·  弹药 %02d" % [player.potions, player.bombs, player.bullets]
-	if campaign_controller:
-		stats.text += "\n世界之源 %.1f%%  ·  噬灵 %d / 100  ·  乐园币 %d" % [GameState.campaign.source, GameState.campaign.world_mana, GameState.coins]
-	_update_hotbar()
 	# 按下操作键就自动收起说明与剧情条，避免长时间挡住视野
 	if key_guide.visible and _player_action_pressed():
 		key_guide.hide()
@@ -612,10 +432,6 @@ func _guide_group(column: Node, group: Dictionary) -> void:
 			_label(grid, "", 16)
 			_label(grid, entry["now"], 16, Color("b08a5a"))
 			_label(grid, "", 16)
-
-## 冷却文案：可用显示“就绪”，冷却中显示剩余秒数。
-func _cd_text(remaining: float) -> String:
-	return "就绪" if remaining <= 0.0 else "%.1fs" % remaining
 
 ## Esc 菜单：任何关卡里都能一键回选关面板，避免进了场景出不来。
 func _build_menu(root: Control) -> void:
@@ -1001,16 +817,6 @@ func _label(parent: Node, text: String, font_size: int, color := SystemUI.TEXT) 
 	label.add_theme_constant_override("outline_size", 5)
 	parent.add_child(label)
 	return label
-
-func _bar(parent: Node, color: Color, minimum := Vector2(320, 22)) -> ProgressBar:
-	var bar := ProgressBar.new()
-	bar.custom_minimum_size = minimum
-	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.show_percentage = false
-	bar.add_theme_stylebox_override("background", SystemUI.track())
-	bar.add_theme_stylebox_override("fill", SystemUI.fill(color))
-	parent.add_child(bar)
-	return bar
 
 ## 复用 HUD 到其他场景时替换文案；task_name 留空时沿用场景标题。
 func configure(header_text: String, objective_text: String = "", task_name: String = "") -> void:

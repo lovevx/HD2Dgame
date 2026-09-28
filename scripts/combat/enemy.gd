@@ -61,7 +61,7 @@ const PROFILES := {
 		"attack_style": "boar_charge",
 	},
 	Kind.GOLEM: {
-		"name": "肉体傀儡", "hp": 58.0, "speed": 0.95, "damage": 18.0, "reach": 3.0,
+		"name": "肉体傀儡", "hp": 90.0, "speed": 0.95, "damage": 18.0, "reach": 3.0,
 		"windup": 1.1, "keep": 1.7, "color": Color("9a8fb5"), "trim": Color("5d5670"), "energy": false, "stun_max": 40.0,
 		"attack_style": "golem_slam",
 	},

@@ -45,6 +45,18 @@ func _run() -> void:
 	assert_eq(attr.max_hp(base), 100.0, "最大HP = 50+5×10 = 100")
 	assert_eq(attr.max_mp(base), 50.0, "最大MP = 5×10 = 50")
 	assert_eq(attr.move_speed(base), 2.6, "移速 = 2.6（敏捷5，整体降速后）")
+	assert_eq(attr.move_speed({"agi": 7}), 2.68, "敏捷7 → 移速2.68")
+	assert_eq(attr.dodge_cooldown(base), 2.2, "敏捷5 → 剃冷却2.2秒")
+	assert_eq(attr.dodge_cooldown({"agi": 7}), 2.04, "敏捷7 → 剃冷却2.04秒")
+	assert_eq(attr.dodge_cooldown({"agi": 99}), 1.4, "高敏捷剃冷却有下限")
+	var equip: GDScript = load("res://data/equip_tables.gd")
+	assert_eq(equip.str_atk_coef(6) > equip.str_atk_coef(5), true, "力量每点连续增伤")
+	assert_eq(equip.str_atk_coef(7) > equip.str_atk_coef(6), true, "力量不再有空白平台")
+	assert_eq(equip.str_attack_bonus(7) - equip.str_attack_bonus(6), 1.0, "战役每点力量另加1点固定攻击")
+	assert_eq(equip.con_hit_factor(6) < equip.con_hit_factor(5), true, "体力提升减轻受击")
+	assert_eq(equip.con_hit_factor(99), 0.7, "体力减伤有上限")
+	var skills: GDScript = load("res://data/combat_skills.gd")
+	assert_eq(skills.shield_capacity(6) - skills.shield_capacity(5), 4.0, "智力每点提高护盾容量4")
 	assert_eq(attr.attack({"str": 7}), 14.0, "力量7 → 攻击14")
 	assert_eq(attr.max_hp({"con": 8}), 130.0, "体力8 → HP130")
 	assert_eq(attr.max_mp({"int": 8}), 80.0, "智力8 → MP80")
@@ -70,6 +82,27 @@ func _run() -> void:
 	assert_eq(gs.get_attr_points(), 4, "属性点 5→4")
 	assert_eq(gs.spend_attr_point("int", 9), false, "点数不足被拒")
 	assert_eq(gs.get_attribute("agi"), 5, "未投维度不变")
+	gs.campaign.bag["leather_cap"] = 1
+	gs.campaign.equipment["head"] = "leather_cap"
+	assert_eq(gs.effective_attributes().con, 6, "护额词条提高作战体力")
+	gs.damage_item_dura("leather_cap", 16)
+	assert_eq(gs.effective_attributes().con, 5, "护额损毁后词条失效")
+	gs.coins = 3000
+	assert_eq(gs.buy_item("letter", 500), false, "任务引荐信不能在商店购买")
+	assert_eq(gs.buy_item("potion", 150), true, "药剂购买成功")
+	assert_eq(gs.sell_item("potion"), true, "药剂可低价回收")
+	assert_eq(gs.coins, 2900, "药剂买卖不能刷币")
+	var shop: GDScript = load("res://scripts/ui/shop_panel.gd")
+	var no_arbitrage := true
+	for good in shop.get_script_constant_map()["GOODS"]:
+		if good.get("sold_out", false):
+			continue
+		var id: String = good["id"]
+		gs.campaign.bag[id] = 0
+		gs.coins = 10000
+		if not gs.buy_item(id, int(good["price"])) or not gs.sell_item(id) or gs.coins > 10000:
+			no_arbitrage = false
+	assert_eq(no_arbitrage, true, "商店商品买卖均不能刷币")
 	gs.free()
 
 	# 3) 试炼场集成：默认六维下玩家派生值与 HUD 就位
@@ -91,7 +124,9 @@ func _run() -> void:
 			assert_eq(player.max_hp, 100.0, "玩家 max_hp = 100")
 			assert_eq(player.max_mp, 50.0, "玩家 max_mp = 50")
 			assert_eq(player.attack_damage, 12.0, "玩家攻击 = 12")
+			assert_eq(player.roll_attack_damage(), 12.0, "练习场真实伤害采用面板力量值")
 			assert_eq(player.move_speed, 2.6, "玩家移速 = 2.6")
+			assert_eq(player.dodge_cooldown, 2.2, "玩家剃冷却采用敏捷派生值")
 			assert_eq(player.hp, player.max_hp, "满血入场")
 			assert_eq(player.mp, player.max_mp, "满蓝入场")
 		var huds := get_nodes_in_group("hud")

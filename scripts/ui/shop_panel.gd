@@ -19,17 +19,17 @@ const QUALITY_COLORS := {
 const GOODS := [
 	{"id": "potion", "name": "恢复药剂", "cat": "消耗品", "price": 150, "quality": "green", "desc": "恢复 40% 生命的琥珀色药剂，出门在外的必备品。"},
 	{"id": "trap", "name": "火药陷阱 · 投掷", "cat": "消耗品", "price": 220, "quality": "green", "desc": "可预埋的炼金炸弹，蹲守与引爆两用。"},
-	{"id": "iron_sword", "name": "精铁刀", "cat": "武器", "price": 900, "quality": "white", "desc": "灰潮港铁匠打的制式直刀，结实耐用。"},
-	{"id": "worn_blade", "name": "缺口刀", "cat": "武器", "price": 120, "quality": "white", "desc": "从旧战场流出的豁口弯刀，还能砍。"},
+	{"id": "iron_sword", "name": "精铁刀", "cat": "武器", "price": 900, "quality": "green", "desc": "灰潮港铁匠打的制式直刀，结实耐用。"},
+	{"id": "worn_blade", "name": "缺口刀", "cat": "武器", "price": 220, "quality": "white", "desc": "从旧战场流出的豁口弯刀，还能砍。"},
 	{"id": "leather_cap", "name": "皮护额", "cat": "防具", "price": 260, "quality": "white", "desc": "硬化的皮革护额，挡得住流石。"},
 	{"id": "ragged_vest", "name": "褴褛甲", "cat": "防具", "price": 340, "quality": "white", "desc": "层层叠叠的旧布甲，聊胜于无。"},
-	{"id": "copper_ring", "name": "铜戒指", "cat": "饰品", "price": 480, "quality": "blue", "desc": "潮气里泡出来的绿斑，反而好看。"},
+	{"id": "copper_ring", "name": "铜戒指", "cat": "饰品", "price": 480, "quality": "white", "desc": "智力 +1，能多储备法力。"},
 	{"id": "pendant", "name": "亡妻项坠", "cat": "饰品", "price": 1500, "quality": "purple", "desc": "不卖。摆在这里只是让它见见光。", "sold_out": true},
-	{"id": "white_mat", "name": "白锻材", "cat": "材料", "price": 650, "quality": "green", "desc": "强化装备的基础锻材。"},
+	{"id": "white_mat", "name": "白锻材", "cat": "材料", "price": 650, "quality": "white", "desc": "强化装备的基础锻材。"},
 	{"id": "blue_mat", "name": "蓝锻材", "cat": "材料", "price": 1400, "quality": "blue", "desc": "泛着海光的锻材，工坊的老主顾都认。"},
-	{"id": "tiger_tooth", "name": "虎齿", "cat": "宝藏", "price": 800, "quality": "green", "desc": "科尔波山巨虎的牙，猎户的战利品。"},
+	{"id": "tiger_tooth", "name": "虎齿", "cat": "宝藏", "price": 800, "quality": "green", "desc": "科尔波山巨虎的牙，猎户的战利品。", "sold_out": true},
 	{"id": "crystal", "name": "灵魂结晶", "cat": "宝藏", "price": 2400, "quality": "purple", "desc": "温热的结晶体，里面像有什么在呼吸。"},
-	{"id": "letter", "name": "引荐信", "cat": "宝藏", "price": 500, "quality": "blue", "desc": "港务委托所的火漆信，别拆开看。"},
+	{"id": "letter", "name": "引荐信", "cat": "宝藏", "price": 500, "quality": "blue", "desc": "港务委托所的火漆信，别拆开看。", "sold_out": true},
 ]
 
 const CATEGORIES := ["全部", "武器", "防具", "饰品", "消耗品", "材料", "宝藏"]

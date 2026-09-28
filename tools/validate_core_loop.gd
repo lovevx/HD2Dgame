@@ -184,7 +184,8 @@ func run() -> void:
 			trap.place_at(tiger.global_position)
 			trap._on_body_entered(tiger)
 			trap._process(0.4)
-			check(tiger.hp == tiger.max_hp - 90, "火药陷阱踩踏引爆伤害")
+			var bomb_damage: float = trap.get_script().get_script_constant_map()["EXPLOSION_DAMAGE"]
+			check(tiger.hp == tiger.max_hp - bomb_damage, "火药陷阱踩踏引爆伤害")
 			tiger.take_damage(290)
 			check(tiger.phase == 1, "巨虎65%狂暴")
 			tiger.take_damage(320)
@@ -245,8 +246,9 @@ func run() -> void:
 			check(not gs.advance_region(), "斩龙闪装备门槛")
 			check(scene.world.get_node("ExitPortal")._locked(), "未装备斩龙闪时出口保持锁定")
 			use_inventory("dragon")
-			# 新攻击模型：区间中点 10.5 × 力量倍率 1.10（str 6）× 刀术训练 1.0 = 11.55
-			check(gs.campaign.equipment.main_weapon == "dragon" and is_equal_approx(scene.player.attack_damage, 11.55), "原背包装备按钮即时提高攻击")
+			var str_val: int = int(gs.effective_attributes().str)
+			var expected_attack: float = 10.5 * gs.Equip.str_atk_coef(str_val) + gs.Equip.str_attack_bonus(str_val)
+			check(gs.campaign.equipment.main_weapon == "dragon" and is_equal_approx(scene.player.attack_damage, expected_attack), "原背包装备按钮即时提高攻击")
 			var kick_done: bool = bool(gs.campaign.tutorial_steps.get("kick", false))
 			var shadow_done: bool = bool(gs.campaign.tutorial_steps.get("shadow", false))
 			gs.campaign.tutorial_steps["kick"] = false

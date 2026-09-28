@@ -316,6 +316,8 @@ func effective_attributes() -> Dictionary:
 	var result := debug_attributes()
 	for slot in campaign.equipment:
 		var id: String = str(campaign.equipment[slot])
+		if is_item_broken(id):
+			continue
 		var def := item_def(id)
 		for key in def.get("stats", {}):
 			result[key] = int(result.get(key, Attributes.BASE)) + int(def["stats"][key])
@@ -392,9 +394,12 @@ func damage_item_dura(id: String, amount: float) -> void:
 	var state: Dictionary = Campaign.dura_state(campaign, id)
 	if state["max"] <= 0:
 		return
+	var was_intact: bool = state["cur"] > 0.0
 	state["cur"] = maxf(0.0, state["cur"] - amount)
 	campaign.item_dura[id] = state
 	mark_sortie_dirty()
+	if was_intact and state["cur"] <= 0.0:
+		attributes_changed.emit()
 
 func is_item_broken(id: String) -> bool:
 	var st: Dictionary = Campaign.dura_state(campaign, id)
@@ -486,8 +491,9 @@ func sell_item(id: String) -> bool:
 	else:
 		var q := Equip.quality_q(item.get("quality", "white"))
 		var st: Dictionary = Campaign.dura_state(campaign, id)
-		var fdur := clampf(st["cur"] / st["max"] if st["max"] > 0 else 1.0, 0.0, 1.0)
-		price = int(q * Equip.SELL_R * Equip.kstr(Campaign.enhance_level(campaign, id)) * fdur * (Equip.GROW_SELL if item.get("growth", false) else 1.0))
+		var fdur := clampf(st["cur"] / st["max"] if st["max"] > 0 else 1.0, 0.4, 1.0)
+		var base_sell := minf(q * Equip.SELL_R, float(item.get("score", 0)) * 25.0)
+		price = int(base_sell * Equip.kstr(Campaign.enhance_level(campaign, id)) * fdur * (Equip.GROW_SELL if item.get("growth", false) else 1.0))
 	if item.has("slot"):
 		_unmount_slot_with(id)
 	give_item(id, -1)
@@ -506,7 +512,7 @@ func decompose_item(id: String) -> bool:
 		return false
 	var q := Equip.quality_q(item.get("quality", "white"))
 	var st: Dictionary = Campaign.dura_state(campaign, id)
-	var fdur := clampf(st["cur"] / st["max"] if st["max"] > 0 else 1.0, 0.0, 1.0)
+	var fdur := clampf(st["cur"] / st["max"] if st["max"] > 0 else 1.0, 0.4, 1.0)
 	var count := ceili(q / 100.0 * Equip.DECOMP_R * Equip.kstr(Campaign.enhance_level(campaign, id)) * fdur * (Equip.GROW_SELL if item.get("growth", false) else 1.0))
 	var mat: String = {"white": "white_mat", "green": "green_mat", "blue": "blue_mat", "purple": "purple_mat", "gold_light": "gold_mat"}.get(item.get("quality", "white"), "white_mat")
 	if item.has("slot"):
@@ -725,6 +731,8 @@ func buy_item(id: String, price: int) -> bool:
 	if def.is_empty() or price <= 0:
 		push_message("该商品暂无货源")
 		return false
+	if def.get("item_kind", "") == "quest":
+		return false
 	if coins < price:
 		push_message("乐园币不足（需要 %d）" % price)
 		return false
@@ -735,9 +743,9 @@ func buy_item(id: String, price: int) -> bool:
 	return true
 
 func buy_potion() -> bool:
-	if not campaign.hub or coins < 100:
+	if not campaign.hub or coins < 150:
 		return false
-	coins -= 100
+	coins -= 150
 	give_item("potion", 1)
 	save_game()
 	return true

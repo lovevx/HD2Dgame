@@ -1,6 +1,7 @@
 extends SceneTree
 ## 战斗技能与法力经济的隔离检查，不碰玩家正式存档。
 const Skills := preload("res://data/combat_skills.gd")
+const Bomb := preload("res://scripts/combat/alchemy_bomb.gd")
 var failures := 0
 var enemy_scene: PackedScene
 var enemy_kinds: Dictionary
@@ -47,6 +48,12 @@ func run() -> void:
 	player.reset()
 	check(InputMap.has_action("hunter_toggle") and InputMap.has_action("aoge") and InputMap.has_action("huanduan"), "Q/E/F 技能键已映射")
 	check(gs.Equip.kill_dur(1) == 1 and gs.Equip.kill_dur(3) == 3 and gs.Equip.kill_dur(8) == 8, "击杀耐久档位 1/3/8")
+	var boss_script: GDScript = load("res://scripts/combat/boss_colpo.gd")
+	var boss_values: Dictionary = boss_script.get_script_constant_map()
+	var boss_sample: Node = boss_script.new()
+	check(Bomb.EXPLOSION_DAMAGE * 3.0 <= float(boss_sample.get("max_hp")) * (1.0 - float(boss_values["P2_AT"])), "三枚陷阱不会被巨虎 P1 锁血吞掉伤害")
+	check(float(boss_values["ATTACKS"]["ambush"]["windup"]) >= 0.3, "巨虎诈死偷袭有可反应的前摇")
+	boss_sample.free()
 
 	var mp_before: float = player.mp
 	player._toggle_shield()

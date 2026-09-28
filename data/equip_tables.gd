@@ -37,17 +37,26 @@ static func quality_color(key: String) -> Color:
 static func quality_q(key: String) -> int:
 	return int(QUALITY.get(key, QUALITY["white"]).get("q", 1000))
 
-## ---------- 肉体伤害修正系数（con 查表，±2%/点，con=5 → 1.00） ----------
+## ---------- 肉体伤害修正系数（体力越高受伤越少，con=5 → 1.00） ----------
 static func con_hit_factor(con: int) -> float:
-	return 1.0 + (con - 5) * 0.02
+	return clampf(1.0 - (con - 5) * 0.03, 0.7, 1.18)
 
-## ---------- 裸装力量近战攻击倍率（查表，上限锁死） ----------
-const STR_ATK_COEF_ROWS := [[5, 1.00], [10, 1.10], [18, 1.22], [30, 1.35], [2147483647, 1.45]]
+## ---------- 力量近战攻击倍率（锚点间线性插值，每一点都生效） ----------
+const STR_ATK_COEF_ROWS := [[5, 1.00], [10, 1.30], [18, 1.48], [30, 1.65]]
+## 倍率之外的固定加成，让低攻击武器也能明显受益于每一点力量。
+const STR_ATTACK_BONUS_PER_POINT := 1.0
+static func str_attack_bonus(str_val: int) -> float:
+	return maxf(0.0, float(str_val - Attributes.BASE)) * STR_ATTACK_BONUS_PER_POINT
+
 static func str_atk_coef(str_val: int) -> float:
+	if str_val <= 5:
+		return maxf(0.7, 1.0 + (str_val - 5) * 0.06)
+	var previous: Array = STR_ATK_COEF_ROWS[0]
 	for row in STR_ATK_COEF_ROWS:
 		if str_val <= row[0]:
-			return row[1]
-	return 1.45
+			return lerpf(float(previous[1]), float(row[1]), float(str_val - previous[0]) / float(row[0] - previous[0]))
+		previous = row
+	return 1.65
 
 ## ---------- 强化 AttackAdd（每 +1 上下限同步增幅，按武器类型查表） ----------
 ## weapon_type 与 ITEMS 条目上的 weapon_type 保持一致。

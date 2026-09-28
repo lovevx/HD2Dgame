@@ -38,10 +38,10 @@ const ATTACKS := {
 	"claw": {"windup": 0.55, "damage": 22.0, "radius": 4.6, "reach": 7.0, "offset": 3.4, "recover": 0.85},
 	"stomp": {"windup": 0.80, "damage": 26.0, "radius": 7.0, "reach": 9.5, "offset": 0.0, "recover": 1.00},
 	"pounce": {"windup": 0.65, "damage": 30.0, "radius": 3.4, "reach": 21.0, "offset": 0.0, "recover": 1.00},
-	"ambush": {"windup": 0.12, "damage": 45.0, "radius": 5.5, "reach": 6.0, "offset": 0.0, "recover": 1.10},
+	"ambush": {"windup": 0.35, "damage": 32.0, "radius": 5.5, "reach": 6.0, "offset": 0.0, "recover": 1.10},
 }
 
-@export var max_hp: float = 800.0
+@export var max_hp: float = 650.0
 @export var walk_speed: float = 5.0
 @export var charge_speed: float = 21.0
 @export var preferred_distance: float = 6.0

@@ -168,7 +168,7 @@ func reset() -> void:
 	hp_changed.emit(hp, max_hp)
 
 ## 从全局六维属性刷新派生值：最大 HP = 50 + 体力×10；最大 MP = 智力×10；
-## 移速 = 5 + (敏捷-5)×0.05；攻击 = 武器区间中点 × 力量倍率 × 刀术训练（面板期望值）。
+## 移速与剃冷却由敏捷派生；战役攻击 =（武器区间中点 × 力量倍率 + 力量固定加成）× 刀术训练。
 func _refresh_derived_stats() -> void:
 	var a: Dictionary = GameState.effective_attributes() if campaign_mode else GameState.debug_attributes()
 	max_hp = Attributes.max_hp(a)
@@ -181,8 +181,12 @@ func _refresh_derived_stats() -> void:
 		var wid := str(GameState.campaign.equipment.get("main_weapon", ""))
 		if wid != "":
 			var w := _weapon_range(wid)
-			attack_damage = (w.x + w.y) / 2.0 * GameState.Equip.str_atk_coef(int(a.get("str", Attributes.BASE))) * (1.0 + 0.1 * GameState.campaign.training)
+			var str_val := int(a.get("str", Attributes.BASE))
+			attack_damage = ((w.x + w.y) / 2.0 * GameState.Equip.str_atk_coef(str_val) + GameState.Equip.str_attack_bonus(str_val)) * (1.0 + 0.1 * GameState.campaign.training)
+			if GameState.is_item_broken(wid):
+				attack_damage *= 0.5
 	move_speed = Attributes.move_speed(a)
+	dodge_cooldown = Attributes.dodge_cooldown(a)
 	# 属性被扣减或重置时，把当前值收进新上限，避免越界。
 	hp = minf(hp, max_hp)
 	mp = minf(mp, max_mp)
@@ -201,12 +205,14 @@ func _weapon_range(id: String) -> Vector2:
 func _roll_range_damage(id: String) -> float:
 	var r := _weapon_range(id)
 	var roll := (randf_range(r.x, r.y) + randf_range(r.x, r.y)) / 2.0
-	if GameState.is_item_broken(id):
-		roll *= 0.5
 	var a: Dictionary = GameState.effective_attributes()
-	return roll * GameState.Equip.str_atk_coef(int(a.get("str", Attributes.BASE))) * (1.0 + 0.1 * GameState.campaign.training)
+	var str_val := int(a.get("str", Attributes.BASE))
+	var damage: float = (roll * GameState.Equip.str_atk_coef(str_val) + GameState.Equip.str_attack_bonus(str_val)) * (1.0 + 0.1 * GameState.campaign.training)
+	return damage * (0.5 if GameState.is_item_broken(id) else 1.0)
 
 func roll_attack_damage() -> float:
+	if not campaign_mode:
+		return attack_damage
 	return _roll_range_damage(str(GameState.campaign.equipment.get("main_weapon", "")))
 
 func _unhandled_input(event: InputEvent) -> void:

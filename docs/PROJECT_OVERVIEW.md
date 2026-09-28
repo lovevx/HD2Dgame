@@ -153,10 +153,10 @@ main_menu.tscn ──开始新游戏──▶ opening.tscn（2D 剧情 + 登记�
 
 | 文件 | 内容 |
 |---|---|
-| `attributes.gd` | 六维键 `str/agi/con/int/cha/luk`；派生：`max_hp = 50 + con×10`、`max_mp = int×10`、`move_speed = 2.6 + (agi−5)×0.026`、`attack = 武器7 + str`；只有力/敏/体/智可加点 |
+| `attributes.gd` | 六维键 `str/agi/con/int/cha/luk`；派生：`max_hp = 50 + con×10`、`max_mp = int×10`、`move_speed = 2.6 + (agi−5)×0.04`、`dodge_cooldown = clamp(2.2−(agi−5)×0.08, 1.4, 2.6)`、练习场攻击 = 武器7 + str；只有力/敏/体/智可加点 |
 | `campaign.gd` | `STAGES`（1.2~1.6 名称/简介/剧情/敌人档位/战利品/源点）、`SLOTS`（11 槽）+`SLOT_CN`、`ITEMS`（全字段：品质/评分/攻击区间/词条/耐久/需求/export/growth/被动）、`CHESTS`、`HUNTS`、`RANDOM_EQUIP_POOL`、`SCENE_CHEST_ITEMS`、`fresh()` 存档模板、`dura_state`/`enhance_level`/`fury_value` 兜底读取 |
-| `combat_skills.gd` | 猎魔消耗/真伤比、回蓝比例、三段连击命中帧(`0.12/0.18/0.23`)/冷却/倍率/范围、护盾、环断、刀芒、影刺全部数值 |
-| `equip_tables.gd` | 5 档品质（Q 值 / 评分区间 / 配色）、`con_hit_factor` 肉体修正、`str_atk_coef` 力量倍率（上限 1.45）、`ATTACK_ADD_BY_TYPE` 强化增幅、`ENHANCE_ROWS` 成功率与失败掉级、`KSTR`、成长倍率、`SELL_R`/`DECOMP_R`、`KILL_DUR` 击杀扣耐 |
+| `combat_skills.gd` | 猎魔消耗/真伤比、回蓝比例、单段斩击命中帧(0.24)/冷却(0.6)/倍率(1.3)、护盾、环断、刀芒、影刺全部数值 |
+| `equip_tables.gd` | 5 档品质（Q 值 / 评分区间 / 配色）、`con_hit_factor` 肉体修正、`str_atk_coef` 连续力量倍率（上限 1.65）、`str_attack_bonus` 每点固定攻击、`ATTACK_ADD_BY_TYPE` 强化增幅、`ENHANCE_ROWS` 成功率与失败掉级、`KSTR`、成长倍率、`SELL_R`/`DECOMP_R`、`KILL_DUR` 击杀扣耐 |
 | `quest_log.gd` | 任务档案（J 键任务面板的数据源）：把 `campaign` 里的进度只读映射成「序章 / 主线 / 支线 / 记录」四章任务表，每条的 `status` 由 `flow/stage/cleared/settled/kills/bag/opened_chests` 推出；纯函数、不引用 autoload，详见 [QUEST_PANEL.md](QUEST_PANEL.md) |
 
 > **口径提醒**：`attributes.attack()`（武器7+力量）只在非战役面板/独立试炼生效；战役伤害走 `equip_tables` 的区间链。这是已知的双轨问题，见 §13。

@@ -5,7 +5,7 @@ const GameAudio := preload("res://data/game_audio.gd")
 ## 预警做在引信上：红圈收缩 + 闪光，敌人和玩家都有时间离开爆炸范围。
 
 const EXPLOSION_RADIUS := 4.5
-const EXPLOSION_DAMAGE := 90.0
+const EXPLOSION_DAMAGE := 75.0
 const FUSE_TIME := 0.35
 const ARM_DELAY := 0.25   # 落地到布防完成，避免刚扔出去就被自己触发的错觉
 

@@ -15,7 +15,7 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-## 默认套件（全部已验证为绿，2026-09-23）。
+## 默认套件（2026-09-23 全绿；2026-09-28 在 31c6d86 上复查：colpo / level_refine / combo_skills / settings / demo 五支在未改动代码上即红，待单独处理）。
 SUITE=(
   validate_demo              # 自由练习场冒烟：木桩/野狼、伤害结算、倒下重开、不动正式资源
   validate_save_transaction  # 出击结算事务 + 存档原子写/版本/坏档回退
@@ -25,6 +25,7 @@ SUITE=(
   validate_combo_skills      # 连段技能
   validate_core_loop         # 核心循环
   validate_quest_panel       # J 任务面板
+  validate_player_hud        # 玩家状态 HUD：快捷栏判定 / 冷却暗幕 / 受击残影 / 低血红晕
   validate_settings          # 设置页：设置档读写兜底 + 画面/声音/游玩/按键是否真生效 + 两个入口
   validate_onboarding_flow   # 开场 → 港口引导
   validate_level_refine      # 关卡细化

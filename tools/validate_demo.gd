@@ -2,6 +2,7 @@ extends SceneTree
 ## 自由练习场冒烟：开场面板 → 打木桩 → 单次伤害结算 → 倒下重开 → 不动正式资源。
 ## 运行：godot --headless --path . --script res://tools/validate_demo.gd
 const TestEnv := preload("res://tools/test_env.gd")
+const CombatSkills := preload("res://data/combat_skills.gd")
 var failures: Array[String] = []
 func check(ok: bool, detail: String) -> void:
 	if not ok:
@@ -40,7 +41,7 @@ func run_checks() -> void:
 	player.facing = Vector3.FORWARD
 	player._start_attack()
 	check(dummy.hp_ == dummy.max_hp, "no damage before active frame")
-	player._physics_process(0.13)
+	player._physics_process(CombatSkills.COMBO_HIT_TIMES[0] + 0.01)
 	var after_hit: float = dummy.hp_
 	check(after_hit < dummy.max_hp, "active frame damages dummy")
 	player._physics_process(0.05)

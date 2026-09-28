@@ -81,15 +81,15 @@ const ITEMS := {
 		"dur_max": 16, "req": {}, "export": false, "growth": false,
 		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
 	"copper_ring": {"name": "铜戒指", "slot": "ring", "item_kind": "jewelry",
-		"quality": "white", "score": 6, "stats": {"luk": 1}, "dur_max": 0,
+		"quality": "white", "score": 6, "stats": {"int": 1}, "dur_max": 0,
 		"req": {}, "export": false, "growth": false,
 		"can_sell": true, "can_decompose": true, "passive": [], "source": "前期世界掉落"},
 	# ---- 消耗品 ----
-	"potion": {"name": "恢复药剂 · 2使用", "item_kind": "consumable", "export": true},
-	"trap": {"name": "火药陷阱 · 1投掷", "item_kind": "consumable", "export": false},
-	"catnip": {"name": "木天芷 · 猎虎诱饵", "item_kind": "consumable", "export": false},
+	"potion": {"name": "恢复药剂 · 2使用", "item_kind": "consumable", "export": true, "sell_price": 50},
+	"trap": {"name": "火药陷阱 · 1投掷", "item_kind": "consumable", "export": false, "sell_price": 80},
+	"catnip": {"name": "木天芷 · 猎虎诱饵", "item_kind": "consumable", "export": false, "can_sell": false},
 	# ---- 材料 ----
-	"crystal": {"name": "灵魂结晶（小）", "item_kind": "material", "quality": "purple", "score": 109, "export": true, "can_sell": true, "can_decompose": false},
+	"crystal": {"name": "灵魂结晶（小）", "item_kind": "material", "quality": "purple", "score": 109, "export": true, "can_sell": true, "can_decompose": false, "sell_price": 1000},
 	"claw": {"name": "虎爪", "item_kind": "material", "quality": "green", "score": 16, "export": true, "can_sell": true, "can_decompose": false},
 	"white_mat": {"name": "白色锻造材料", "item_kind": "material", "quality": "white", "score": 2, "export": true, "can_sell": true, "can_decompose": false, "sell_price": 12},
 	"green_mat": {"name": "绿色锻造材料", "item_kind": "material", "quality": "green", "score": 15, "export": true, "can_sell": true, "can_decompose": false, "sell_price": 60},
@@ -97,9 +97,9 @@ const ITEMS := {
 	"purple_mat": {"name": "紫色锻造材料", "item_kind": "material", "quality": "purple", "score": 150, "export": true, "can_sell": true, "can_decompose": false, "sell_price": 400},
 	"gold_mat": {"name": "淡金色锻造材料", "item_kind": "material", "quality": "gold_light", "score": 280, "export": true, "can_sell": true, "can_decompose": false, "sell_price": 900},
 	# ---- 剧情 / 任务 ----
-	"letter": {"name": "卡洛斯的引荐信", "item_kind": "quest", "export": false},
-	"guard_badge": {"name": "侍卫身份凭证", "item_kind": "quest", "export": false},
-	"tiger_tooth": {"name": "虎齿 · 支线目标（本次不交付）", "item_kind": "quest", "export": true},
+	"letter": {"name": "卡洛斯的引荐信", "item_kind": "quest", "export": false, "can_sell": false},
+	"guard_badge": {"name": "侍卫身份凭证", "item_kind": "quest", "export": false, "can_sell": false},
+	"tiger_tooth": {"name": "虎齿 · 支线目标（本次不交付）", "item_kind": "quest", "export": true, "can_sell": false},
 	# ---- 宝箱 ----
 	"carlos_chest": {"name": "卡洛斯的白色宝箱", "item_kind": "chest", "export": true, "can_sell": false, "can_decompose": false},
 	"oka_chest": {"name": "欧卡的白色宝箱", "item_kind": "chest", "export": true, "can_sell": false, "can_decompose": false},

@@ -38,7 +38,7 @@ const MUSIC_PATHS := {
 }
 
 var _stream_cache: Dictionary = {}
-var _voices: Array[Node] = []
+var _voices: Array[WeakRef] = []
 var _music_players: Array[AudioStreamPlayer] = []
 var _music_slot := 0
 var _music_fade: Tween
@@ -135,14 +135,16 @@ func _play_stream(stream: AudioStream, bus_name: String, world_position: Vector3
 		player.pitch_scale = pitch_scale
 		voice = player
 		add_child(player)
-	voice.finished.connect(_release_voice.bind(voice), CONNECT_ONE_SHOT)
-	_voices.append(voice)
+	var voice_ref: WeakRef = weakref(voice)
+	voice.finished.connect(_release_voice.bind(voice_ref), CONNECT_ONE_SHOT)
+	_voices.append(voice_ref)
 	while _voices.size() > MAX_ACTIVE_SFX:
 		_release_voice(_voices[0])
 	voice.play()
 
-func _release_voice(voice: Node) -> void:
-	_voices.erase(voice)
+func _release_voice(voice_ref: WeakRef) -> void:
+	_voices.erase(voice_ref)
+	var voice := voice_ref.get_ref() as Node
 	if is_instance_valid(voice):
 		voice.queue_free()
 
@@ -199,7 +201,12 @@ func _update_combat_music() -> void:
 
 func _on_node_added(node: Node) -> void:
 	if node is BaseButton:
-		call_deferred("_bind_ui_button", node)
+		call_deferred("_bind_ui_button_ref", weakref(node))
+
+func _bind_ui_button_ref(node_ref: WeakRef) -> void:
+	var node := node_ref.get_ref() as Node
+	if is_instance_valid(node):
+		_bind_ui_button(node)
 
 func _bind_ui_tree(node: Node) -> void:
 	if node is BaseButton:
