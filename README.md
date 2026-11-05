@@ -3,6 +3,10 @@
 Godot 4.7 的 HD-2D 动作 RPG（2D 精灵 + 3D 场景），题材取自《轮回乐园》。
 战斗采用**即时动作**：移动、读招、斩击、闪避、技能与处决都在探索场景中实时结算。
 
+这是我独立推进、用 AI 辅助开发的动作 RPG 原型。试玩内容包括序章、森林探索与可选巨虎挑战。项目展示记录了任务与成长规则、通路修正和装备反馈的迭代。
+
+[项目展示与实机截图](https://lovevx.github.io/my-work/works/hd2d.html) · [展示稿与验证材料](https://github.com/lovevx/my-work/tree/main/files/hd2d)
+
 ## 环境
 
 - Godot **4.7.x**（开发机为 Steam 版 `4.7.2`）。
